@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construct</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="global-topbar">
+        <div class="logo">Construct</div>
+        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
+        
+        <div class="search-box">
+            <input type="text" placeholder="Search categories...">
+        </div>
+        
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+            <a href="catalog.html" class="nav-btn active">Catalog</a>
+            <a href="index.html" class="nav-btn">Projects</a>
+            <a href="boq-detail.html" class="nav-btn cart-btn">🛒 BOQ</a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="sidebar">
+            <button class="add-btn" id="add-btn" style="width:100%">+ Add Category</button>
+        </div>
+
+        <div class="main-content">
+            <h1>Product Catalog</h1>
+            <div class="category-grid" id="category-grid"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">New Category</h2>
+            <input type="text" id="cat-name" placeholder="Category name">
+            <input type="text" id="cat-desc" placeholder="Short description">
+            <div class="modal-buttons">
+                <button id="delete-category-btn" style="display:none;background:#ef4444;color:white;margin-right:auto">Delete</button>
+                <button id="cancel-btn">Cancel</button>
+                <button id="confirm-btn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="project-modal">
+        <div class="modal">
+            <h2>Select Project</h2>
+            <div id="project-list-modal"></div>
+            <div class="modal-buttons">
+                <button id="project-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+    <script>
+        let editingId = null;
+
+async function loadCategories() {
+    let response = await fetch('http://localhost:8081/api/categories');
+    let categories = await response.json();
+    document.querySelector('.category-grid').innerHTML = '';
+    categories.forEach(function(cat) {
+        renderCategories(cat);
+    });
+}
+
+function renderCategories(cat) {
+    let grid = document.querySelector('.category-grid');
+    let card = document.createElement('div');
+    card.classList.add('category-tile');
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="tile-title">${cat.name}</div>
+            <button class="dots-btn" onclick="event.stopPropagation(); editCategory(${cat.id}, '${cat.name}', '${cat.description}')">⋮</button>
+        </div>
+        <div class="tile-desc">${cat.description}</div>
+    `;
+
+    card.addEventListener('click', function() {
+    localStorage.setItem('selectedCategoryId', cat.id);
+    localStorage.setItem('selectedCategoryName', cat.name);
+    window.location.href = 'suppliers.html';
+});
+
+    grid.appendChild(card);
+}
+
+async function deleteCategory(id) {
+    await fetch('http://localhost:8081/api/categories/' + id, {
+        method: 'DELETE'
+    });
+    loadCategories();
+}
+
+function editCategory(id, currentName, currentDescription) {
+    editingId = id;
+    document.getElementById('cat-name').value = currentName;
+    document.getElementById('cat-desc').value = currentDescription;
+    document.getElementById('modal-title').textContent = 'Edit Category';
+    document.getElementById('confirm-btn').textContent = 'Save';
+    document.getElementById('delete-category-btn').style.display = 'block';
+    modal.classList.add('open');
+}
+
+let modal = document.getElementById('modal-overlay');
+let addBtn = document.getElementById('add-btn');
+let cancelBtn = document.getElementById('cancel-btn');
+let confirmBtn = document.getElementById('confirm-btn');
+
+addBtn.addEventListener('click', function() {
+    editingId = null;
+    document.getElementById('cat-name').value = '';
+    document.getElementById('cat-desc').value = '';
+    document.getElementById('modal-title').textContent = 'New Category';
+    document.getElementById('confirm-btn').textContent = 'Add';
+    document.getElementById('delete-category-btn').style.display = 'none';
+    modal.classList.add('open');
+});
+
+cancelBtn.addEventListener('click', function() {
+    modal.classList.remove('open');
+    editingId = null;
+});
+
+document.querySelector('.search-box input').addEventListener('input', function() {
+    let query = this.value.toLowerCase().trim();
+    let tiles = document.querySelectorAll('.category-tile');
+    tiles.forEach(function(tile) {
+        let title = tile.querySelector('.tile-title').textContent.toLowerCase();
+        let desc = tile.querySelector('.tile-desc').textContent.toLowerCase();
+        tile.style.display = (title.includes(query) || desc.includes(query)) ? 'block' : 'none';
+    });
+});
+
+confirmBtn.addEventListener('click', async function() {
+    let name = document.getElementById('cat-name').value.trim();
+    let desc = document.getElementById('cat-desc').value.trim();
+
+    if (name === '') {
+        alert('Please enter a category name');
+        return;
+    }
+
+    if (editingId) {
+        await fetch('http://localhost:8081/api/categories/' + editingId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, description: desc })
+        });
+    } else {
+        await fetch('http://localhost:8081/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, description: desc })
+        });
+    }
+
+    modal.classList.remove('open');
+    editingId = null;
+    loadCategories();
+
+    document.getElementById('delete-category-btn').addEventListener('click', async function() {
+    if (confirm('Are you sure you want to delete this category?')) {
+        await fetch('http://localhost:8081/api/categories/' + editingId, {
+            method: 'DELETE'
+        });
+        modal.classList.remove('open');
+        editingId = null;
+        loadCategories();
+    }
+});
+});
+
+
+
+loadCategories();
+    </script>
+</body>
+</html>
+

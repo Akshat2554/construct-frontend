@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>All products</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src = "cart.js"></script>   
+    </head>
+    <body>
+        <div class="global-topbar">
+            <div class="logo">Construct</div>
+            <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No project</span></button>
+
+            <div class="search-box">
+                <input type="text" placeholder="Search Products">
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+                <a href="catalog.html" class="nav-btn">Catalog</a>
+                <a href="boq-detail.html" class="nav-btn cart-btn">BOQ <span id="cart-count">0</span></a>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div class="sidebar">
+                <a href="suppliers.html" class="back-btn">Back to suppliers</a>
+            </div>
+
+            <div class="main-content">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                    <h1 id="category-title" style="margin-bottom:0">Products</h1>
+                    <div class="view-toggle">
+                        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
+                        <button id="list-view-btn" class="view-toggle-btn " onclick="setView('list')">☰ List</button>
+                    </div>
+                </div>
+                <div class="product-grid" id="product-grid"></div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="project-modal">
+            <div class="modal">
+                <h2>Select Project</h2>
+                <div id="project-list-modal"></div>
+                <div class="modal-buttons">
+                    <button id="project-modal-close">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="topbar.js"></script>
+        <script>
+            let currentView = localStorage.getItem('productView') || 'grid';
+            let categoryId = localStorage.getItem('selectedCategoryId');
+            let categoryName = localStorage.getItem('selectedCategoryName');
+            document.getElementById('category-title').textContent = categoryName + ' - All Products';
+
+            async function loadAllProducts() {
+                let productsResponse = await fetch('http://localhost:8081/api/products/by-category/' + categoryId);
+                let products = await productsResponse.json();
+
+                let grid = document.querySelector('.product-grid');
+                grid.innerHTML = '';
+
+                if (products.length > 0) {
+                    let header = document.createElement('div');
+                    header.style.cssText = 'grid-column:1/-1;font-size:15px;font-weight:600;color:#1a1f2e;margin:16px 0 8px';
+                    header.textContent = 'Products';
+                    grid.appendChild(header);
+
+                    if(currentView === 'list') {
+                        renderProductsList(grid,products);
+                    }
+                    else {
+                        renderProductsGrid(grid,products);
+                    }
+                }
+
+                if (products.length === 0) {
+                grid.innerHTML = '<p style="color:#64748b;padding:20px">No catalogs or products uploaded yet.</p>';
+            }
+            }
+
+            function setView(view) {
+                currentView = view;
+                localStorage.setItem('productView', view);
+                document.getElementById('grid-view-btn').classList.toggle('active', view === 'grid');
+                document.getElementById('list-view-btn').classList.toggle('active', view === 'list');
+                loadAllProducts();
+            }
+
+            function addToCartPayload(product) {
+            return `addToCart({
+                productId: ${product.id},
+                name: '${product.name}',
+                productNumber: '${product.productNumber || ''}',
+                supplierName: '${product.supplierId || ''}',
+                category: '${categoryName}',
+                unit: '${product.unit || ''}',
+                unitPrice: ${product.price},
+                quantity: 1,
+                totalPrice: ${product.price}
+            })`;
+        }
+
+        function renderProductsGrid(grid, products) {
+            let cardRow = document.createElement('div');
+            cardRow.style.cssText = 'grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:16px';
+            grid.appendChild(cardRow);
+
+            products.forEach(function(product) {
+                let card = document.createElement('div');
+                card.className = 'product-tile-card';
+                card.innerHTML = `
+                    <div class="product-tile-image">
+                        ${product.imageURL
+                            ? `<img src="${product.imageURL}" alt="${product.name}">`
+                            : `<div class="product-tile-placeholder">📦</div>`}
+                        <button class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button>
+                    </div>
+                    <div class="product-tile-body">
+                        <div class="product-tile-name">${product.name}</div>
+                        <div class="product-tile-row"><span>Brand</span><span>${product.brandName || '—'}</span></div>
+                        <div class="product-tile-row"><span>Code</span><span>${product.productNumber || '—'}</span></div>
+                        <div class="product-tile-row"><span>Dimensions</span><span>${product.dimensions || '—'}</span></div>
+                        <div class="product-tile-row"><span>Unit</span><span>${product.unit || '—'}</span></div>
+                        <div class="product-tile-row"><span>Availability</span><span>${product.availability || '—'}</span></div>
+                        <div class="product-tile-footer">
+                            <div class="product-tile-price">₹${product.price}</div>
+                            <button class="add-to-cart-btn" onclick="${addToCartPayload(product)}">+</button>
+                        </div>
+                    </div>
+                `;
+                cardRow.appendChild(card);
+            });
+        }
+
+        document.querySelector('.search-box input').addEventListener('input', function() {
+    let query = this.value.toLowerCase().trim();
+    
+    // List view — filter table rows
+    let rows = document.querySelectorAll('#products-tbody tr');
+    rows.forEach(function(row) {
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
+
+    // Grid view — filter product cards
+    let cards = document.querySelectorAll('.product-tile-card');
+    cards.forEach(function(card) {
+        let text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? '' : 'none';
+    });
+});
+
+        function renderProductsList(grid, products) {
+            let table = document.createElement('table');
+            table.className = 'list-table';
+            table.style.cssText = 'grid-column:1/-1';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Brand</th>
+                        <th>Code</th>
+                        <th>Dimensions</th>
+                        <th>Unit</th>
+                        <th>Availability</th>
+                        <th>Price</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="products-tbody"></tbody>
+            `;
+            grid.appendChild(table);
+
+            let tbody = table.querySelector('#products-tbody');
+
+            products.forEach(function(product) {
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        ${product.imageURL
+                            ? `<img src="${product.imageURL}" alt="${product.name}" class="list-thumb">`
+                            : `<div class="list-thumb-placeholder">📦</div>`}
+                    </td>
+                    <td style="font-weight:500">${product.name}</td>
+                    <td>${product.brandName || '—'}</td>
+                    <td>${product.productNumber || '—'}</td>
+                    <td>${product.dimensions || '—'}</td>
+                    <td>${product.unit || '—'}</td>
+                    <td>${product.availability || '—'}</td>
+                    <td style="color:#e8742a;font-weight:600">₹${product.price}</td>
+                    <td><button class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button></td>
+                    <td><button class="add-to-cart-btn" onclick="${addToCartPayload(product)}">+</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        loadAllProducts();
+        updateCartCount();
+        </script>
+    </body>
+</html>

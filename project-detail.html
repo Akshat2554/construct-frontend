@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Project details</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="cart.js"></script>
+    </head>
+<body>
+
+    <div class="global-topbar">
+        <div class="logo">Construct</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+            <a href="catalog.html" class="nav-btn">Catalog</a>
+            <a href="boq-detail.html" class="nav-btn cart-btn">BOQ <span id="cart-count">0</span></a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="sidebar">
+            <a href="index.html" class="nav-btn">← Projects</a>
+            <button class="boq-nav-btn active" id="overview-btn" onclick="switchView('overview')">Overview</button>
+<button class="boq-nav-btn" id="layout-btn" onclick="switchView('layout')">Layout</button>
+<button class="boq-nav-btn" id="boq-btn" onclick="switchView('boq')">BOQ</button>
+<button class="boq-nav-btn" id="shortlist-btn" onclick="switchView('shortlist')">Vendor Shortlist</button>
+        </div>
+        <div class="main-content">
+            <div style="margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <h1 id="project-title" style="font-family:'Syne',sans-serif;margin-bottom:4px"></h1>
+                <span id="project-subtitle" style="font-size:13px;color:var(--text-muted)"></span>
+            </div>
+            <div id="view-overview"></div>
+            <div id="view-layout" style="display:none"></div>
+            <div id="view-boq" style="display:none"></div>
+            <div id="view-shortlist" style="display:none"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="room-modal">
+        <div class="modal">
+            <h2 id="room-modal-title">Add Room</h2>
+            <input type="text" id="room-name" placeholder="Room name (e.g. Conference Room A)">
+            <select id="room-type">
+                <option value="">Room type</option>
+                <option value="Office">Office</option>
+                <option value="Conference">Conference</option>
+                <option value="Reception">Reception</option>
+                <option value="Kitchen">Kitchen</option>
+                <option value="Bathroom">Bathroom</option>
+                <option value="Co-Working">Co-Working</option>
+                <option value="Storage">Storage</option>
+                <option value="Corridor">Corridor</option>
+                <option value="Other">Other</option>
+            </select>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <input type="number" id="room-length" placeholder="Length (mm)">
+                <input type="number" id="room-breadth" placeholder="Breadth (mm)">
+                <input type="number" id="room-height" placeholder="Height (mm)">
+            </div>
+            <div class="modal-buttons">
+                <button id="room-cancel">Cancel</button>
+                <button id="room-confirm">Add Room</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let projectId = localStorage.getItem('selectedProjectId');
+    let projectName = localStorage.getItem('selectedProjectName');
+
+    function switchView(view) {
+    if (view === 'boq') {
+        localStorage.setItem('boqDefaultTab', 'boq');
+        window.location.href = 'boq-detail.html';
+        return;
+    }
+    if (view === 'shortlist') {
+        localStorage.setItem('boqDefaultTab', 'shortlist');
+        window.location.href = 'boq-detail.html';
+        return;
+    }
+
+    ['overview', 'layout'].forEach(v => {
+        document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
+    });
+    document.querySelectorAll('.boq-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(view + '-btn').classList.add('active');
+    if (view === 'layout') loadLayout();
+    if (view === 'overview') loadProjectDetails();
+}
+
+    async function loadProjectDetails() {
+    let response = await fetch('http://localhost:8081/api/projects/' + projectId);
+    let project = await response.json();
+    document.getElementById('project-title').textContent = project.name;
+    document.getElementById('project-subtitle').textContent = 
+        (project.clientName || '') + 
+        (project.location ? ' · ' + project.location : '') + 
+        (project.squareFootage ? ' · ' + project.squareFootage + ' sqft' : '') +
+        (project.budget ? ' · ₹' + Number(project.budget).toLocaleString('en-IN') : '');
+
+    // Load rooms and vendors for overview stats
+    let roomsRes = await fetch('http://localhost:8081/api/rooms/' + projectId);
+    let rooms = await roomsRes.json();
+
+    let cart = getCart();
+    let boqValue = cart.reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.quantity || 1)), 0);
+    let confirmed = getConfirmed();
+    let groups = {};
+    cart.forEach(item => { let k = item.category || 'Other'; if (!groups[k]) groups[k] = true; });
+    let totalCats = Object.keys(groups).length;
+    let progress = totalCats > 0 ? Math.round((confirmed.length / totalCats) * 100) : 0;
+
+    let shortlist = JSON.parse(localStorage.getItem('shortlist-' + projectId)) || [];
+
+    document.getElementById('view-overview').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Total Budget</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">₹${project.budget ? (project.budget/10000000).toFixed(2) + ' Cr' : '—'}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Value So Far</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">₹${(boqValue/10000000).toFixed(2)} Cr</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Rooms</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${rooms.length}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Shortlisted Vendors</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${shortlist.length}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Completion</div>
+                <div style="font-size:22px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif">${progress}%</div>
+                <div style="height:4px;background:var(--border);border-radius:99px;margin-top:8px;overflow:hidden">
+                    <div style="height:100%;width:${progress}%;background:var(--accent);border-radius:99px"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    let versions = JSON.parse(localStorage.getItem('versions-' + projectId)) || [];
+
+    let versionsHtml = versions.length === 0 
+    ? '<p style="font-size:13px;color:var(--text-muted)">No activity yet.</p>'
+    : `<table class="list-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Update</th>
+                <th>Remarks</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            ${versions.map(v => {
+                let date = new Date(v.timestamp);
+                let formatted = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + 
+                    ' · ' + date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                return `<tr>
+                    <td style="color:var(--text-muted);white-space:nowrap;font-size:12px">${formatted}</td>
+                    <td style="font-weight:500">${v.label}</td>
+                    <td style="color:var(--text-muted)">${v.remarks || '—'}</td>
+                    <td><button onclick="viewVersion('${v.id}')" 
+                        style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12.5px;font-family:inherit">
+                        View
+                    </button></td>
+                </tr>`;
+            }).join('')}
+        </tbody>
+    </table>`;
+
+    document.getElementById('view-overview').innerHTML += `
+    <div style="margin-top:28px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Version History</div>
+            <button onclick="addManualActivity()" 
+                style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;font-family:inherit;cursor:pointer">
+                + Add Activity
+            </button>
+        </div>
+        ${versionsHtml}
+    </div>
+`;
+}
+
+// Auto-open room if returning from catalog
+let returnToRoom = localStorage.getItem('addingToRoom');
+if (returnToRoom) {
+    localStorage.removeItem('addingToRoom');
+    switchView('layout');
+    // Wait for layout to load then open the room
+    setTimeout(async function() {
+        let response = await fetch('http://localhost:8081/api/rooms/single/' + returnToRoom);
+        let room = await response.json();
+        openRoomDetail(room);
+    }, 500);
+}
+
+let currentFloor = 1;
+
+async function loadLayout() {
+    let drawingsRes = await fetch('http://localhost:8081/api/drawings/' + projectId);
+    let allDrawings = await drawingsRes.json();
+    
+    let roomsRes = await fetch('http://localhost:8081/api/rooms/' + projectId);
+    let allRooms = await roomsRes.json();
+
+    let savedFloors = JSON.parse(localStorage.getItem('floors-' + projectId)) || [1];
+    let floorList = [...new Set([...savedFloors, currentFloor])].sort((a, b) => a - b);
+
+    let drawings = allDrawings.filter(d => parseInt(d.floorNumber) === parseInt(currentFloor));
+    let rooms = allRooms.filter(r => parseInt(r.floorNumber) === parseInt(currentFloor));
+
+    let layout = document.getElementById('view-layout');
+    layout.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:13px;font-weight:600;color:var(--text-primary)">Floor</span>
+                <select id="floor-selector" onchange="currentFloor=parseInt(this.value);loadLayout()" 
+                    style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                    ${floorList.map(f => `<option value="${f}" ${f === currentFloor ? 'selected' : ''}>Floor ${f}</option>`).join('')}
+                </select>
+                <button onclick="addFloor(${Math.max(...floorList) + 1})" 
+                    style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12.5px;color:var(--text-secondary);cursor:pointer">
+                    + Add Floor
+                </button>
+                ${currentFloor > 1 ? `
+    <button onclick="deleteFloor(${currentFloor})"
+        style="padding:6px 12px;border:1px solid var(--destructive);border-radius:6px;background:transparent;color:var(--destructive);font-size:12px;font-family:inherit;cursor:pointer">
+        Delete Floor
+    </button>
+` : ''}
+            </div>
+            <div style="display:flex;gap:8px">
+                ${drawings.length === 0 ? `
+                    <label class="add-btn" style="font-size:12px;padding:6px 14px;cursor:pointer">
+                        Upload Drawing
+                        <input type="file" id="drawing-upload" accept="image/*,.pdf" style="display:none" 
+                            onchange="uploadDrawing(this, ${currentFloor})">
+                    </label>
+                ` : `
+                    <span style="font-size:12px;color:var(--text-muted);align-self:center">${drawings[0].displayName || 'Floor ' + currentFloor + ' drawing'}</span>
+                    <label class="add-btn" style="font-size:12px;padding:6px 14px;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--text-secondary)">
+                        Replace
+                        <input type="file" id="drawing-upload" accept="image/*,.pdf" style="display:none"
+                            onchange="uploadDrawing(this, ${currentFloor}, ${drawings[0].id})">
+                    </label>
+                    <button onclick="deleteDrawing(${drawings[0].id})" 
+    style="padding:6px 12px;border:1px solid var(--destructive);border-radius:6px;background:transparent;color:var(--destructive);font-size:12px;font-family:inherit;cursor:pointer">
+    Delete Drawing
+</button>
+                `}
+                <button class="add-btn" onclick="openAddRoomModal()" style="font-size:12px;padding:6px 14px">+ Add Room</button>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:16px;height:calc(100vh - 260px)">
+            
+            <!-- Left: Drawing -->
+            <div style="flex:1;border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;background:var(--surface)">
+                ${drawings.length === 0 ? `
+                    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-muted)">
+                        <div style="font-size:40px">📐</div>
+                        <div style="font-size:13px">Upload a drawing for Floor ${currentFloor}</div>
+                    </div>
+                ` : drawings[0].fileName && drawings[0].fileName.toLowerCase().endsWith('.pdf') ? `
+                    <iframe src="http://localhost:8081/api/files/${drawings[0].fileName}" 
+                        style="width:100%;height:100%;border:none;display:block"></iframe>
+                ` : `
+                    <div style="position:relative;width:100%;height:100%">
+                        <img id="drawing-img" src="http://localhost:8081/api/files/${drawings[0].fileName}" 
+                            style="width:100%;height:100%;object-fit:contain;display:block;cursor:crosshair">
+                        <div id="pins-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                    </div>
+                `}
+            </div>
+
+            <!-- Right: Room List -->
+            <div style="width:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${rooms.length} room${rooms.length !== 1 ? 's' : ''} on Floor ${currentFloor}</div>
+                <div id="room-list"></div>
+            </div>
+        </div>
+    `;
+
+    renderRoomList(rooms);
+
+    if (drawings.length > 0 && drawings[0].fileName && !drawings[0].fileName.toLowerCase().endsWith('.pdf')) {
+        renderPins(rooms);
+        document.getElementById('drawing-img').addEventListener('click', function(e) {
+            let rect = this.getBoundingClientRect();
+            let x = ((e.clientX - rect.left) / rect.width) * 100;
+            let y = ((e.clientY - rect.top) / rect.height) * 100;
+            openAddRoomModal(x, y);
+        });
+    }
+}
+
+function addFloor(floorNum) {
+    currentFloor = floorNum;
+    loadLayout();
+}
+
+async function uploadDrawing(input, floorNumber, existingId) {
+    let file = input.files[0];
+    if (!file) return;
+
+    let remarks = '';
+    if (existingId) {
+        remarks = prompt('Why is this drawing being replaced? (optional)') || '';
+    }
+
+    if (existingId) {
+        await fetch('http://localhost:8081/api/drawings/' + existingId, { method: 'DELETE' });
+    }
+
+    let formData = new FormData();
+    formData.append('file', file);
+
+    let uploadRes = await fetch('http://localhost:8081/api/files/upload', {
+        method: 'POST',
+        body: formData
+    });
+    let fileName = await uploadRes.text();
+
+    let today = new Date().toISOString().split('T')[0];
+    await fetch('http://localhost:8081/api/drawings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            fileName: fileName,
+            displayName: 'Floor ' + floorNumber + ' Drawing',
+            uploadedAt: today,
+            floorNumber: floorNumber
+        })
+    });
+
+    createVersion(
+        existingId ? 'Drawing replaced on Floor ' + floorNumber : 'Drawing uploaded on Floor ' + floorNumber,
+        remarks
+    );
+    loadLayout();
+}
+
+async function deleteDrawing(id) {
+    if (confirm('Delete this drawing? This cannot be undone.')) {
+        await fetch('http://localhost:8081/api/drawings/' + id, { method: 'DELETE' });
+        createVersion('Drawing deleted on Floor ' + currentFloor);
+        loadLayout();
+    }
+}
+
+async function deleteFloor(floorNum) {
+    if (confirm('Delete Floor ' + floorNum + '? All rooms and drawings on this floor will be deleted.')) {
+        // Delete all rooms on this floor
+        let roomsRes = await fetch('http://localhost:8081/api/rooms/' + projectId);
+        let allRooms = await roomsRes.json();
+        let floorRooms = allRooms.filter(r => parseInt(r.floorNumber) === floorNum);
+        for (let room of floorRooms) {
+            await fetch('http://localhost:8081/api/rooms/' + room.id, { method: 'DELETE' });
+        }
+
+        // Delete all drawings on this floor
+        let drawingsRes = await fetch('http://localhost:8081/api/drawings/' + projectId);
+        let allDrawings = await drawingsRes.json();
+        let floorDrawings = allDrawings.filter(d => parseInt(d.floorNumber) === floorNum);
+        for (let drawing of floorDrawings) {
+            await fetch('http://localhost:8081/api/drawings/' + drawing.id, { method: 'DELETE' });
+        }
+
+        // Remove from localStorage floors list
+        let floors = JSON.parse(localStorage.getItem('floors-' + projectId)) || [1];
+        floors = floors.filter(f => f !== floorNum);
+        localStorage.setItem('floors-' + projectId, JSON.stringify(floors));
+
+        // Go back to floor 1
+        currentFloor = 1;
+        loadLayout();
+    }
+}
+
+function addManualActivity() {
+    let label = prompt('Enter Activity');
+    if (!label) return;
+    let remarks = prompt('Any remarks or notes? (optional)');
+    createVersion(label, remarks || '');
+    loadProjectDetails();
+}
+
+function viewVersion(versionId) {
+    let versions = JSON.parse(localStorage.getItem('versions-' + projectId)) || [];
+    let version = versions.find(v => v.id == versionId);
+    if (!version) return;
+
+    let date = new Date(version.timestamp).toLocaleString('en-IN');
+    let snapshot = version.snapshot;
+    let cart = snapshot.cart || [];
+    let confirmed = snapshot.confirmed || [];
+    let vendors = snapshot.vendorShortlist || [];
+
+    let grandTotal = cart.reduce((s, i) => s + ((i.unitPrice || 0) * (i.quantity || 1)), 0);
+
+    document.getElementById('view-overview').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <button onclick="loadProjectDetails()" 
+                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:inherit">
+                ← Back to Overview
+            </button>
+            <span style="color:var(--border)">|</span>
+            <span style="font-size:14px;font-weight:600;color:var(--text-primary)">${version.label}</span>
+            <span style="font-size:12px;color:var(--text-muted)">${date}</span>
+            <span style="font-size:11px;background:var(--surface-raised);color:var(--text-muted);padding:2px 8px;border-radius:4px;margin-left:4px">Read only</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Items</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${cart.length}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Value</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">₹${(grandTotal/10000000).toFixed(2)} Cr</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Confirmed Categories</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${confirmed.length}</div>
+            </div>
+        </div>
+
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">BOQ at this point</div>
+        <table class="list-table" style="margin-bottom:24px">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${cart.length === 0 
+                    ? '<tr><td colspan="5" style="color:var(--text-muted)">No items in BOQ at this point</td></tr>'
+                    : cart.map(item => `
+                        <tr>
+                            <td style="font-weight:500">${item.name}</td>
+                            <td style="color:var(--text-muted)">${item.category || '—'}</td>
+                            <td>${item.quantity}</td>
+                            <td>₹${(item.unitPrice || 0).toLocaleString('en-IN')}</td>
+                            <td style="color:var(--accent);font-weight:600">₹${((item.unitPrice || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</td>
+                        </tr>
+                    `).join('')}
+            </tbody>
+        </table>
+
+        ${vendors.length > 0 ? `
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Vendor Shortlist at this point</div>
+            <table class="list-table">
+                <thead><tr><th>Supplier</th><th>Status</th><th>Notes</th></tr></thead>
+                <tbody>
+                    ${vendors.map(v => `
+                        <tr>
+                            <td style="font-weight:500">${v.name}</td>
+                            <td>${v.status}</td>
+                            <td style="color:var(--text-muted)">${v.notes || '—'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        ` : ''}
+    `;
+}
+
+function renderRoomList(rooms) {
+    let container = document.getElementById('room-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (rooms.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No rooms added yet. Click on the drawing to place a room.</p>';
+        return;
+    }
+
+    rooms.forEach(function(room, index) {
+        let savedArea = localStorage.getItem('room-area-' + room.id);
+let area = savedArea !== null ? parseFloat(savedArea) : 
+    (room.length && room.breadth ? ((room.length * room.breadth) / 92903).toFixed(1) : 0);
+
+        let card = document.createElement('div');
+        card.style.cssText = `
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:8px;
+            padding:14px;
+            cursor:pointer;
+            transition:all 0.15s;
+        `;
+        card.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:22px;height:22px;background:var(--accent);color:white;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">${index + 1}</div>
+                    <div style="font-size:13.5px;font-weight:600;color:var(--text-primary)">${room.name}</div>
+                </div>
+                <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:4px;font-weight:500">${room.roomType || '—'}</span>
+            </div>
+            ${room.length ? `<div style="font-size:11.5px;color:var(--text-muted)">${room.length} × ${room.breadth} × ${room.height} mm</div>` : ''}
+            ${area ? `<div>
+    ` : ''}
+        `;
+        card.addEventListener('mouseover', function() { this.style.borderColor = 'var(--accent)'; });
+        card.addEventListener('mouseout', function() { this.style.borderColor = 'var(--border)'; });
+        card.addEventListener('click', function() { openRoomDetail(room); });
+        container.appendChild(card);
+    });
+}
+
+function renderPins(rooms) {
+    let layer = document.getElementById('pins-layer');
+    if (!layer) return;
+    layer.innerHTML = '';
+    rooms.forEach(function(room, index) {
+        if (room.pinX === null || room.pinY === null) return;
+        let pin = document.createElement('div');
+        pin.style.cssText = `
+            position:absolute;
+            left:${room.pinX}%;
+            top:${room.pinY}%;
+            transform:translate(-50%, -50%);
+            width:28px;
+            height:28px;
+            background:var(--accent);
+            color:white;
+            border-radius:50%;
+            font-size:11px;
+            font-weight:700;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            border:2px solid white;
+            box-shadow:0 2px 8px rgba(0,0,0,0.2);
+            transition:transform 0.15s;
+            z-index:10;
+        `;
+        pin.textContent = index + 1;
+        pin.title = room.name;
+        pin.addEventListener('mouseover', function() { this.style.transform = 'translate(-50%,-50%) scale(1.2)'; });
+        pin.addEventListener('mouseout', function() { this.style.transform = 'translate(-50%,-50%) scale(1)'; });
+        pin.addEventListener('click', function(e) { e.stopPropagation(); openRoomDetail(room); });
+        layer.appendChild(pin);
+    });
+}
+
+let pendingPinX = null;
+let pendingPinY = null;
+let editingRoomId = null;
+
+function openAddRoomModal(x, y) {
+    pendingPinX = x !== undefined ? x : null;
+    pendingPinY = y !== undefined ? y : null;
+    editingRoomId = null;
+    document.getElementById('room-name').value = '';
+    document.getElementById('room-type').value = '';
+    document.getElementById('room-length').value = '';
+    document.getElementById('room-breadth').value = '';
+    document.getElementById('room-height').value = '';
+    document.getElementById('room-modal').classList.add('open');
+}
+
+function addFloor(floorNum) {
+    currentFloor = floorNum;
+    let floors = JSON.parse(localStorage.getItem('floors-' + projectId)) || [1];
+    if (!floors.includes(floorNum)) {
+        floors.push(floorNum);
+        localStorage.setItem('floors-' + projectId, JSON.stringify(floors));
+    }
+    loadLayout();
+}
+
+function openRoomDetail(room) {
+    let area = room.length && room.breadth 
+        ? ((room.length * room.breadth) / 92903).toFixed(1)
+        : 0;
+    let wallArea = room.length && room.breadth && room.height
+        ? ((2 * (room.length + room.breadth) * room.height) / 92903).toFixed(1)
+        : 0;
+
+        let cart = getCart();
+        let roomShortlist = cart.filter(item => item.roomId === room.id);
+
+    document.getElementById('view-layout').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <button onclick="loadLayout()" 
+                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:inherit;padding:0">
+                ← Back to Layout
+            </button>
+            <span style="color:var(--border)">|</span>
+            <span style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.name}</span>
+            <span style="font-size:11px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:4px;font-weight:500">${room.roomType || '—'}</span>
+            <button onclick="deleteRoom(${room.id}, '${room.name}')" 
+                style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:inherit"
+                onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">Delete Room</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+            <!-- Left: Dimensions + Calculators -->
+            <div style="display:flex;flex-direction:column;gap:16px">
+
+                <!-- Dimensions card -->
+                <input type="hidden" id="wall-area-value" value="${wallArea}">
+                <input type="hidden" id="room-length-val" value="${room.length || 0}">
+                <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Dimensions</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Length</div>
+                            <div style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.length ? room.length + ' mm' : '—'}</div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Breadth</div>
+                            <div style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.breadth ? room.breadth + ' mm' : '—'}</div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Height</div>
+                            <div style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.height ? room.height + ' mm' : '—'}</div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--border)">
+                        <div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Floor Area (editable)</div>
+    <div style="display:flex;align-items:baseline;gap:6px">
+        <input type="number" id="area-input" value="${area}"
+            onclick="event.stopPropagation()"
+            onchange="localStorage.setItem('room-area-${room.id}', this.value)"
+            style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
+        <span style="font-size:13px;color:var(--text-muted)">sqft</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Calculated: ${((room.length || 0) * (room.breadth || 0) / 92903).toFixed(1)} sqft</div>
+</div>
+                        <div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Wall Area (editable)</div>
+    <div style="display:flex;align-items:baseline;gap:6px">
+        <input type="number" id="wall-area-value" value="${wallArea}"
+            onclick="event.stopPropagation()"
+            onchange="document.getElementById('wall-area-value').value = this.value"
+            style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
+        <span style="font-size:13px;color:var(--text-muted)">sqft</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Calculated: ${wallArea} sqft</div>
+</div>
+                    </div>
+                </div>
+
+                <!-- Calculators -->
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px">Calculators</div>
+                    
+                    <!-- Paint -->
+                    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Paint</div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                            <label style="font-size:12px;color:var(--text-muted);width:80px">Coats</label>
+                            <input type="number" id="paint-coats" value="2" min="1" max="5"
+                                style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
+                            <label style="font-size:12px;color:var(--text-muted);width:120px">Coverage (sqft/L)</label>
+                            <input type="number" id="paint-coverage" value="120" min="1"
+                                style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+                            Formula: (Wall Area × Coats) ÷ Coverage
+                        </div>
+                        <div id="paint-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
+                       <button onclick="calcPaint()">Calculate</button>
+                    </div>
+
+                    <!-- Flooring -->
+                    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Flooring</div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                            <label style="font-size:12px;color:var(--text-muted);width:80px">Tile (mm)</label>
+                            <input type="number" id="floor-tile" value="600" 
+                                style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
+                            <label style="font-size:12px;color:var(--text-muted);width:80px">Wastage %</label>
+                            <input type="number" id="floor-wastage" value="10"
+                                style="width:55px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+                            Formula: Floor Area × (1 + Wastage%) ÷ Tile Area
+                        </div>
+                        <div id="floor-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
+                        <button onclick="calcFlooring()">Calculate</button>
+                    </div>
+
+                    <!-- False Ceiling -->
+                    <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">False Ceiling</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+                            Formula: Floor Area (tiles) + Perimeter ÷ 0.6 (edge trim in rft)
+                        </div>
+                        <div id="ceiling-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
+                        <button onclick="calcCeiling()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Room Shortlist -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Room Shortlist</div>
+                    <a href="catalog.html" onclick="localStorage.setItem('addingToRoom', '${room.id}')" 
+                        class="add-btn" style="font-size:11.5px;padding:5px 12px;text-decoration:none">+ Add from Catalog</a>
+                </div>
+
+                ${roomShortlist.length === 0 
+    ? `<p style="font-size:13px;color:var(--text-muted)">No items added yet.</p>`
+    : `<table class="list-table">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Product</th>
+                <th>Price (₹)</th>
+                <th>Qty</th>
+                <th>Total (₹)</th>
+                <th>Remarks</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            ${roomShortlist.map((item, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td style="font-weight:500">${item.name}</td>
+                    <td>₹${(item.unitPrice || 0).toLocaleString('en-IN')}</td>
+                    <td>
+                        <input type="number" value="${item.quantity || 1}" min="1"
+                            style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="updateQuantity(${item.productId}, this.value); openRoomDetail(${JSON.stringify(room).replace(/"/g, '&quot;')})">
+                    </td>
+                    <td style="color:var(--accent);font-weight:600">₹${((item.unitPrice || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</td>
+                    <td>
+                        <input type="text" value="${item.remarks || ''}" placeholder="—"
+                            style="width:100px;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:12px;background:transparent"
+                            onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+                            onblur="this.style.borderColor='transparent';this.style.background='transparent'"
+                            onchange="updateRemarks(${item.productId}, this.value)">
+                    </td>
+                    <td>
+                        <button onclick="removeFromCart(${item.productId}); openRoomById(${room.id});"
+                            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px"
+                            onmouseover="this.style.color='var(--destructive)'"
+                            onmouseout="this.style.color='var(--text-muted)'">✕</button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>`
+}
+            </div>
+        </div>
+    `;
+}
+
+// Calculator functions
+function calcPaint() {
+    let area = parseFloat(document.getElementById('area-input').value) || 0;
+    let wallArea = parseFloat(document.getElementById('wall-area-value').value) || 0;
+    let coats = parseFloat(document.getElementById('paint-coats').value) || 2;
+    let coverage = parseFloat(document.getElementById('paint-coverage').value) || 120;
+    let litres = (wallArea * coats) / coverage;
+    document.getElementById('paint-result').textContent = 
+        litres > 0 ? `${litres.toFixed(1)} litres — approx ${Math.ceil(litres / 4)} × 4L cans` : 'Enter valid dimensions first';
+}
+
+function calcFlooring() {
+    let area = parseFloat(document.getElementById('area-input').value) || 0;
+    let tileSize = parseFloat(document.getElementById('floor-tile').value) || 600;
+    let wastage = parseFloat(document.getElementById('floor-wastage').value) || 10;
+    let tileSqft = (tileSize / 304.8) * (tileSize / 304.8);
+    let tiles = area > 0 ? Math.ceil((area * (1 + wastage / 100)) / tileSqft) : 0;
+    document.getElementById('floor-result').textContent = 
+        tiles > 0 ? `${tiles} tiles needed (${tileSize}×${tileSize}mm with ${wastage}% wastage)` : 'Enter valid dimensions first';
+}
+
+function calcCeiling() {
+    let area = parseFloat(document.getElementById('area-input').value) || 0;
+    let length = parseFloat(document.getElementById('room-length-val').value) || 0;
+    let breadth = parseFloat(document.getElementById('room-breadth-val').value) || 0;
+    let tiles = Math.ceil(area);
+    let perimeterMm = 2 * (length + breadth);
+    let edgeTrim = perimeterMm > 0 ? Math.ceil(perimeterMm / (600 * 304.8)) : 0;
+    document.getElementById('ceiling-result').textContent = 
+        area > 0 ? `${tiles} sqft tiles + ${edgeTrim} rft edge trim` : 'Enter valid dimensions first';
+}
+
+function getEffectiveArea(roomId) {
+    let saved = localStorage.getItem('room-area-' + roomId);
+    return saved !== null ? parseFloat(saved) : 0;
+}
+
+async function deleteRoom(id) {
+    if (confirm('Delete this room? This cannot be undone.')) {
+        await fetch('http://localhost:8081/api/rooms/' + id, { method: 'DELETE' });
+        createVersion(name + ' deleted');
+        loadLayout();
+    }
+}
+
+document.getElementById('room-cancel').addEventListener('click', function() {
+    document.getElementById('room-modal').classList.remove('open');
+});
+
+document.getElementById('room-confirm').addEventListener('click', async function() {
+    let name = document.getElementById('room-name').value.trim();
+    if (!name) { alert('Please enter a room name'); return; }
+
+    let room = {
+        projectId: parseInt(projectId),
+        name,
+        roomType: document.getElementById('room-type').value,
+        length: parseFloat(document.getElementById('room-length').value) || null,
+        breadth: parseFloat(document.getElementById('room-breadth').value) || null,
+        height: parseFloat(document.getElementById('room-height').value) || null,
+        pinX: pendingPinX,
+        pinY: pendingPinY,
+        floorNumber: currentFloor,
+        drawingId: null
+    };
+
+    await fetch('http://localhost:8081/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(room)
+    });
+    createVersion('Room added: ' + name);
+
+    document.getElementById('room-modal').classList.remove('open');
+    loadLayout();
+});
+
+loadProjectDetails();
+updateCartCount();
+</script>
+</body>
+</html>

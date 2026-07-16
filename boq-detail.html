@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOQ — Construct</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="cart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body>
+
+    <div class="global-topbar">
+        <div class="logo">Construct</div>
+        <button class="nav-btn" id="project-selector-btn">📋 <span id="topbar-project-name">No Project</span></button>
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+            <a href="catalog.html" class="nav-btn">Catalog</a>
+            <a href="index.html" class="nav-btn">Projects</a>
+            <a href="boq-detail.html" class="nav-btn cart-btn">BOQ <span id="cart-count">0</span></a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="sidebar" style="justify-content:flex-start;gap:2px">
+            <a href="index.html" class="back-btn" style="margin-bottom:12px">← Projects</a>
+
+            <!-- Vendor Shortlist -->
+            <button class="boq-nav-btn" id="btn-shortlist" onclick="showShortlist()">
+                Vendor Shortlist
+            </button>
+
+            <!-- BOQ Dropdown -->
+            <button class="boq-nav-btn" id="btn-boq" onclick="toggleBOQDropdown()">
+                BOQ <span id="boq-arrow" style="margin-left:auto;font-size:11px">▾</span>
+            </button>
+
+            <!-- Category list under BOQ -->
+            <div id="category-nav" style="display:none;padding-left:12px;display:flex;flex-direction:column;gap:2px"></div>
+
+            <!-- Generate button at bottom -->
+            <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
+                <button class="add-btn" onclick="generateExcel()" style="width:100%;font-size:13px">Export Excel</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:24px">
+                <h1 id="project-title" style="margin-bottom:0">BOQ</h1>
+                <span id="view-label" style="font-size:13px;color:var(--text-muted)">Summary</span>
+                <button id="confirm-btn-category" style="display:none;margin-left:auto;padding:7px 16px;border-radius:6px;border:none;color:white;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">Confirm BOQ</button>
+            </div>
+
+            <!-- Summary View -->
+            <div id="view-summary">
+                <table class="list-table" id="summary-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Category</th>
+                            <th>Total (₹)</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summary-tbody"></tbody>
+                    <tfoot id="summary-tfoot"></tfoot>
+                </table>
+            </div>
+
+            <!-- Category Detail View -->
+            <div id="view-category" style="display:none;overflow-x:auto;width:100%">
+                <table class="list-table boq-table" id="category-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="background:var(--bg)">S.No</th>
+                            <th rowspan="2" style="background:var(--bg)">Description</th>
+                            <th rowspan="2" style="background:var(--bg)">Image</th>
+                            <th rowspan="2" style="background:var(--bg)">Unit</th>
+                            <th rowspan="2" style="background:var(--bg)">Qty</th>
+                            <th colspan="2" style="text-align:center;background:var(--bg)">Rate (₹)</th>
+                            <th colspan="3" style="text-align:center;background:var(--bg)">Amount (₹)</th>
+                            <th rowspan="2" style="background:var(--bg);min-width:120px">Total</th>
+                            <th rowspan="2" style="background:var(--bg);min-width:40px"></th>
+                        </tr>
+                        <tr>
+                            <th style="background:var(--bg)">Supply</th>
+                            <th style="background:var(--bg)">Installation</th>
+                            <th style="background:var(--bg)">Supply</th>
+                            <th style="background:var(--bg)">Installation</th>
+                            <th style="background:var(--bg)">Remarks</th>
+                        </tr>
+                    </thead>
+                <tbody id="category-tbody"></tbody>
+                <tfoot id="category-tfoot"></tfoot>
+            </table>
+        </div>
+
+            <!-- Shortlist View -->
+            <div id="view-shortlist" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <span style="font-size:13px;color:var(--text-muted)">Vendors shortlisted for this project</span>
+                    <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:12.5px">+ Add Vendor</button>
+                </div>
+                <div id="shortlist-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vendor Modal -->
+    <div class="modal-overlay" id="vendor-modal">
+        <div class="modal">
+            <h2>Add to Vendor Shortlist</h2>
+            <input type="text" id="vendor-name" placeholder="Supplier name">
+            <select id="vendor-category">
+                <option value="">Select category</option>
+                <option value="Furniture & Fixtures">Furniture & Fixtures</option>
+                <option value="Civil & Architectural">Civil & Architectural</option>
+                <option value="MEP">MEP</option>
+                <option value="Technology & ELV">Technology & ELV</option>
+                <option value="Fire & Life Safety">Fire & Life Safety</option>
+                <option value="Lighting & Controls">Lighting & Controls</option>
+                <option value="Branding & Signage">Branding & Signage</option>
+                <option value="Security & Facility">Security & Facility</option>
+                <option value="Sustainability">Sustainability</option>
+                <option value="External Works">External Works</option>
+                <option value="Facility Management">Facility Management</option>
+                <option value="Workplace Strategy">Workplace Strategy</option>
+            </select>
+            <select id="vendor-status">
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            <textarea id="vendor-notes" placeholder="Notes (optional)" style="min-height:80px;resize:none"></textarea>
+            <div class="modal-buttons">
+                <button id="vendor-cancel">Cancel</button>
+                <button id="vendor-confirm">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Selector Modal -->
+    <div class="modal-overlay" id="project-modal">
+        <div class="modal">
+            <h2>Select Project</h2>
+            <div id="project-list-modal"></div>
+            <div class="modal-buttons">
+                <button id="project-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+    <script>
+        let projectId = localStorage.getItem('selectedProjectId');
+        let projectName = localStorage.getItem('selectedProjectName');
+        document.getElementById('project-title').textContent = projectName || 'BOQ';
+
+        let currentView = 'summary';
+        let boqOpen = false;
+
+        // ===== Helpers =====
+        function formatNum(n) {
+            return (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function getGroups() {
+            let cart = getCart();
+            let groups = {};
+            cart.forEach(function(item) {
+                let key = item.category || 'Other';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+            });
+            return groups;
+        }
+
+        // ===== Sidebar nav =====
+        function setActive(btnId) {
+            document.querySelectorAll('.boq-nav-btn, .boq-cat-btn').forEach(b => b.classList.remove('active'));
+            let el = document.getElementById(btnId);
+            if (el) el.classList.add('active');
+        }
+
+        function toggleBOQDropdown() {
+            boqOpen = !boqOpen;
+            let nav = document.getElementById('category-nav');
+            let arrow = document.getElementById('boq-arrow');
+            nav.style.display = boqOpen ? 'flex' : 'none';
+            arrow.textContent = boqOpen ? '▴' : '▾';
+            if (boqOpen) buildCategoryNav();
+            showSummary();
+            setActive('btn-boq');
+        }
+
+        function buildCategoryNav() {
+            let groups = getGroups();
+            let nav = document.getElementById('category-nav');
+            nav.innerHTML = '';
+            Object.keys(groups).forEach(function(cat) {
+                let btn = document.createElement('button');
+                btn.className = 'boq-cat-btn';
+                btn.id = 'cat-btn-' + cat.replace(/\s/g, '');
+                btn.textContent = cat;
+                btn.onclick = function() {
+                    showCategory(cat);
+                    setActive('cat-btn-' + cat.replace(/\s/g, ''));
+                };
+                nav.appendChild(btn);
+            });
+        }
+
+        // ===== Views =====
+        function hideAll() {
+    document.getElementById('view-summary').style.display = 'none';
+    document.getElementById('view-category').style.display = 'none';
+    document.getElementById('view-shortlist').style.display = 'none';
+    document.getElementById('confirm-btn-category').style.display = 'none';
+}
+
+        function showSummary() {
+            hideAll();
+            document.getElementById('view-summary').style.display = 'block';
+            document.getElementById('view-label').textContent = 'Summary';
+            loadSummary();
+        }
+
+        function showCategory(category) {
+            hideAll();
+            document.getElementById('view-category').style.display = 'block';
+            document.getElementById('confirm-btn-category').style.display = 'block';
+            document.getElementById('view-label').textContent = category;
+let confirmed = isConfirmed(category);
+document.getElementById('confirm-btn-category').textContent = confirmed ? '✓ Confirmed' : 'Confirm BOQ';
+document.getElementById('confirm-btn-category').style.background = confirmed ? 'var(--success)' : 'var(--accent)';
+document.getElementById('confirm-btn-category').onclick = function() {
+    toggleConfirmed(category);
+    createVersion('BOQ confirmed: ' + category);
+    showCategory(category);
+};
+            console.log('tbody exists?', document.getElementById('category-tbody'));
+            loadCategoryDetail(category);
+        }
+
+        function showShortlist() {
+            hideAll();
+            document.getElementById('view-shortlist').style.display = 'block';
+            document.getElementById('view-label').textContent = 'Vendor Shortlist';
+            setActive('btn-shortlist');
+            loadShortlist();
+        }
+
+        // ===== Summary =====
+        function loadSummary() {
+            let groups = getGroups();
+            let tbody = document.getElementById('summary-tbody');
+            let tfoot = document.getElementById('summary-tfoot');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            if (Object.keys(groups).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);padding:20px">No items added yet. Go to the catalog to add products.</td></tr>';
+                return;
+            }
+
+            let grandSupply = 0, grandInstall = 0, grandTotal = 0;
+            let sno = 1;
+
+            Object.keys(groups).forEach(function(category) {
+                let items = groups[category];
+                let supTotal = items.reduce((s, i) => s + (i.unitPrice * i.quantity), 0);
+                let instTotal = items.reduce((s, i) => s + ((i.installRate || 0) * i.quantity), 0);
+                let total = supTotal + instTotal;
+                grandSupply += supTotal;
+                grandInstall += instTotal;
+                grandTotal += total;
+
+                let row = document.createElement('tr');
+                row.style.cursor = 'pointer';
+                row.innerHTML = `
+                    <td>${sno++}</td>
+                    <td style="font-weight:500;color:var(--text-primary)">${category}</td>
+                    <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
+                    <td>
+    <input type="text" value="${localStorage.getItem('boq-remarks-' + projectId + '-' + category.replace(/\s/g,'')) || ''}" 
+        placeholder="—"
+        style="width:100%;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:13px;background:transparent;color:var(--text-secondary)"
+        onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+        onblur="this.style.borderColor='transparent';this.style.background='transparent'"
+        onchange="localStorage.setItem('boq-remarks-${projectId}-${category.replace(/\\s/g,'')}', this.value)">
+</td>
+                `;
+                row.addEventListener('click', function() {
+                    if (!boqOpen) {
+                        boqOpen = true;
+                        document.getElementById('category-nav').style.display = 'flex';
+                        document.getElementById('boq-arrow').textContent = '▴';
+                        buildCategoryNav();
+                    }
+                    showCategory(category);
+                    setActive('cat-btn-' + category.replace(/\s/g, ''));
+                });
+                row.addEventListener('mouseover', function() { this.style.background = 'var(--surface-raised)'; });
+                row.addEventListener('mouseout', function() { this.style.background = ''; });
+                tbody.appendChild(row);
+            });
+
+            tfoot.innerHTML = `
+    <tr style="font-weight:700;border-top:2px solid var(--border)">
+        <td colspan="2" style="color:var(--text-primary)">Grand Total</td>
+        <td style="color:var(--accent);font-weight:700">₹${formatNum(grandTotal)}</td>
+        <td></td>
+    </tr>
+`;
+        }
+
+        // ===== Category Detail =====
+        function loadCategoryDetail(category) {
+            let cart = getCart();
+            let items = cart.filter(i => (i.category || 'Other') === category);
+            let tbody = document.getElementById('category-tbody');
+            let tfoot = document.getElementById('category-tfoot');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            let supTotal = 0, instTotal = 0, grandTotal = 0;
+
+            items.forEach(function(item, index) {
+                let effectiveSupply = item.negotiatedSupplyRate !== null ? item.negotiatedSupplyRate : (item.unitPrice || 0);
+let effectiveInstall = item.negotiatedInstallRate !== null ? item.negotiatedInstallRate : (item.installRate || 0);
+let supAmt = effectiveSupply * (item.quantity || 1);
+let instAmt = effectiveInstall * (item.quantity || 1);
+                let total = supAmt + instAmt;
+                supTotal += supAmt;
+                instTotal += instAmt;
+                grandTotal += total;
+
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td style="font-weight:500;color:var(--text-primary);min-width:160px">${item.name}</td>
+                    <td style="padding:6px">
+                        ${item.imageUrl
+                            ? `<img src="${item.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">`
+                            : `<div style="width:40px;height:40px;border-radius:4px;border:1px solid var(--border);background:var(--bg)"></div>`}
+                    </td>
+                    <td>${item.unit || '—'}</td>
+                    <td>
+                        <input type="number" value="${item.quantity || 1}" min="1"
+                            style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="updateQuantity(${item.productId}, this.value); loadCategoryDetail('${category}'); loadSummary()">
+                    </td>
+                    <td>
+                        <input type="number" value="${item.unitPrice || 0}"
+                            style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="updatePrice(${item.productId}, this.value); loadCategoryDetail('${category}'); loadSummary()">
+                    </td>
+                    <td>
+                        <input type="number" value="${item.installRate || 0}"
+                            style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="updateInstallRate(${item.productId}, this.value); loadCategoryDetail('${category}'); loadSummary()">
+                    </td>
+                    <td>
+    <input type="number" value="${supAmt.toFixed(2)}"
+        style="width:90px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+        onchange="updatePrice(${item.productId}, this.value / ${item.quantity || 1}); loadCategoryDetail('${category}'); loadSummary()">
+</td>
+<td>
+    <input type="number" value="${instAmt.toFixed(2)}"
+        style="width:90px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+        onchange="updateInstallRate(${item.productId}, this.value / ${item.quantity || 1}); loadCategoryDetail('${category}'); loadSummary()">
+</td>
+                    <td>
+                        <input type="text" value="${item.remarks || ''}" placeholder="—"
+                            style="width:100px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="updateRemarks(${item.productId}, this.value)">
+                    </td>
+                    <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
+                    <td>
+                        <button onclick="removeFromCart(${item.productId}); loadCategoryDetail('${category}'); loadSummary(); buildCategoryNav();"
+                            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px"
+                            onmouseover="this.style.color='var(--destructive)'"
+                            onmouseout="this.style.color='var(--text-muted)'">✕</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            tfoot.innerHTML = `
+                <tr style="font-weight:700;border-top:2px solid var(--border)">
+                    <td colspan="7" style="color:var(--text-primary)">Category Total</td>
+                    <td>₹${formatNum(supTotal)}</td>
+                    <td>₹${formatNum(instTotal)}</td>
+                    <td style="color:var(--accent)">₹${formatNum(grandTotal)}</td>
+                    <td colspan="2"></td>
+                </tr>
+            `;
+        }
+
+        // ===== Vendor Shortlist =====
+        let shortlist = JSON.parse(localStorage.getItem('shortlist-' + projectId)) || [];
+
+        function loadShortlist() {
+            document.getElementById('vendor-category').value = '';
+            let container = document.getElementById('shortlist-container');
+            container.innerHTML = '';
+
+            if (shortlist.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);padding:20px 0">No vendors shortlisted yet.</p>';
+                return;
+            }
+
+            let table = document.createElement('table');
+            table.className = 'list-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="shortlist-tbody"></tbody>
+            `;
+            container.appendChild(table);
+
+            let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
+            shortlist.forEach(function(vendor, index) {
+                let tbody = table.querySelector('#shortlist-tbody');
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight:500;color:var(--text-primary)">
+    ${vendor.name}
+    ${vendor.category ? `<span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;margin-left:6px;font-weight:500">${vendor.category}</span>` : ''}
+</td>
+                    <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
+                    <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
+                    <td><button onclick="removeVendor(${index})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function removeVendor(index) {
+            shortlist.splice(index, 1);
+            localStorage.setItem('shortlist-' + projectId, JSON.stringify(shortlist));
+            loadShortlist();
+        }
+
+        function openVendorModal() {
+            document.getElementById('vendor-name').value = '';
+            document.getElementById('vendor-status').value = 'Pending';
+            document.getElementById('vendor-notes').value = '';
+            document.getElementById('vendor-modal').classList.add('open');
+        }
+
+        document.getElementById('vendor-cancel').addEventListener('click', function() {
+            document.getElementById('vendor-modal').classList.remove('open');
+        });
+
+        document.getElementById('vendor-confirm').addEventListener('click', function() {
+    let name = document.getElementById('vendor-name').value.trim();
+    if (!name) { alert('Please enter a supplier name'); return; }
+    shortlist.push({
+        name,
+        category: document.getElementById('vendor-category').value,
+        status: document.getElementById('vendor-status').value,
+        notes: document.getElementById('vendor-notes').value.trim()
+    });
+    localStorage.setItem('shortlist-' + projectId, JSON.stringify(shortlist));
+    createVersion('Vendor added: ' + name + ' (' + document.getElementById('vendor-status').value + ')');
+    document.getElementById('vendor-modal').classList.remove('open');
+    loadShortlist(); // keep this
+    // Add this if shortlist view isn't visible:
+    document.getElementById('view-shortlist').style.display = 'block';
+});
+
+        // ===== Excel Export =====
+        function generateExcel() {
+    let cart = getCart();
+    if (cart.length === 0) {
+        alert('No items in cart to export');
+        return;
+    }
+
+    let groups = getGroups();
+    let wb = XLSX.utils.book_new();
+    let categoryTotals = {};
+
+    // ===== Category Sheets =====
+    Object.keys(groups).forEach(function(category) {
+        let items = groups[category];
+        let sheetName = category.substring(0, 31);
+
+        let rows = [];
+        rows.push(['S.No', 'Description', 'Unit', 'Qty', 'Rate - Supply (₹)', 'Rate - Install (₹)', 'Amount - Supply (₹)', 'Amount - Install (₹)', 'Total (₹)', 'Remarks']);
+
+        let dataStartRow = 2;
+        let catSupTotal = 0, catInstTotal = 0, catTotal = 0;
+
+        items.forEach(function(item, index) {
+            let supAmt = (item.unitPrice || 0) * (item.quantity || 1);
+            let instAmt = (item.installRate || 0) * (item.quantity || 1);
+            let total = supAmt + instAmt;
+            catSupTotal += supAmt;
+            catInstTotal += instAmt;
+            catTotal += total;
+
+            let row = index + dataStartRow;
+            rows.push([
+                index + 1,
+                item.name,
+                item.unit || '',
+                item.quantity || 1,
+                item.unitPrice || 0,
+                item.installRate || 0,
+                { f: `D${row}*E${row}` },
+                { f: `D${row}*F${row}` },
+                { f: `G${row}+H${row}` },
+                item.remarks || ''
+            ]);
+        });
+
+        let totalRow = items.length + dataStartRow;
+        rows.push([
+            '', 'TOTAL', '', '',
+            { f: `SUM(E${dataStartRow}:E${totalRow - 1})` },
+            { f: `SUM(F${dataStartRow}:F${totalRow - 1})` },
+            { f: `SUM(G${dataStartRow}:G${totalRow - 1})` },
+            { f: `SUM(H${dataStartRow}:H${totalRow - 1})` },
+            { f: `SUM(I${dataStartRow}:I${totalRow - 1})` },
+            ''
+        ]);
+
+        categoryTotals[sheetName] = totalRow;
+
+        let ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [
+            { wch: 8 },   // S.No
+            { wch: 40 },  // Description
+            { wch: 8 },   // Unit
+            { wch: 8 },   // Qty
+            { wch: 16 },  // Supply Rate
+            { wch: 16 },  // Install Rate
+            { wch: 18 },  // Supply Amount
+            { wch: 18 },  // Install Amount
+            { wch: 16 },  // Total
+            { wch: 24 },  // Remarks
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    // ===== Summary Sheet =====
+    let summaryRows = [];
+    summaryRows.push(['S.No', 'Category', 'Grand Total (₹)', 'Remarks']);
+
+    let sno = 1;
+    let firstDataRow = 2;
+
+    Object.keys(groups).forEach(function(category) {
+        let sheetName = category.substring(0, 31);
+        let totalRow = categoryTotals[sheetName];
+        summaryRows.push([
+            sno,
+            category,
+            { f: `'${sheetName}'!I${totalRow}` },
+            ''
+        ]);
+        sno++;
+    });
+
+    let lastDataRow = 1 + Object.keys(groups).length;
+    summaryRows.push([
+        '', 'GRAND TOTAL',
+        { f: `SUM(C${firstDataRow}:C${lastDataRow})` },
+        ''
+    ]);
+
+    let summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+    summaryWs['!cols'] = [
+        { wch: 8 },
+        { wch: 40 },
+        { wch: 20 },
+        { wch: 24 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+    wb.SheetNames = ['Summary', ...wb.SheetNames.filter(n => n !== 'Summary')];
+
+    let fileName = (projectName || 'Project') + ' — BOQ.xlsx';
+    XLSX.writeFile(wb, fileName);
+}
+
+        // ===== Init =====
+        showSummary();
+        updateCartCount();
+    </script>
+</body>
+</html>

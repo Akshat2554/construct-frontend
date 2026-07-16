@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="cart.js"></script>
+</head>
+<body>
+    <div class="global-topbar">
+        <div class="logo">Construct</div>
+        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
+
+        <div class="search-box">
+            <input type="text" placeholder="Search products...">
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+            <a href="catalog.html" class="nav-btn">Catalog</a>
+            <a href="boq-detail.html" class="nav-btn cart-btn">🛒 BOQ <span id="cart-count">0</span></a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="sidebar">
+            <a href="suppliers.html" class="back-btn">← Back to Suppliers</a>
+            <button class="add-btn" id="add-btn" style="width:100%;margin-top:10px">+ Add Product</button>
+            <button class="add-btn" id="upload-pdf-btn" style="width:100%">+ Upload PDF</button>
+            <label class="add-btn" style="width:100%;text-align:center">
+                Upload Excel
+                <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none">
+            </label>
+        </div>
+
+        <div class="main-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                <h1 id="category-title" style="margin-bottom:0">Products</h1>
+                <div class="view-toggle">
+                    <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
+                    <button id="list-view-btn" class="view-toggle-btn" onclick="setView('list')">☰ List</button>
+                </div>
+            </div>
+            <div class="product-grid" id="product-grid"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pdf-modal">
+        <div class="modal">
+            <h2>Upload PDF Catalog</h2>
+            <input type="text" id="pdf-display-name" placeholder="Display name (e.g. Chair Catalog 2024)">
+            <input type="file" id="pdf-file" accept=".pdf">
+            <div class="modal-buttons">
+                <button id="pdf-cancel">Cancel</button>
+                <button id="pdf-confirm">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="mapping-modal">
+        <div class="modal">
+            <h2>Map Your Columns</h2>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:8px">Match your Excel columns to product fields</p>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Product Number</span>
+                    <select id="map-productNumber" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Brand</span>
+                    <select id="map-brand" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Name</span>
+                    <select id="map-name" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Description</span>
+                    <select id="map-description" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Dimensions</span>
+                    <select id="map-dimensions" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Unit</span>
+                    <select id="map-unit" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Price</span>
+                    <select id="map-price" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:130px;font-size:13px">Availability</span>
+                    <select id="map-availability" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                </div>
+            </div>
+
+            <div class="modal-buttons" style="margin-top:16px">
+                <button id="mapping-cancel">Cancel</button>
+                <button id="mapping-confirm">Import</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">Add new product</h2>
+            <input type="text" id="prod-name" placeholder="Product name">
+            <input type="text" id="prod-id" placeholder="Product Id">
+            <input type="text" id="prod-dim" placeholder="Product dimensions">
+            <input type="text" id="prod-avlblty" placeholder="Product availability">
+            <input type="text" id="prod-unit" placeholder="Unit">
+            <input type="number" id="prod-price" placeholder="Price">
+            <input type="text" id="prod-brand" placeholder="Brand">
+            <div class="modal-buttons">
+                <button id="delete-product-btn" style="display:none;background:#ef4444;color:white;margin-right:auto">Delete</button>
+                <button id="cancel-btn">Cancel</button>
+                <button id="confirm-btn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="project-modal">
+        <div class="modal">
+            <h2>Select Project</h2>
+            <div id="project-list-modal"></div>
+            <div class="modal-buttons">
+                <button id="project-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+    <script>
+        let supplier = localStorage.getItem('selectedSupplier');
+        let categoryId = localStorage.getItem('selectedCategoryId');
+        let categoryName = localStorage.getItem('selectedCategoryName');
+
+        let addingToRoom = localStorage.getItem('addingToRoom');
+if (addingToRoom) {
+    let cartBtn = document.querySelector('.nav-btn.cart-btn');
+    if (cartBtn) {
+        cartBtn.textContent = '← Back to Room';
+        cartBtn.href = 'javascript:void(0)';
+        cartBtn.onclick = function() {
+            window.location.href = 'project-detail.html';
+        };
+    }
+}
+
+        document.getElementById('category-title').textContent = supplier + ' - Catalog';
+
+        let currentView = localStorage.getItem('productView') || 'grid';
+        document.getElementById('grid-view-btn').classList.toggle('active', currentView === 'grid');
+        document.getElementById('list-view-btn').classList.toggle('active', currentView === 'list');
+
+        async function loadSupplierCatalog() {
+            console.log('loadSupplierCatalog called');
+            let supplierId = localStorage.getItem('selectedSupplierId');
+            console.log('supplierId is:', supplierId);
+
+            let catalogResponse = await fetch('http://localhost:8081/api/catalogs/' + supplierId);
+            let catalogs = await catalogResponse.json();
+
+            let productsResponse = await fetch('http://localhost:8081/api/products/' + supplierId);
+            let products = await productsResponse.json();
+
+            let grid = document.querySelector('.product-grid');
+            grid.innerHTML = '';
+
+            if (catalogs.length > 0) {
+                grid.innerHTML += `<div style="grid-column:1/-1;font-size:15px;font-weight:600;color:#1a1f2e;margin-bottom:8px">Catalogs</div>`;
+
+                let pdfRow = document.createElement('div');
+                pdfRow.style.cssText = 'grid-column:1/-1;display:flex;gap:16px;overflow-x:auto;padding-bottom:8px';
+
+                catalogs.forEach(function(catalog) {
+                    let card = document.createElement('div');
+                    card.style.cssText = 'min-width:200px;background:white;border:1px solid #edf0f5;border-radius:12px;overflow:hidden;flex-shrink:0';
+                    card.innerHTML = `
+    <div style="position:relative">
+        <iframe 
+            src="http://localhost:8081/api/files/${catalog.filename}#toolbar=0&navpanes=0" 
+            width="100%" 
+            height="160px" 
+            style="border:none;pointer-events:none;display:block">
+        </iframe>
+        <button class="dots-btn" onclick="deleteCatalog(${catalog.id})" 
+            style="position:absolute;top:6px;right:6px;background:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2);font-size:16px"
+            title="Delete catalog">✕</button>
+    </div>
+    <div style="padding:10px 12px">
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${catalog.displayName}</div>
+        <button class="catalog-btn" onclick="window.open('http://localhost:8081/api/files/${catalog.filename}', '_blank')">Open PDF</button>
+    </div>
+`;
+                    pdfRow.appendChild(card);
+                });
+
+                grid.appendChild(pdfRow);
+            }
+
+            if (products.length > 0) {
+                let header = document.createElement('div');
+                header.style.cssText = 'grid-column:1/-1;font-size:15px;font-weight:600;color:#1a1f2e;margin:16px 0 8px';
+                header.textContent = 'Products';
+                grid.appendChild(header);
+
+                if (currentView === 'list') {
+                    renderProductsList(grid, products);
+                } else {
+                    renderProductsGrid(grid, products);
+                }
+            }
+
+            if (catalogs.length === 0 && products.length === 0) {
+                grid.innerHTML = '<p style="color:#64748b;padding:20px">No catalogs or products uploaded yet.</p>';
+            }
+        }
+
+        function setView(view) {
+            currentView = view;
+            localStorage.setItem('productView', view);
+            document.getElementById('grid-view-btn').classList.toggle('active', view === 'grid');
+            document.getElementById('list-view-btn').classList.toggle('active', view === 'list');
+            loadSupplierCatalog();
+        }
+
+        function addToCartPayload(product) {
+    let safeName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\r?\n/g, ' ').replace(/\r/g, ' ');
+    let safeSupplier = (supplier || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+    let safeCategory = (categoryName || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+    let safeUnit = (product.unit || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+    let safeNumber = (product.productNumber || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+    
+    if (!product.name || !product.unit || !product.price) {
+        return `alert('Cannot add to BOQ: missing name, unit, or price')`;
+    }
+    
+    if (localStorage.getItem('addingToRoom')) {
+        let roomId = localStorage.getItem('addingToRoom');
+        return `addToRoomShortlist(${product.id}, '${safeName}', ${product.price}, '${safeUnit}', ${roomId});`;
+    }
+    return `addToCart({productId: ${product.id}, name: '${safeName}', productNumber: '${safeNumber}', supplierName: '${safeSupplier}', category: '${safeCategory}', unit: '${safeUnit}', unitPrice: ${product.price}, quantity: 1, totalPrice: ${product.price}})`;
+}
+
+        function renderProductsGrid(grid, products) {
+            console.log('renderProductsGrid called, products:', products.length);
+            let cardRow = document.createElement('div');
+            cardRow.style.cssText = 'grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:16px';
+            grid.appendChild(cardRow);
+
+            products.forEach(function(product) {
+                let card = document.createElement('div');
+                card.className = 'product-tile-card';
+                card.innerHTML = `
+                    <div class="product-tile-image">
+                        ${product.imageURL
+                            ? `<img src="${product.imageURL}" alt="${product.name}">`
+                            : `<div class="product-tile-placeholder">📦</div>`}
+                        <button class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button>
+                    </div>
+                    <div class="product-tile-body">
+                        <div class="product-tile-name">${product.name}</div>
+                        <div class="product-tile-row"><span>Brand</span><span>${product.brandName || '—'}</span></div>
+                        <div class="product-tile-row"><span>Code</span><span>${product.productNumber || '—'}</span></div>
+                        <div class="product-tile-row"><span>Dimensions</span><span>${product.dimensions || '—'}</span></div>
+                        <div class="product-tile-row"><span>Unit</span><span>${product.unit || '—'}</span></div>
+                        <div class="product-tile-row"><span>Availability</span><span>${product.availability || '—'}</span></div>
+                        <div class="product-tile-footer">
+                            <div class="product-tile-price">₹${product.price}</div>
+                            ${!product.name || !product.unit || !product.price 
+    ? `<button disabled title="Missing name, unit, or price" 
+        style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--text-muted);border:none;font-size:18px;cursor:not-allowed;display:flex;align-items:center;justify-content:center">+</button>`
+    : `<button class="add-to-cart-btn" onclick="${addToCartPayload(product)}">+</button>`
+}
+                        </div>
+                    </div>
+                `;
+                cardRow.appendChild(card);
+            });
+        }
+
+        async function deleteCatalog(id) {
+    if (confirm('Delete this catalog?')) {
+        await fetch('http://localhost:8081/api/catalogs/' + id, { method: 'DELETE' });
+        loadSupplierCatalog();
+    }
+}
+
+        function renderProductsList(grid, products) {
+            console.log('renderProductsList called, products:', products.length);
+            let table = document.createElement('table');
+            table.className = 'list-table';
+            table.style.cssText = 'grid-column:1/-1';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Brand</th>
+                        <th>Code</th>
+                        <th>Dimensions</th>
+                        <th>Unit</th>
+                        <th>Availability</th>
+                        <th>Price</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="products-tbody"></tbody>
+            `;
+            grid.appendChild(table);
+
+            let tbody = table.querySelector('#products-tbody');
+
+            products.forEach(function(product) {
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        ${product.imageURL
+                            ? `<img src="${product.imageURL}" alt="${product.name}" class="list-thumb">`
+                            : `<div class="list-thumb-placeholder">📦</div>`}
+                    </td>
+                    <td style="font-weight:500">${product.name}</td>
+                    <td>${product.brandName || '—'}</td>
+                    <td>${product.productNumber || '—'}</td>
+                    <td>${product.dimensions || '—'}</td>
+                    <td>${product.unit || '—'}</td>
+                    <td>${product.availability || '—'}</td>
+                    <td style="color:#e8742a;font-weight:600">₹${product.price}</td>
+                    <td><button class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button></td>
+                    <td><button class="add-to-cart-btn" onclick="if(this._fired) return; this._fired=true; setTimeout(()=>this._fired=false, 1000); ${addToCartPayload(product)}">+</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        loadSupplierCatalog();
+
+        let pdfModal = document.getElementById('pdf-modal');
+        let uploadPdfBtn = document.getElementById('upload-pdf-btn');
+
+        function showMappingModal(headers, rows) {
+            let overlay = document.getElementById('mapping-modal');
+            overlay.classList.add('open');
+
+            let selects = ['map-productNumber', 'map-brand', 'map-name', 'map-description', 'map-dimensions', 'map-unit', 'map-price', 'map-availability'];
+
+            selects.forEach(function(selectId) {
+                let select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">— Skip —</option>';
+                headers.forEach(function(header) {
+                    select.innerHTML += `<option value="${header}">${header}</option>`;
+                });
+            });
+
+            document.getElementById('mapping-cancel').addEventListener('click', function() {
+                overlay.classList.remove('open');
+            });
+
+            document.getElementById('mapping-confirm').addEventListener('click', async function() {
+                let supplierId = localStorage.getItem('selectedSupplierId');
+                let imported = 0;
+
+                for (let row of rows) {
+                    let product = {
+                        supplierId: parseInt(supplierId),
+                        productNumber: row[document.getElementById('map-productNumber').value] || '',
+                        brandName: row[document.getElementById('map-brand').value] || '',
+                        name: row[document.getElementById('map-name').value] || '',
+                        description: row[document.getElementById('map-description').value] || '',
+                        dimensions: row[document.getElementById('map-dimensions').value] || '',
+                        unit: row[document.getElementById('map-unit').value] || '',
+                        price: parseFloat(row[document.getElementById('map-price').value]) || 0,
+                        availability: parseInt(row[document.getElementById('map-availability').value]) || 0
+                    };
+
+                    if (product.name) {
+                        await fetch('http://localhost:8081/api/products', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(product)
+                        });
+                        imported++;
+                    }
+                }
+
+                overlay.classList.remove('open');
+                alert(imported + ' products imported.');
+                loadSupplierCatalog();
+            });
+        }
+
+        uploadPdfBtn.addEventListener('click', function() {
+            pdfModal.classList.add('open');
+        });
+
+        document.getElementById('pdf-cancel').addEventListener('click', function() {
+            pdfModal.classList.remove('open');
+        });
+
+        document.getElementById('pdf-confirm').addEventListener('click', async function() {
+            let displayName = document.getElementById('pdf-display-name').value.trim();
+            let file = document.getElementById('pdf-file').files[0];
+            let supplierId = localStorage.getItem('selectedSupplierId');
+
+            if (!displayName || !file) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append('file', file);
+            formData.append('displayName', displayName);
+
+            await fetch('http://localhost:8081/api/catalogs/upload/' + supplierId, {
+                method: 'POST',
+                body: formData
+            });
+
+            pdfModal.classList.remove('open');
+            document.getElementById('pdf-display-name').value = '';
+            document.getElementById('pdf-file').value = '';
+            loadSupplierCatalog();
+        });
+
+        let modal = document.getElementById('modal-overlay');
+        let addBtn = document.getElementById('add-btn');
+        let cancelBtn = document.getElementById('cancel-btn');
+        let confirmBtn = document.getElementById('confirm-btn');
+        let editingProductId = null;
+
+        addBtn.addEventListener('click', function() {
+            editingProductId = null;
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-id').value = '';
+            document.getElementById('prod-dim').value = '';
+            document.getElementById('prod-avlblty').value = '';
+            document.getElementById('prod-unit').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-brand').value = '';
+            document.getElementById('modal-title').textContent = 'Add Product';
+            document.getElementById('confirm-btn').textContent = 'Add';
+            document.getElementById('delete-product-btn').style.display = 'none';
+            modal.classList.add('open');
+        });
+
+        cancelBtn.addEventListener('click', function() {
+            modal.classList.remove('open');
+        });
+
+        confirmBtn.addEventListener('click', async function() {
+            let name = document.getElementById('prod-name').value.trim();
+            let productNumber = document.getElementById('prod-id').value.trim();
+            let dimensions = document.getElementById('prod-dim').value.trim();
+            let availability = document.getElementById('prod-avlblty').value.trim();
+            let unit = document.getElementById('prod-unit').value.trim();
+            let price = document.getElementById('prod-price').value.trim();
+            let brandName = document.getElementById('prod-brand').value.trim();
+            let supplierId = localStorage.getItem('selectedSupplierId');
+
+            if (name === '') {
+                alert('Please enter a product name');
+                return;
+            }
+
+            let product = { name, productNumber, dimensions, availability, unit, price: parseFloat(price), brandName, supplierId: parseInt(supplierId) };
+
+            if (editingProductId) {
+                await fetch('http://localhost:8081/api/products/' + editingProductId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(product)
+                });
+            } else {
+                await fetch('http://localhost:8081/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(product)
+                });
+            }
+
+            modal.classList.remove('open');
+            editingProductId = null;
+            loadSupplierCatalog();
+        });
+
+        document.getElementById('excel-upload').addEventListener('change', function(e) {
+            let file = e.target.files[0];
+            let reader = new FileReader();
+
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, { type: 'array' });
+                let sheet = workbook.Sheets[workbook.SheetNames[0]];
+                let rows = XLSX.utils.sheet_to_json(sheet);
+
+                let headers = Object.keys(rows[0]);
+                showMappingModal(headers, rows);
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+
+        async function editProduct(id) {
+            let response = await fetch('http://localhost:8081/api/products/single/' + id);
+            let product = await response.json();
+
+            editingProductId = id;
+            document.getElementById('prod-name').value = product.name || '';
+            document.getElementById('prod-id').value = product.productNumber || '';
+            document.getElementById('prod-dim').value = product.dimensions || '';
+            document.getElementById('prod-avlblty').value = product.availability || '';
+            document.getElementById('prod-unit').value = product.unit || '';
+            document.getElementById('prod-price').value = product.price || '';
+            document.getElementById('prod-brand').value = product.brandName || '';
+            document.getElementById('modal-title').textContent = 'Edit Product';
+            document.getElementById('confirm-btn').textContent = 'Save';
+            document.getElementById('delete-product-btn').style.display = 'block';
+            modal.classList.add('open');
+        }
+
+        document.querySelector('.search-box input').addEventListener('input', function() {
+    let query = this.value.toLowerCase().trim();
+    
+    // List view — filter table rows
+    let rows = document.querySelectorAll('#products-tbody tr');
+    rows.forEach(function(row) {
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
+
+    // Grid view — filter product cards
+    let cards = document.querySelectorAll('.product-tile-card');
+    cards.forEach(function(card) {
+        let text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? '' : 'none';
+    });
+});
+
+        document.getElementById('delete-product-btn').addEventListener('click', async function() {
+            if (confirm('Delete this product? This cannot be undone.')) {
+                await fetch('http://localhost:8081/api/products/' + editingProductId, {
+                    method: 'DELETE'
+                });
+                modal.classList.remove('open');
+                editingProductId = null;
+                loadSupplierCatalog();
+            }
+        });
+
+        updateCartCount();
+    </script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suppliers</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+</head>
+<body>
+    <div class="global-topbar">
+        <div class="logo">Construct</div>
+        <button class="nav-btn" id="project-selector-btn">📋 <span id="topbar-project-name">No Project</span></button>
+
+        <div class="search-box">
+            <input type="text" placeholder="Search suppliers...">
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+            <a href="catalog.html" class="nav-btn">Catalog</a>
+            <a href="boq-detail.html" class="nav-btn cart-btn">🛒 BOQ</a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="sidebar">
+            <a href="catalog.html" class="back-btn">← Back to Catalog</a>
+            <a href="all-products.html" class="add-btn" style="width:100%;text-align:center;text-decoration:none;margin-top:8px">View All Products</a>
+            <button class="add-btn" id="add-btn" style="width:100%;margin-top:10px">+ Add Supplier</button>
+            <div id="filter-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;"></div>
+        </div>
+
+        <div class="main-content">
+            <h1 id="category-title">Suppliers</h1>
+            <div id="supplier-container"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+    
+            <h2 id="modal-title">Add New Supplier</h2>
+    
+            <div class="supplier-form-grid">
+    
+                <!-- LEFT COLUMN -->
+                <div class="form-column">
+    
+                    <input type="text"
+                           id="sup-name"
+                           placeholder="Company Name">
+    
+                    <input type="text"
+                           id="sup-conName"
+                           placeholder="Contact Name">
+    
+                    <input type="text"
+                           id="sup-num"
+                           placeholder="Contact No.">
+    
+                    <select id="sup-type">
+                        <option value="">Type</option>
+                        <option value="Manufacturer">Manufacturer</option>
+                        <option value="Supplier">Supplier</option>
+                        <option value="Service Provider">Service Provider</option>
+                    </select>
+    
+                    <div class="checkbox-grid" id="checkbox-grid"></div>
+    
+                </div>
+    
+                <!-- RIGHT COLUMN -->
+                <div class="form-column">    
+                    <input type="text"
+                           id="sup-loc"
+                           placeholder="Location">    
+                    <input type="text"
+                           id="sup-desgn"
+                           placeholder="Designation">
+                    <select id="sup-scale">
+                        <option value="">Scale</option>
+                        <option value="Small">Small</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Large">Large</option>
+                    </select>
+                    <textarea id="sup-usp"
+                              placeholder="USP"></textarea>
+                </div>    
+            </div>    
+            <div class="modal-buttons">   
+                <button id="delete-supplier-btn"
+                        class="delete-btn"
+                        style="display:none;">
+                    Delete
+                </button>    
+                <button id="cancel-btn">
+                    Cancel
+                </button>    
+                <button id="confirm-btn">
+                    Add
+                </button>  
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="project-modal">
+        <div class="modal">
+            <h2>Select Project</h2>
+            <div id="project-list-modal"></div>
+            <div class="modal-buttons">
+                <button id="project-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+    <script>
+        const filterIcons = {
+    'Office Furniture': 'desk',
+    'Modular Furniture': 'kitchen',
+    'Collab Furniture': 'groups',
+    'Loose Furniture': 'chair',
+    'Outdoor Furniture': 'deck',
+    'Decorative': 'star'
+};
+
+        let activeFilters = new Set();
+        let editingId = null;
+        let categoryId = localStorage.getItem('selectedCategoryId');
+let categoryName = localStorage.getItem('selectedCategoryName');
+document.getElementById('category-title').textContent = categoryName + ' — Suppliers';
+
+        async function loadSuppliers() {
+            let response = await fetch('http://localhost:8081/api/suppliers/' + categoryId);
+            let suppliers = await response.json();
+
+            if (activeFilters.size > 0) {
+    let filterArray = [...activeFilters];
+    
+    let supplierSets = await Promise.all(filterArray.map(async filterId => {
+        let linksResponse = await fetch('http://localhost:8081/api/supplier-subcategories/' + filterId);
+        let links = await linksResponse.json();
+        return new Set(links.map(link => link.supplierId));
+    }));
+    
+    suppliers = suppliers.filter(s => supplierSets.every(set => set.has(s.id)));
+}
+
+            let grid = document.getElementById('supplier-container');
+            grid.innerHTML = '';
+
+            let Manufacturer = suppliers.filter(s => s.supplierType === 'Manufacturer');
+            let Supplier = suppliers.filter(s => s.supplierType === 'Supplier');
+            let serviceProvider = suppliers.filter(s => s.supplierType === 'Service Provider');
+            let untyped = suppliers.filter(s => !s.supplierType);
+
+            function renderSection(title, list) {
+                if (list.length === 0) return;
+
+                let container = document.getElementById('supplier-container');
+
+                let header = document.createElement('div');
+                header.style.cssText = 'font-size:15px;font-weight:600;color:#1a1f2e;margin:20px 0 10px';
+                header.textContent = title;
+                container.appendChild(header);
+
+                let table = document.createElement('table');
+                table.className = 'list-table';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Contact</th>
+                            <th>Phone</th>
+                            <th>Location</th>
+                            <th>Scale</th>
+                            <th>USP</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-${title.replace(/\s/g,'')}"></tbody>
+                `;
+                container.appendChild(table);
+
+                list.forEach(sup => renderSupplier(sup, `tbody-${title.replace(/\s/g,'')}`));
+            }
+            
+            renderSection('Manufacturer', Manufacturer);
+            renderSection('Supplier', Supplier);
+            renderSection('Service Provider', serviceProvider);
+            if (untyped.length > 0) renderSection('Other', untyped);
+        }
+
+        function renderSupplier(sup, tbodyId) {
+            let tbody = document.getElementById(tbodyId);
+            let row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.innerHTML = `
+                <td style="font-weight:500">${sup.name}</td>
+                <td>${sup.conName} — ${sup.desgn}</td>
+                <td>${sup.num}</td>
+                <td>${sup.location}</td>
+                <td>${sup.scale}</td>
+                <td>${sup.usp}</td>
+                <td><button class="dots-btn" onclick="event.stopPropagation(); editSupplier(${sup.id})">⋮</button></td>
+            `;
+            row.addEventListener('click', function() {
+                localStorage.setItem('selectedSupplier', sup.name);
+                localStorage.setItem('selectedSupplierId', sup.id);
+                window.location.href = 'products.html';
+            });
+            tbody.appendChild(row);
+        }
+
+        async function loadSubCategoryCheckboxes(){
+    console.log(categoryId)
+    let response = await fetch('http://localhost:8081/api/subcategories/' + categoryId)
+    let sup = await response.json();
+
+    let container = document.getElementById('checkbox-grid');
+    container.innerHTML = '';
+
+    sup.forEach(function(subcat) {
+        container.innerHTML += `<label class="checkbox-item"><input type="checkbox" id="cb-${subcat.id}"> <span>${subcat.name}</span></label>`;
+    });
+}
+
+        async function loadSidebarFilters() {
+            let response = await fetch('http://localhost:8081/api/subcategories/' + categoryId);
+            let subcategories = await response.json();
+
+            let container = document.getElementById('filter-tabs');
+            container.innerHTML = '';
+
+            subcategories.forEach(function(subcat) {
+                let btn = document.createElement('button');
+btn.dataset.subcatId = subcat.id;
+btn.className = 'filter-tab';
+btn.innerHTML = `
+    <span class="material-symbols-outlined" style="font-size:24px;display:block;margin-bottom:4px">
+    ${filterIcons[subcat.name] || 'category'}
+</span>
+    <span style="font-size:11px">${subcat.name}</span>
+`;
+btn.addEventListener('click', function() {
+    let subcatId = subcat.id;
+    if (activeFilters.has(subcatId)) {
+        activeFilters.delete(subcatId);
+        btn.classList.remove('active');
+    } else {
+        activeFilters.add(subcatId);
+        btn.classList.add('active');
+    }
+    loadSuppliers();
+});
+                container.appendChild(btn);
+            });
+        }
+
+        async function editSupplier(id) {
+            let response = await fetch('http://localhost:8081/api/suppliers/single/' + id);
+            let sup = await response.json();
+
+            editingId = id;
+            document.getElementById('sup-name').value = sup.name || '';
+            document.getElementById('sup-conName').value = sup.conName || '';
+            document.getElementById('sup-desgn').value = sup.desgn || '';
+            document.getElementById('sup-num').value = sup.num || '';
+            document.getElementById('sup-loc').value = sup.location || '';
+            document.getElementById('sup-usp').value = sup.usp || '';
+            document.getElementById('sup-scale').value = sup.scale || '';
+            document.getElementById('sup-type').value = sup.supplierType || '';
+            document.getElementById('modal-title').textContent = 'Edit Supplier';
+            document.getElementById('confirm-btn').textContent = 'Save';
+            document.getElementById('delete-supplier-btn').style.display = 'block';
+
+            await loadSubCategoryCheckboxes();
+            let linksResponse = await fetch('http://localhost:8081/api/supplier-subcategories/supplier/' + id);
+            let links = await linksResponse.json();
+            links.forEach(function(link) {
+            document.getElementById('cb-' + link.subCategoryId).checked = true
+        });
+
+        modal.classList.add('open');
+        }
+
+        let modal = document.getElementById('modal-overlay');
+        let addBtn = document.getElementById('add-btn');
+        let cancelBtn = document.getElementById('cancel-btn');
+        let confirmBtn = document.getElementById('confirm-btn');
+
+        addBtn.addEventListener('click', function() {
+            editingId = null;
+            document.getElementById('sup-name').value = '';
+            document.getElementById('sup-conName').value = '';
+            document.getElementById('sup-desgn').value = '';
+            document.getElementById('sup-usp').value = '';
+            document.getElementById('sup-num').value = '';
+            document.getElementById('sup-loc').value = '';
+            document.getElementById('sup-scale').value = '';
+            document.getElementById('modal-title').textContent = 'Add New Supplier';
+            document.getElementById('confirm-btn').textContent = 'Add';
+            document.getElementById('delete-supplier-btn').style.display = 'none';
+            loadSubCategoryCheckboxes();
+            modal.classList.add('open');
+        });
+
+        cancelBtn.addEventListener('click', function() {
+            modal.classList.remove('open');
+            editingId = null;
+        });
+
+        confirmBtn.addEventListener('click', async function() {
+            let name = document.getElementById('sup-name').value.trim();
+            let conName = document.getElementById('sup-conName').value.trim();
+            let desgn = document.getElementById('sup-desgn').value.trim();
+            let num = document.getElementById('sup-num').value.trim();
+            let location = document.getElementById('sup-loc').value.trim();
+            let usp = document.getElementById('sup-usp').value.trim();
+            let scale = document.getElementById('sup-scale').value.trim();
+            let supplierType = document.getElementById('sup-type').value;
+
+            if (name === '') {
+                alert('Please enter a company name');
+                return;
+            }
+
+            let supplier = { name, categoryId, conName, desgn, num, location, usp, scale, supplierType };
+
+            if (editingId) {
+                let saveResponse = await fetch('http://localhost:8081/api/suppliers/' + editingId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supplier)
+                });
+                var saved = await saveResponse.json();
+            } else {
+                let catalogPath = '';
+                supplier.catalogPath = catalogPath;
+                let saveResponse = await fetch('http://localhost:8081/api/suppliers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supplier)
+                });
+                var saved = await saveResponse.json();
+            }
+
+            let checkedBoxes = document.querySelectorAll('#checkbox-grid input[type="checkbox"]:checked');
+            await fetch('http://localhost:8081/api/supplier-subcategories/supplier/' + saved.id, {
+                method: 'DELETE'
+            });
+            checkedBoxes.forEach(async function(box) {
+                let subCategoryId = Number(box.id.replace("cb-", ""));
+                await fetch('http://localhost:8081/api/supplier-subcategories', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ supplierId: saved.id, subCategoryId: subCategoryId})
+                });
+            });
+
+            modal.classList.remove('open');
+            editingId = null;
+            document.getElementById('supplier-container').innerHTML = '';
+            loadSuppliers();
+        });
+
+        document.querySelector('.search-box input').addEventListener('input', function() {
+    let query = this.value.toLowerCase().trim();
+    let rows = document.querySelectorAll('#supplier-container tr');
+    rows.forEach(function(row) {
+        if (row.closest('thead')) return; // skip header rows
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
+});
+
+        document.getElementById('delete-supplier-btn').addEventListener('click', async function() {
+            if (confirm('Delete this supplier? This cannot be undone.')) {
+                await fetch('http://localhost:8081/api/suppliers/' + editingId, {
+                    method: 'DELETE'
+                });
+                modal.classList.remove('open');
+                editingId = null;
+                loadSuppliers();
+            }
+        });
+
+        loadSuppliers();
+        loadSidebarFilters();
+    </script>
+</body>
+</html>
