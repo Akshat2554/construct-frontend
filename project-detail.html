@@ -287,14 +287,61 @@ async function loadLayout() {
     renderRoomList(rooms);
 
     if (drawings.length > 0 && drawings[0].fileName && !drawings[0].fileName.toLowerCase().endsWith('.pdf')) {
-        renderPins(rooms);
-        document.getElementById('drawing-img').addEventListener('click', function(e) {
-            let rect = this.getBoundingClientRect();
-            let x = ((e.clientX - rect.left) / rect.width) * 100;
-            let y = ((e.clientY - rect.top) / rect.height) * 100;
-            openAddRoomModal(x, y);
-        });
-    }
+    requestAnimationFrame(function() {
+        let img = document.getElementById('drawing-img');
+        if (!img) return;
+        
+        if (img.complete && img.naturalWidth > 0) {
+            renderPins(rooms);
+            img.addEventListener('click', function(e) {
+    let containerRect = this.getBoundingClientRect();
+    let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(this);
+    
+    let x = ((e.clientX - containerRect.left - offsetX) / renderedW) * 100;
+    let y = ((e.clientY - containerRect.top - offsetY) / renderedH) * 100;
+    
+    // Clamp to image bounds
+    x = Math.max(0, Math.min(100, x));
+    y = Math.max(0, Math.min(100, y));
+    
+    openAddRoomModal(x, y);
+});
+        } else {
+            img.addEventListener('load', function() {
+                renderPins(rooms);
+                img.addEventListener('click', function(e) {
+    let containerRect = this.getBoundingClientRect();
+    let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(this);
+    
+    let x = ((e.clientX - containerRect.left - offsetX) / renderedW) * 100;
+    let y = ((e.clientY - containerRect.top - offsetY) / renderedH) * 100;
+    
+    // Clamp to image bounds
+    x = Math.max(0, Math.min(100, x));
+    y = Math.max(0, Math.min(100, y));
+    
+    openAddRoomModal(x, y);
+});
+            });
+        }
+    });
+}
+}
+
+function getImageRenderRect(img) {
+    let containerRect = img.getBoundingClientRect();
+    let containerW = containerRect.width;
+    let containerH = containerRect.height;
+    let imgW = img.naturalWidth;
+    let imgH = img.naturalHeight;
+    
+    let scale = Math.min(containerW / imgW, containerH / imgH);
+    let renderedW = imgW * scale;
+    let renderedH = imgH * scale;
+    let offsetX = (containerW - renderedW) / 2;
+    let offsetY = (containerH - renderedH) / 2;
+    
+    return { offsetX, offsetY, renderedW, renderedH };
 }
 
 function addFloor(floorNum) {
@@ -520,13 +567,23 @@ function renderPins(rooms) {
     let layer = document.getElementById('pins-layer');
     if (!layer) return;
     layer.innerHTML = '';
+    
+    let img = document.getElementById('drawing-img');
+    if (!img) return;
+    
+    let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(img);
+    
     rooms.forEach(function(room, index) {
         if (room.pinX === null || room.pinY === null) return;
+        
         let pin = document.createElement('div');
+        let left = offsetX + (room.pinX / 100) * renderedW;
+        let top = offsetY + (room.pinY / 100) * renderedH;
+        
         pin.style.cssText = `
             position:absolute;
-            left:${room.pinX}%;
-            top:${room.pinY}%;
+            left:${left}px;
+            top:${top}px;
             transform:translate(-50%, -50%);
             width:28px;
             height:28px;
@@ -617,17 +674,26 @@ function openRoomDetail(room) {
                     <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Dimensions</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
                         <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Length</div>
-                            <div style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.length ? room.length + ' mm' : '—'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Breadth</div>
-                            <div style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.breadth ? room.breadth + ' mm' : '—'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Height</div>
-                            <div style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.height ? room.height + ' mm' : '—'}</div>
-                        </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Length (mm)</div>
+    <input type="number" value="${room.length || ''}"
+        onclick="event.stopPropagation()"
+        onchange="updateRoomDimension(${room.id}, 'length', this.value)"
+        style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+</div>
+<div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Breadth (mm)</div>
+    <input type="number" value="${room.breadth || ''}"
+        onclick="event.stopPropagation()"
+        onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
+        style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+</div>
+<div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Height (mm)</div>
+    <input type="number" value="${room.height || ''}"
+        onclick="event.stopPropagation()"
+        onchange="updateRoomDimension(${room.id}, 'height', this.value)"
+        style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+</div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--border)">
                         <div>
@@ -639,7 +705,6 @@ function openRoomDetail(room) {
             style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
         <span style="font-size:13px;color:var(--text-muted)">sqft</span>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Calculated: ${((room.length || 0) * (room.breadth || 0) / 92903).toFixed(1)} sqft</div>
 </div>
                         <div>
     <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Wall Area (editable)</div>
@@ -650,7 +715,6 @@ function openRoomDetail(room) {
             style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
         <span style="font-size:13px;color:var(--text-muted)">sqft</span>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Calculated: ${wallArea} sqft</div>
 </div>
                     </div>
                 </div>
@@ -783,6 +847,26 @@ function calcFlooring() {
     let tiles = area > 0 ? Math.ceil((area * (1 + wastage / 100)) / tileSqft) : 0;
     document.getElementById('floor-result').textContent = 
         tiles > 0 ? `${tiles} tiles needed (${tileSize}×${tileSize}mm with ${wastage}% wastage)` : 'Enter valid dimensions first';
+}
+
+async function updateRoomDimension(roomId, field, value) {
+    let response = await fetch('http://localhost:8081/api/rooms/single/' + roomId);
+    let room = await response.json();
+    room[field] = parseFloat(value);
+    
+    // Recalculate area and wall area
+    if (room.length && room.breadth) {
+        let newArea = ((room.length * room.breadth) / 92903).toFixed(1);
+        localStorage.setItem('room-area-' + roomId, newArea);
+        let areaInput = document.getElementById('area-input');
+        if (areaInput) areaInput.value = newArea;
+    }
+    
+    await fetch('http://localhost:8081/api/rooms/' + roomId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(room)
+    });
 }
 
 function calcCeiling() {

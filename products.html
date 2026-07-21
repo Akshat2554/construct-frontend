@@ -105,6 +105,54 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="product-detail-modal">
+        <div class="modal" style="width:580px;max-width:95vw">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <h2 id="pd-name" style="font-size:18px;max-width:480px"></h2>
+                <button onclick="document.getElementById('product-detail-modal').classList.remove('open')"
+                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0">✕</button>
+            </div>
+    
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                <div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Brand</div>
+                    <div id="pd-brand" style="font-size:13.5px;color:var(--text-primary)"></div>
+                </div>
+                <div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Code</div>
+                    <div id="pd-code" style="font-size:13.5px;color:var(--text-primary)"></div>
+                </div>
+                <div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Dimensions</div>
+                    <div id="pd-dimensions" style="font-size:13.5px;color:var(--text-primary)"></div>
+                </div>
+                <div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Unit</div>
+                    <div id="pd-unit" style="font-size:13.5px;color:var(--text-primary)"></div>
+                </div>
+                <div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Availability</div>
+                    <div id="pd-availability" style="font-size:13.5px;color:var(--text-primary)"></div>
+                </div>
+                <div>
+                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Price</div>
+                    <div id="pd-price" style="font-size:18px;font-weight:700;color:var(--accent)"></div>
+                </div>
+            </div>
+    
+            <div id="pd-description-section" style="display:none;margin-bottom:16px">
+                <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Description / Specification</div>
+                <div id="pd-description" style="font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;white-space:pre-wrap;max-height:200px;overflow-y:auto"></div>
+            </div>
+    
+            <div class="modal-buttons">
+                <button onclick="document.getElementById('product-detail-modal').classList.remove('open')" 
+                    id="pd-cancel">Close</button>
+                <button id="pd-add-btn" class="add-btn">Add to BOQ</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal">
             <h2 id="modal-title">Add new product</h2>
@@ -257,29 +305,34 @@ if (addingToRoom) {
                 let card = document.createElement('div');
                 card.className = 'product-tile-card';
                 card.innerHTML = `
-                    <div class="product-tile-image">
-                        ${product.imageURL
-                            ? `<img src="${product.imageURL}" alt="${product.name}">`
-                            : `<div class="product-tile-placeholder">📦</div>`}
-                        <button class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button>
-                    </div>
-                    <div class="product-tile-body">
-                        <div class="product-tile-name">${product.name}</div>
-                        <div class="product-tile-row"><span>Brand</span><span>${product.brandName || '—'}</span></div>
-                        <div class="product-tile-row"><span>Code</span><span>${product.productNumber || '—'}</span></div>
-                        <div class="product-tile-row"><span>Dimensions</span><span>${product.dimensions || '—'}</span></div>
-                        <div class="product-tile-row"><span>Unit</span><span>${product.unit || '—'}</span></div>
-                        <div class="product-tile-row"><span>Availability</span><span>${product.availability || '—'}</span></div>
-                        <div class="product-tile-footer">
-                            <div class="product-tile-price">₹${product.price}</div>
-                            ${!product.name || !product.unit || !product.price 
-    ? `<button disabled title="Missing name, unit, or price" 
-        style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--text-muted);border:none;font-size:18px;cursor:not-allowed;display:flex;align-items:center;justify-content:center">+</button>`
-    : `<button class="add-to-cart-btn" onclick="${addToCartPayload(product)}">+</button>`
-}
-                        </div>
-                    </div>
-                `;
+    <div class="product-tile-image">
+        ${product.imageURL
+            ? `<img src="${product.imageURL}" alt="${product.name}">`
+            : `<div class="product-tile-placeholder">📦</div>`}
+        <button class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button>
+    </div>
+    <div class="product-tile-body">
+        <div class="product-tile-name">${product.name}</div>
+        <div class="product-tile-row"><span>Brand</span><span>${product.brandName || '—'}</span></div>
+        <div class="product-tile-row"><span>Code</span><span>${product.productNumber || '—'}</span></div>
+        <div class="product-tile-row"><span>Dimensions</span><span>${product.dimensions || '—'}</span></div>
+        <div class="product-tile-row"><span>Unit</span><span>${product.unit || '—'}</span></div>
+        <div class="product-tile-row"><span>Availability</span><span>${product.availability || '—'}</span></div>
+        <div class="product-tile-footer">
+            <div class="product-tile-price">₹${product.price}</div>
+            ${!product.name || !product.unit || !product.price 
+                ? `<button disabled title="Missing name, unit, or price" 
+                    style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--text-muted);border:none;font-size:18px;cursor:not-allowed;display:flex;align-items:center;justify-content:center">+</button>`
+                : `<div data-product-id="${product.id}">${renderCartControl(product)}</div>`
+            }
+        </div>
+    </div>
+`;
+                card.style.cursor = 'pointer';
+card.addEventListener('click', function(e) {
+    if (e.target.closest('button')) return;
+    openProductDetail(product);
+});
                 cardRow.appendChild(card);
             });
         }
@@ -291,8 +344,64 @@ if (addingToRoom) {
     }
 }
 
+function getCartQuantity(productId) {
+    let cart = getCart();
+    let item = cart.find(i => i.productId === productId);
+    return item ? item.quantity : 0;
+}
+
+function renderCartControl(product) {
+    let qty = getCartQuantity(product.id);
+    if (qty === 0) {
+        return `<button class="add-to-cart-btn" onclick="event.stopPropagation(); ${addToCartPayload(product)}; rerenderCartControl(${product.id})">+</button>`;
+    } else {
+        return `
+            <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+                <button onclick="updateQuantity(${product.id}, ${qty - 1 === 0 ? 0 : qty - 1}); ${qty - 1 === 0 ? `removeFromCart(${product.id});` : ''} rerenderCartControl(${product.id})"
+                    style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+                <span style="font-size:13px;font-weight:600;color:var(--accent);min-width:16px;text-align:center">${qty}</span>
+                <button onclick="updateQuantity(${product.id}, ${qty + 1}); rerenderCartControl(${product.id})"
+                    style="width:24px;height:24px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+            </div>
+        `;
+    }
+}
+
+function rerenderCartControl(productId) {
+    updateCartCount();
+    loadSupplierCatalog();
+}
+
+function openProductDetail(product) {
+    document.getElementById('pd-name').textContent = product.name || '—';
+    document.getElementById('pd-brand').textContent = product.brandName || '—';
+    document.getElementById('pd-code').textContent = product.productNumber || '—';
+    document.getElementById('pd-dimensions').textContent = product.dimensions || '—';
+    document.getElementById('pd-unit').textContent = product.unit || '—';
+    document.getElementById('pd-availability').textContent = product.availability ? product.availability + ' nos' : '—';
+    document.getElementById('pd-price').textContent = product.price ? '₹' + Number(product.price).toLocaleString('en-IN') : '—';
+    
+    let descSection = document.getElementById('pd-description-section');
+    let descEl = document.getElementById('pd-description');
+    if (product.description && product.description.trim()) {
+        descEl.textContent = product.description;
+        descSection.style.display = 'block';
+    } else {
+        descSection.style.display = 'none';
+    }
+
+    document.getElementById('pd-add-btn').onclick = function() {
+    let payload = addToCartPayload(product);
+    eval(payload);
+    document.getElementById('product-detail-modal').classList.remove('open');
+    loadSupplierCatalog();
+};
+
+    document.getElementById('product-detail-modal').classList.add('open');
+}
+
         function renderProductsList(grid, products) {
-            console.log('renderProductsList called, products:', products.length);
+            window._renderedProducts = products;
             let table = document.createElement('table');
             table.className = 'list-table';
             table.style.cssText = 'grid-column:1/-1';
@@ -333,8 +442,13 @@ if (addingToRoom) {
                     <td>${product.availability || '—'}</td>
                     <td style="color:#e8742a;font-weight:600">₹${product.price}</td>
                     <td><button class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button></td>
-                    <td><button class="add-to-cart-btn" onclick="if(this._fired) return; this._fired=true; setTimeout(()=>this._fired=false, 1000); ${addToCartPayload(product)}">+</button></td>
+                    <td data-product-id="${product.id}">${renderCartControl(product)}</td>
                 `;
+                row.style.cursor = 'pointer';
+row.addEventListener('click', function(e) {
+    if (e.target.closest('button')) return; // ignore button clicks
+    openProductDetail(product);
+});
                 tbody.appendChild(row);
             });
         }

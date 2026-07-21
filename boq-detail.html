@@ -384,6 +384,7 @@ let instAmt = effectiveInstall * (item.quantity || 1);
                     </td>
                 `;
                 tbody.appendChild(row);
+                
             });
 
             tfoot.innerHTML = `
@@ -395,6 +396,7 @@ let instAmt = effectiveInstall * (item.quantity || 1);
                     <td colspan="2"></td>
                 </tr>
             `;
+            
         }
 
         // ===== Vendor Shortlist =====
@@ -424,6 +426,8 @@ let instAmt = effectiveInstall * (item.quantity || 1);
                 <tbody id="shortlist-tbody"></tbody>
             `;
             container.appendChild(table);
+
+            
 
             let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
             shortlist.forEach(function(vendor, index) {
@@ -475,6 +479,26 @@ let instAmt = effectiveInstall * (item.quantity || 1);
     // Add this if shortlist view isn't visible:
     document.getElementById('view-shortlist').style.display = 'block';
 });
+
+function toggleLongLead(productId, isLongLead) {
+    let cart = getCart();
+    let item = cart.find(i => i.productId === productId);
+    if (item) {
+        item.isLongLead = isLongLead;
+        if (!isLongLead) item.leadWeeks = null;
+        saveCart(cart);
+        loadCategoryDetail(document.getElementById('view-label').textContent);
+    }
+}
+
+function updateLeadWeeks(productId, weeks) {
+    let cart = getCart();
+    let item = cart.find(i => i.productId === productId);
+    if (item) {
+        item.leadWeeks = parseInt(weeks);
+        saveCart(cart);
+    }
+}
 
         // ===== Excel Export =====
         function generateExcel() {

@@ -36,28 +36,46 @@
 
     <!-- Add/Edit Project Modal -->
     <div class="modal-overlay" id="modal-overlay">
-        <div class="modal">
+        <div class="modal" style="width:620px;max-width:95vw">
             <h2 id="modal-title">New Project</h2>
-            <input type="text" id="proj-name" placeholder="Project name">
-            <input type="text" id="proj-location" placeholder="Site location">
-            <select id="proj-status">
-                <option value="">Select status</option>
-                <option value="Active">Active</option>
-                <option value="On Hold">On Hold</option>
-                <option value="Completed">Completed</option>
-            </select>
-            <select id="proj-priority">
-                <option value="">Select priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-            </select>
-            <input type="text" id="proj-sft" placeholder="Area in sqft">
-            <input type="text" id="proj-budget" placeholder="Budget">
-            <input type="text" id="proj-clientName" placeholder="Client Name">
-            <input type="date" id="proj-startDate" placeholder="Start Date">
-            <input type="date" id="proj-endDate" placeholder="End Date">
-            <div class="modal-buttons">
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <input type="text" id="proj-name" placeholder="Project name">
+                <input type="text" id="proj-clientName" placeholder="Client name">
+                <input type="text" id="proj-location" placeholder="Site location">
+                <div style="display:flex;gap:8px">
+                    <select id="proj-status" style="flex:1">
+                        <option value="">Status</option>
+                        <option value="Active">Active</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                    <select id="proj-priority" style="flex:1">
+                        <option value="">Priority</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div style="position:relative">
+                    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none">₹</span>
+                    <input type="number" id="proj-budget" placeholder="Budget" style="padding-left:24px;width:100%">
+                </div>
+                <div style="position:relative">
+                    <input type="number" id="proj-sft" placeholder="Area" style="padding-right:36px;width:100%">
+                    <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none">sqft</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <label style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Start Date</label>
+                    <input type="date" id="proj-startDate">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <label style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">End Date</label>
+                    <input type="date" id="proj-endDate">
+                </div>
+            </div>
+    
+            <div class="modal-buttons" style="margin-top:16px">
                 <button id="delete-project-btn" class="delete-btn" style="display:none">Delete</button>
                 <button id="cancel-btn">Cancel</button>
                 <button id="confirm-btn">Create</button>

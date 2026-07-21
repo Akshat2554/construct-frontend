@@ -29,6 +29,8 @@ function addToCart(product) {
         product.remarks = '';
         product.negotiatedSupplyRate = null;
         product.negotiatedInstallRate = null;
+        product.isLongLead = false;
+        product.leadWeeks = null;
         cart.push(product);
     }
     
