@@ -10,15 +10,16 @@
 <body>
     <div class="global-topbar">
         <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn">📋 <span id="topbar-project-name">No Project</span></button>
+        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
 
         <div class="search-box">
             <input type="text" placeholder="Search suppliers...">
         </div>
 
         <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn">🛒 BOQ</a>
+            <a href="catalog.html" class="nav-btn active">Catalog</a>
+            <a href="index.html" class="nav-btn">Projects</a>
+            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
         </div>
     </div>
 
@@ -190,6 +191,12 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
             renderSection('Service Provider', serviceProvider);
             if (untyped.length > 0) renderSection('Other', untyped);
         }
+
+        function getCartQuantity(productId) {
+    let cart = getCart();
+    let item = cart.find(i => i.productId === productId);
+    return item ? item.quantity : 0;
+}
 
         function renderSupplier(sup, tbodyId) {
             let tbody = document.getElementById(tbodyId);

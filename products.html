@@ -18,8 +18,9 @@
         </div>
 
         <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn">🛒 BOQ <span id="cart-count">0</span></a>
+            <a href="catalog.html" class="nav-btn active">Catalog</a>
+            <a href="index.html" class="nav-btn">Projects</a>
+            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
         </div>
     </div>
 
@@ -96,6 +97,12 @@
                     <span style="width:130px;font-size:13px">Availability</span>
                     <select id="map-availability" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
                 </div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+                    <span style="width:120px;font-size:13px;color:var(--text-primary)">Image URL</span>
+                    <select id="map-image" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)">
+                        <option value="">— Skip —</option>
+                    </select>
+                </div>
             </div>
 
             <div class="modal-buttons" style="margin-top:16px">
@@ -108,46 +115,57 @@
     <div class="modal-overlay" id="product-detail-modal">
         <div class="modal" style="width:580px;max-width:95vw">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-                <h2 id="pd-name" style="font-size:18px;max-width:480px"></h2>
+                <h2 id="pd-name" style="font-size:18px;max-width:680px"></h2>
                 <button onclick="document.getElementById('product-detail-modal').classList.remove('open')"
                     style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0">✕</button>
             </div>
     
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-                <div>
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Brand</div>
-                    <div id="pd-brand" style="font-size:13.5px;color:var(--text-primary)"></div>
-                </div>
-                <div>
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Code</div>
-                    <div id="pd-code" style="font-size:13.5px;color:var(--text-primary)"></div>
-                </div>
-                <div>
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Dimensions</div>
-                    <div id="pd-dimensions" style="font-size:13.5px;color:var(--text-primary)"></div>
-                </div>
-                <div>
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Unit</div>
-                    <div id="pd-unit" style="font-size:13.5px;color:var(--text-primary)"></div>
-                </div>
-                <div>
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Availability</div>
-                    <div id="pd-availability" style="font-size:13.5px;color:var(--text-primary)"></div>
-                </div>
-                <div>
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Price</div>
-                    <div id="pd-price" style="font-size:18px;font-weight:700;color:var(--accent)"></div>
+            <div style="display:flex;gap:0">
+                <!-- Image panel -->
+                <div id="pd-image-panel" style="display:none;width:280px;flex-shrink:0;min-height:200px;border-radius:8px;overflow:hidden;background:var(--bg)"></div>
+    
+                <!-- Details panel -->
+                <div id="pd-details-panel" style="flex:1">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Brand</div>
+                            <div id="pd-brand" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Code</div>
+                            <div id="pd-code" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Dimensions</div>
+                            <div id="pd-dimensions" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Unit</div>
+                            <div id="pd-unit" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Availability</div>
+                            <div id="pd-availability" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Price</div>
+                            <div id="pd-price" style="font-size:18px;font-weight:700;color:var(--accent)"></div>
+                        </div>
+                    </div>
+    
+                    <div id="pd-description-section" style="display:none;margin-bottom:16px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Description</div>
+                            <button class="desc-toggle" onclick="let d=document.getElementById('pd-description'); d.style.display=d.style.display==='none'?'block':'none'; this.textContent=d.style.display==='none'?'Show':'Hide'"
+                                style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit">Show</button>
+                        </div>
+                        <div id="pd-description" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;white-space:pre-wrap;max-height:200px;overflow-y:auto"></div>
+                    </div>
                 </div>
             </div>
     
-            <div id="pd-description-section" style="display:none;margin-bottom:16px">
-                <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Description / Specification</div>
-                <div id="pd-description" style="font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;white-space:pre-wrap;max-height:200px;overflow-y:auto"></div>
-            </div>
-    
-            <div class="modal-buttons">
-                <button onclick="document.getElementById('product-detail-modal').classList.remove('open')" 
-                    id="pd-cancel">Close</button>
+            <div class="modal-buttons" style="margin-top:16px">
+                <button onclick="document.getElementById('product-detail-modal').classList.remove('open')" id="pd-cancel">Close</button>
                 <button id="pd-add-btn" class="add-btn">Add to BOQ</button>
             </div>
         </div>
@@ -163,6 +181,18 @@
             <input type="text" id="prod-unit" placeholder="Unit">
             <input type="number" id="prod-price" placeholder="Price">
             <input type="text" id="prod-brand" placeholder="Brand">
+            <div id="image-drop-zone" 
+    style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative"
+    ondragover="event.preventDefault(); this.style.borderColor='var(--accent)'; this.style.background='var(--accent-glow)'"
+    ondragleave="this.style.borderColor='var(--border)'; this.style.background='transparent'"
+    ondrop="handleImageDrop(event)">
+    <div id="image-preview" style="margin-bottom:8px">
+        <div style="font-size:28px">🖼️</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">Drag & drop product image here</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">or click to browse</div>
+    </div>
+    <input type="file" id="image-file-input" accept="image/*" style="display:none" onchange="handleImageFile(this)">
+</div>
             <div class="modal-buttons">
                 <button id="delete-product-btn" style="display:none;background:#ef4444;color:white;margin-right:auto">Delete</button>
                 <button id="cancel-btn">Cancel</button>
@@ -373,6 +403,11 @@ function rerenderCartControl(productId) {
 }
 
 function openProductDetail(product) {
+    let modal = document.getElementById('product-detail-modal');
+    let hasImage = product.imageURL && product.imageURL.trim();
+
+    modal.querySelector('.modal').style.width = hasImage ? '780px' : '580px';
+
     document.getElementById('pd-name').textContent = product.name || '—';
     document.getElementById('pd-brand').textContent = product.brandName || '—';
     document.getElementById('pd-code').textContent = product.productNumber || '—';
@@ -380,7 +415,7 @@ function openProductDetail(product) {
     document.getElementById('pd-unit').textContent = product.unit || '—';
     document.getElementById('pd-availability').textContent = product.availability ? product.availability + ' nos' : '—';
     document.getElementById('pd-price').textContent = product.price ? '₹' + Number(product.price).toLocaleString('en-IN') : '—';
-    
+
     let descSection = document.getElementById('pd-description-section');
     let descEl = document.getElementById('pd-description');
     if (product.description && product.description.trim()) {
@@ -390,12 +425,27 @@ function openProductDetail(product) {
         descSection.style.display = 'none';
     }
 
+    // Show/hide image panel
+    let imagePanel = document.getElementById('pd-image-panel');
+    let detailsPanel = document.getElementById('pd-details-panel');
+    
+    if (hasImage) {
+        imagePanel.style.display = 'block';
+        imagePanel.innerHTML = `<img src="${product.imageURL}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;background:var(--bg)">`;
+        detailsPanel.style.borderLeft = '1px solid var(--border)';
+        detailsPanel.style.paddingLeft = '20px';
+    } else {
+        imagePanel.style.display = 'none';
+        detailsPanel.style.borderLeft = 'none';
+        detailsPanel.style.paddingLeft = '0';
+    }
+
     document.getElementById('pd-add-btn').onclick = function() {
-    let payload = addToCartPayload(product);
-    eval(payload);
-    document.getElementById('product-detail-modal').classList.remove('open');
-    loadSupplierCatalog();
-};
+        let payload = addToCartPayload(product);
+        eval(payload);
+        document.getElementById('product-detail-modal').classList.remove('open');
+        loadSupplierCatalog();
+    };
 
     document.getElementById('product-detail-modal').classList.add('open');
 }
@@ -461,7 +511,7 @@ row.addEventListener('click', function(e) {
             let overlay = document.getElementById('mapping-modal');
             overlay.classList.add('open');
 
-            let selects = ['map-productNumber', 'map-brand', 'map-name', 'map-description', 'map-dimensions', 'map-unit', 'map-price', 'map-availability'];
+            let selects = ['map-productNumber', 'map-brand', 'map-name', 'map-description', 'map-dimensions', 'map-unit', 'map-price', 'map-availability', 'map-image'];
 
             selects.forEach(function(selectId) {
                 let select = document.getElementById(selectId);
@@ -476,21 +526,23 @@ row.addEventListener('click', function(e) {
             });
 
             document.getElementById('mapping-confirm').addEventListener('click', async function() {
+
                 let supplierId = localStorage.getItem('selectedSupplierId');
                 let imported = 0;
 
                 for (let row of rows) {
                     let product = {
-                        supplierId: parseInt(supplierId),
-                        productNumber: row[document.getElementById('map-productNumber').value] || '',
-                        brandName: row[document.getElementById('map-brand').value] || '',
-                        name: row[document.getElementById('map-name').value] || '',
-                        description: row[document.getElementById('map-description').value] || '',
-                        dimensions: row[document.getElementById('map-dimensions').value] || '',
-                        unit: row[document.getElementById('map-unit').value] || '',
-                        price: parseFloat(row[document.getElementById('map-price').value]) || 0,
-                        availability: parseInt(row[document.getElementById('map-availability').value]) || 0
-                    };
+    supplierId: parseInt(supplierId),
+    productNumber: row[document.getElementById('map-productNumber').value] || '',
+    brandName: row[document.getElementById('map-brand').value] || '',
+    name: row[document.getElementById('map-name').value] || '',
+    description: row[document.getElementById('map-description').value] || '',
+    dimensions: row[document.getElementById('map-dimensions').value] || '',
+    unit: row[document.getElementById('map-unit').value] || '',
+    price: parseFloat(row[document.getElementById('map-price').value]) || 0,
+    availability: parseInt(row[document.getElementById('map-availability').value]) || 0,
+    imageURL: row[document.getElementById('map-image').value] || null
+};
 
                     if (product.name) {
                         await fetch('http://localhost:8081/api/products', {
@@ -567,40 +619,52 @@ row.addEventListener('click', function(e) {
         });
 
         confirmBtn.addEventListener('click', async function() {
-            let name = document.getElementById('prod-name').value.trim();
-            let productNumber = document.getElementById('prod-id').value.trim();
-            let dimensions = document.getElementById('prod-dim').value.trim();
-            let availability = document.getElementById('prod-avlblty').value.trim();
-            let unit = document.getElementById('prod-unit').value.trim();
-            let price = document.getElementById('prod-price').value.trim();
-            let brandName = document.getElementById('prod-brand').value.trim();
-            let supplierId = localStorage.getItem('selectedSupplierId');
+    let name = document.getElementById('prod-name').value.trim();
+    let productNumber = document.getElementById('prod-id').value.trim();
+    let dimensions = document.getElementById('prod-dim').value.trim();
+    let availability = document.getElementById('prod-avlblty').value.trim();
+    let unit = document.getElementById('prod-unit').value.trim();
+    let price = document.getElementById('prod-price').value.trim();
+    let brandName = document.getElementById('prod-brand').value.trim();
+    let supplierId = localStorage.getItem('selectedSupplierId');
 
-            if (name === '') {
-                alert('Please enter a product name');
-                return;
-            }
+    if (name === '') {
+        alert('Please enter a product name');
+        return;
+    }
 
-            let product = { name, productNumber, dimensions, availability, unit, price: parseFloat(price), brandName, supplierId: parseInt(supplierId) };
+    let product = { 
+        name, productNumber, dimensions, availability, unit, 
+        price: parseFloat(price), 
+        brandName, 
+        supplierId: parseInt(supplierId)
+    };
 
-            if (editingProductId) {
-                await fetch('http://localhost:8081/api/products/' + editingProductId, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(product)
-                });
-            } else {
-                await fetch('http://localhost:8081/api/products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(product)
-                });
-            }
+    if (window._pendingImageUrl) {
+        product.imageURL = window._pendingImageUrl;
+        window._pendingImageUrl = null;
+    } else if (editingProductId) {
+        product.imageURL = window._existingImageUrl || null;
+    }
 
-            modal.classList.remove('open');
-            editingProductId = null;
-            loadSupplierCatalog();
+    if (editingProductId) {
+        await fetch('http://localhost:8081/api/products/' + editingProductId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
         });
+    } else {
+        await fetch('http://localhost:8081/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+        });
+    }
+
+    modal.classList.remove('open');
+    editingProductId = null;
+    loadSupplierCatalog();
+});
 
         document.getElementById('excel-upload').addEventListener('change', function(e) {
             let file = e.target.files[0];
@@ -619,21 +683,90 @@ row.addEventListener('click', function(e) {
             reader.readAsArrayBuffer(file);
         });
 
+        async function handleImageDrop(event) {
+    event.preventDefault();
+    let zone = document.getElementById('image-drop-zone');
+    zone.style.borderColor = 'var(--border)';
+    zone.style.background = 'transparent';
+    
+    let file = event.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) {
+        alert('Please drop an image file');
+        return;
+    }
+    await uploadProductImage(file);
+}
+
+async function handleImageFile(input) {
+    let file = input.files[0];
+    if (!file) return;
+    await uploadProductImage(file);
+}
+
+async function uploadProductImage(file) {
+    let zone = document.getElementById('image-drop-zone');
+    zone.style.borderColor = 'var(--accent)';
+    
+    let formData = new FormData();
+    formData.append('file', file);
+    
+    let response = await fetch('http://localhost:8081/api/files/upload', {
+        method: 'POST',
+        body: formData
+    });
+    let filename = await response.text();
+    let imageUrl = 'http://localhost:8081/api/files/' + filename;
+    
+    // Store for saving
+    window._pendingImageUrl = imageUrl;
+    
+    // Show preview
+    document.getElementById('image-preview').innerHTML = `
+        <img src="${imageUrl}" style="max-height:120px;max-width:100%;border-radius:6px;object-fit:contain">
+        <div style="font-size:11px;color:var(--success);margin-top:6px">✓ Image uploaded</div>
+    `;
+    zone.style.borderColor = 'var(--success)';
+}
+
         async function editProduct(id) {
             let response = await fetch('http://localhost:8081/api/products/single/' + id);
-            let product = await response.json();
+            let prod = await response.json();
+
 
             editingProductId = id;
-            document.getElementById('prod-name').value = product.name || '';
-            document.getElementById('prod-id').value = product.productNumber || '';
-            document.getElementById('prod-dim').value = product.dimensions || '';
-            document.getElementById('prod-avlblty').value = product.availability || '';
-            document.getElementById('prod-unit').value = product.unit || '';
-            document.getElementById('prod-price').value = product.price || '';
-            document.getElementById('prod-brand').value = product.brandName || '';
+            let preview = document.getElementById('image-preview');
+let zone = document.getElementById('image-drop-zone');
+if (prod.imageURL) {
+    preview.innerHTML = `
+        <img src="${prod.imageURL}" style="max-height:120px;max-width:100%;border-radius:6px;object-fit:contain">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Current image — drop new one to replace</div>
+    `;
+    zone.style.borderColor = 'var(--success)';
+} else {
+    preview.innerHTML = `
+        <div style="font-size:28px">🖼️</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">Drag & drop product image here</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">or click to browse</div>
+    `;
+    zone.style.borderColor = 'var(--border)';
+}
+window._pendingImageUrl = null;
+window._existingImageUrl = prod.imageURL || null;
+
+            document.getElementById('prod-name').value = prod.name || '';
+            document.getElementById('prod-id').value = prod.productNumber || '';
+            document.getElementById('prod-dim').value = prod.dimensions || '';
+            document.getElementById('prod-avlblty').value = prod.availability || '';
+            document.getElementById('prod-unit').value = prod.unit || '';
+            document.getElementById('prod-price').value = prod.price || '';
+            document.getElementById('prod-brand').value = prod.brandName || '';
             document.getElementById('modal-title').textContent = 'Edit Product';
             document.getElementById('confirm-btn').textContent = 'Save';
             document.getElementById('delete-product-btn').style.display = 'block';
+
+            document.getElementById('image-drop-zone').onclick = function() {
+        document.getElementById('image-file-input').click();
+    };
             modal.classList.add('open');
         }
 
@@ -665,6 +798,7 @@ row.addEventListener('click', function(e) {
                 loadSupplierCatalog();
             }
         });
+
 
         updateCartCount();
     </script>

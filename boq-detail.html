@@ -13,11 +13,11 @@
 
     <div class="global-topbar">
         <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn">📋 <span id="topbar-project-name">No Project</span></button>
+        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
         <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
             <a href="catalog.html" class="nav-btn">Catalog</a>
             <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn">BOQ <span id="cart-count">0</span></a>
+            <a href="boq-detail.html" class="nav-btn cart-btn"> BOQ <span id="cart-count">0</span></a>
         </div>
     </div>
 
@@ -282,12 +282,12 @@ document.getElementById('confirm-btn-category').onclick = function() {
                     <td style="font-weight:500;color:var(--text-primary)">${category}</td>
                     <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
                     <td>
-    <input type="text" value="${localStorage.getItem('boq-remarks-' + projectId + '-' + category.replace(/\s/g,'')) || ''}" 
+    <input type="text" value="${localStorage.getItem('boq-notes-' + projectId + '-' + encodeURIComponent(category)) || ''}" 
         placeholder="—"
         style="width:100%;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:13px;background:transparent;color:var(--text-secondary)"
         onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
         onblur="this.style.borderColor='transparent';this.style.background='transparent'"
-        onchange="localStorage.setItem('boq-remarks-${projectId}-${category.replace(/\\s/g,'')}', this.value)">
+        onchange="localStorage.setItem('boq-notes-${projectId}-${encodeURIComponent(category)}', this.value)">
 </td>
                 `;
                 row.addEventListener('click', function() {
@@ -385,6 +385,41 @@ let instAmt = effectiveInstall * (item.quantity || 1);
                 `;
                 tbody.appendChild(row);
                 
+                // Add sub-items rows
+let subItems = getSubItems(item.productId, category);
+let letters = 'abcdefghijklmnopqrstuvwxyz';
+
+subItems.forEach(function(sub, si) {
+    let subRow = document.createElement('tr');
+    subRow.innerHTML = `
+        <td style="color:var(--text-muted);font-size:11px;padding-left:20px">${letters[si]}</td>
+        <td colspan="10">
+            <input type="text" value="${sub.text || ''}" placeholder="Sub-item description..."
+                style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;color:var(--text-secondary);background:transparent;outline:none"
+                onchange="updateSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}, this.value)">
+        </td>
+        <td>
+            <button onclick="removeSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}); loadCategoryDetail('${category}')"
+                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
+                onmouseover="this.style.color='var(--destructive)'"
+                onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        </td>
+    `;
+    tbody.appendChild(subRow);
+});
+
+// Add sub-item button row
+let addSubRow = document.createElement('tr');
+addSubRow.innerHTML = `
+    <td colspan="12" style="padding:2px 8px">
+        <button onclick="addSubItem(${item.productId}, '${encodeURIComponent(category)}'); loadCategoryDetail('${category}')"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11.5px;font-family:inherit;padding:2px 4px"
+            onmouseover="this.style.color='var(--accent)'"
+            onmouseout="this.style.color='var(--text-muted)'">+ add note</button>
+    </td>
+`;
+tbody.appendChild(addSubRow);
+
             });
 
             tfoot.innerHTML = `
@@ -445,6 +480,28 @@ let instAmt = effectiveInstall * (item.quantity || 1);
                 tbody.appendChild(row);
             });
         }
+
+        function addSubItem(productId, encodedCategory) {
+    let category = decodeURIComponent(encodedCategory);
+    let items = getSubItems(productId, category);
+    items.push({ text: '' });
+    saveSubItems(productId, category, items);
+}
+
+function updateSubItem(productId, encodedCategory, index, value) {
+    let category = decodeURIComponent(encodedCategory);
+    let items = getSubItems(productId, category);
+    if (items[index]) {
+        items[index].text = value;
+        saveSubItems(productId, category, items);
+    }
+}
+
+function removeSubItem(productId, encodedCategory, index) {
+    let category = decodeURIComponent(encodedCategory);
+    let items = getSubItems(productId, category).filter((_, i) => i !== index);
+    saveSubItems(productId, category, items);
+}
 
         function removeVendor(index) {
             shortlist.splice(index, 1);
@@ -514,69 +571,64 @@ function updateLeadWeeks(productId, weeks) {
 
     // ===== Category Sheets =====
     Object.keys(groups).forEach(function(category) {
-        let items = groups[category];
-        let sheetName = category.substring(0, 31);
+    let items = groups[category];
+    let sheetName = category.substring(0, 31);
+    let letters = 'abcdefghijklmnopqrstuvwxyz';
 
-        let rows = [];
-        rows.push(['S.No', 'Description', 'Unit', 'Qty', 'Rate - Supply (₹)', 'Rate - Install (₹)', 'Amount - Supply (₹)', 'Amount - Install (₹)', 'Total (₹)', 'Remarks']);
+    let rows = [];
+    rows.push(['S.No', 'Description', 'Unit', 'Qty', 'Rate - Supply (₹)', 'Rate - Install (₹)', 'Amount - Supply (₹)', 'Amount - Install (₹)', 'Total (₹)', 'Remarks']);
 
-        let dataStartRow = 2;
-        let catSupTotal = 0, catInstTotal = 0, catTotal = 0;
+    let dataStartRow = 2;
+    let currentRow = dataStartRow;
 
-        items.forEach(function(item, index) {
-            let supAmt = (item.unitPrice || 0) * (item.quantity || 1);
-            let instAmt = (item.installRate || 0) * (item.quantity || 1);
-            let total = supAmt + instAmt;
-            catSupTotal += supAmt;
-            catInstTotal += instAmt;
-            catTotal += total;
-
-            let row = index + dataStartRow;
-            rows.push([
-                index + 1,
-                item.name,
-                item.unit || '',
-                item.quantity || 1,
-                item.unitPrice || 0,
-                item.installRate || 0,
-                { f: `D${row}*E${row}` },
-                { f: `D${row}*F${row}` },
-                { f: `G${row}+H${row}` },
-                item.remarks || ''
-            ]);
-        });
-
-        let totalRow = items.length + dataStartRow;
+    items.forEach(function(item, index) {
         rows.push([
-            '', 'TOTAL', '', '',
-            { f: `SUM(E${dataStartRow}:E${totalRow - 1})` },
-            { f: `SUM(F${dataStartRow}:F${totalRow - 1})` },
-            { f: `SUM(G${dataStartRow}:G${totalRow - 1})` },
-            { f: `SUM(H${dataStartRow}:H${totalRow - 1})` },
-            { f: `SUM(I${dataStartRow}:I${totalRow - 1})` },
-            ''
+            index + 1,
+            item.name,
+            item.unit || '',
+            item.quantity || 1,
+            item.unitPrice || 0,
+            item.installRate || 0,
+            { f: `D${currentRow}*E${currentRow}` },
+            { f: `D${currentRow}*F${currentRow}` },
+            { f: `G${currentRow}+H${currentRow}` },
+            item.remarks || ''
         ]);
+        currentRow++;
 
-        categoryTotals[sheetName] = totalRow;
-
-        let ws = XLSX.utils.aoa_to_sheet(rows);
-        ws['!cols'] = [
-            { wch: 8 },   // S.No
-            { wch: 40 },  // Description
-            { wch: 8 },   // Unit
-            { wch: 8 },   // Qty
-            { wch: 16 },  // Supply Rate
-            { wch: 16 },  // Install Rate
-            { wch: 18 },  // Supply Amount
-            { wch: 18 },  // Install Amount
-            { wch: 16 },  // Total
-            { wch: 24 },  // Remarks
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        // Sub-items
+        let subItems = getSubItems(item.productId, category);
+        subItems.forEach(function(sub, si) {
+            if (sub.text && sub.text.trim()) {
+                rows.push([letters[si], sub.text, '', '', '', '', '', '', '', '']);
+                currentRow++;
+            }
+        });
     });
 
-    // ===== Summary Sheet =====
+    let totalRow = currentRow;
+    rows.push([
+        '', 'TOTAL', '', '',
+        { f: `SUM(E${dataStartRow}:E${totalRow - 1})` },
+        { f: `SUM(F${dataStartRow}:F${totalRow - 1})` },
+        { f: `SUM(G${dataStartRow}:G${totalRow - 1})` },
+        { f: `SUM(H${dataStartRow}:H${totalRow - 1})` },
+        { f: `SUM(I${dataStartRow}:I${totalRow - 1})` },
+        ''
+    ]);
+
+    categoryTotals[sheetName] = totalRow;
+
+    let ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+        { wch: 8 }, { wch: 40 }, { wch: 8 }, { wch: 8 },
+        { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 },
+        { wch: 16 }, { wch: 24 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+});
+        // ===== Summary Sheet =====
     let summaryRows = [];
     summaryRows.push(['S.No', 'Category', 'Grand Total (₹)', 'Remarks']);
 
@@ -584,16 +636,18 @@ function updateLeadWeeks(productId, weeks) {
     let firstDataRow = 2;
 
     Object.keys(groups).forEach(function(category) {
-        let sheetName = category.substring(0, 31);
-        let totalRow = categoryTotals[sheetName];
-        summaryRows.push([
-            sno,
-            category,
-            { f: `'${sheetName}'!I${totalRow}` },
-            ''
-        ]);
-        sno++;
-    });
+    let sheetName = category.substring(0, 31);
+    let totalRow = categoryTotals[sheetName];
+    let notesKey = 'boq-notes-' + projectId + '-' + encodeURIComponent(category);
+let remarks = localStorage.getItem(notesKey) || '';
+    summaryRows.push([
+        sno,
+        category,
+        { f: `'${sheetName}'!I${totalRow}` },
+        remarks
+    ]);
+    sno++;
+});
 
     let lastDataRow = 1 + Object.keys(groups).length;
     summaryRows.push([

@@ -44,6 +44,16 @@ function removeFromCart(productId) {
     updateCartCount();
 }
 
+function getSubItems(productId, category) {
+    let key = 'sub-items-' + projectId + '-' + productId + '-' + encodeURIComponent(category);
+    return JSON.parse(localStorage.getItem(key)) || [];
+}
+
+function saveSubItems(productId, category, items) {
+    let key = 'sub-items-' + projectId + '-' + productId + '-' + encodeURIComponent(category);
+    localStorage.setItem(key, JSON.stringify(items));
+}
+
 function updateCartCount() {
     let count = getCart().length;
     let badge = document.getElementById('cart-count');

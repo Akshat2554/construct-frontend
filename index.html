@@ -13,13 +13,14 @@
 
     <div class="global-topbar">
         <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn">📋 <span id="topbar-project-name">No Project</span></button>
+        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
         <div class="search-box">
             <input type="text" placeholder="Search projects...">
         </div>
         <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
             <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn">BOQ <span id="cart-count">0</span></a>
+            <a href="index.html" class="nav-btn active">Projects</a>
+            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
         </div>
     </div>
 
@@ -30,6 +31,27 @@
 
         <div class="main-content">
             <h1>Projects</h1>
+            <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+                <select id="filter-status" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Completed">Completed</option>
+                </select>
+                <select id="filter-priority" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                    <option value="">All Priority</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+                <select id="sort-projects" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                    <option value="">Sort: Default</option>
+                    <option value="priority-high">Priority: High First</option>
+                    <option value="priority-low">Priority: Low First</option>
+                    <option value="name">Name A-Z</option>
+                    <option value="budget-high">Budget: High First</option>
+                </select>
+            </div>
             <div id="projects-container"></div>
         </div>
     </div>
@@ -120,6 +142,21 @@
                 container.innerHTML = '<p style="color:var(--text-muted);padding:20px">No projects yet. Click + New Project to get started.</p>';
                 return;
             }
+
+            // Filter
+let statusFilter = document.getElementById('filter-status').value;
+let priorityFilter = document.getElementById('filter-priority').value;
+let sortValue = document.getElementById('sort-projects').value;
+
+if (statusFilter) projects = projects.filter(p => p.status === statusFilter);
+if (priorityFilter) projects = projects.filter(p => p.priority === priorityFilter);
+
+// Sort
+const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+if (sortValue === 'priority-high') projects.sort((a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99));
+if (sortValue === 'priority-low') projects.sort((a, b) => (priorityOrder[b.priority] || 99) - (priorityOrder[a.priority] || 99));
+if (sortValue === 'name') projects.sort((a, b) => a.name.localeCompare(b.name));
+if (sortValue === 'budget-high') projects.sort((a, b) => (b.budget || 0) - (a.budget || 0));
 
             projects.forEach(function(project) {
                 let card = document.createElement('div');

@@ -18,7 +18,7 @@
         <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
             <a href="catalog.html" class="nav-btn active">Catalog</a>
             <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn">🛒 BOQ</a>
+            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
         </div>
     </div>
 
@@ -96,6 +96,12 @@ async function deleteCategory(id) {
         method: 'DELETE'
     });
     loadCategories();
+}
+
+function getCartQuantity(productId) {
+    let cart = getCart();
+    let item = cart.find(i => i.productId === productId);
+    return item ? item.quantity : 0;
 }
 
 function editCategory(id, currentName, currentDescription) {
