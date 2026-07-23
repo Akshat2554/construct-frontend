@@ -133,14 +133,14 @@ let categoryName = localStorage.getItem('selectedCategoryName');
 document.getElementById('category-title').textContent = categoryName + ' — Suppliers';
 
         async function loadSuppliers() {
-            let response = await fetch('http://localhost:8081/api/suppliers/' + categoryId);
+            let response = await fetch('https://construct-backend-production.up.railway.app/api/suppliers/' + categoryId);
             let suppliers = await response.json();
 
             if (activeFilters.size > 0) {
     let filterArray = [...activeFilters];
     
     let supplierSets = await Promise.all(filterArray.map(async filterId => {
-        let linksResponse = await fetch('http://localhost:8081/api/supplier-subcategories/' + filterId);
+        let linksResponse = await fetch('https://construct-backend-production.up.railway.app/api/supplier-subcategories/' + filterId);
         let links = await linksResponse.json();
         return new Set(links.map(link => link.supplierId));
     }));
@@ -222,7 +222,7 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
 
         async function loadSubCategoryCheckboxes(){
     console.log(categoryId)
-    let response = await fetch('http://localhost:8081/api/subcategories/' + categoryId)
+    let response = await fetch('https://construct-backend-production.up.railway.app/api/subcategories/' + categoryId)
     let sup = await response.json();
 
     let container = document.getElementById('checkbox-grid');
@@ -234,7 +234,7 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
 }
 
         async function loadSidebarFilters() {
-            let response = await fetch('http://localhost:8081/api/subcategories/' + categoryId);
+            let response = await fetch('https://construct-backend-production.up.railway.app/api/subcategories/' + categoryId);
             let subcategories = await response.json();
 
             let container = document.getElementById('filter-tabs');
@@ -266,7 +266,7 @@ btn.addEventListener('click', function() {
         }
 
         async function editSupplier(id) {
-            let response = await fetch('http://localhost:8081/api/suppliers/single/' + id);
+            let response = await fetch('https://construct-backend-production.up.railway.app/api/suppliers/single/' + id);
             let sup = await response.json();
 
             editingId = id;
@@ -283,7 +283,7 @@ btn.addEventListener('click', function() {
             document.getElementById('delete-supplier-btn').style.display = 'block';
 
             await loadSubCategoryCheckboxes();
-            let linksResponse = await fetch('http://localhost:8081/api/supplier-subcategories/supplier/' + id);
+            let linksResponse = await fetch('https://construct-backend-production.up.railway.app/api/supplier-subcategories/supplier/' + id);
             let links = await linksResponse.json();
             links.forEach(function(link) {
             document.getElementById('cb-' + link.subCategoryId).checked = true
@@ -336,7 +336,7 @@ btn.addEventListener('click', function() {
             let supplier = { name, categoryId, conName, desgn, num, location, usp, scale, supplierType };
 
             if (editingId) {
-                let saveResponse = await fetch('http://localhost:8081/api/suppliers/' + editingId, {
+                let saveResponse = await fetch('https://construct-backend-production.up.railway.app/api/suppliers/' + editingId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(supplier)
@@ -345,7 +345,7 @@ btn.addEventListener('click', function() {
             } else {
                 let catalogPath = '';
                 supplier.catalogPath = catalogPath;
-                let saveResponse = await fetch('http://localhost:8081/api/suppliers', {
+                let saveResponse = await fetch('https://construct-backend-production.up.railway.app/api/suppliers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(supplier)
@@ -354,12 +354,12 @@ btn.addEventListener('click', function() {
             }
 
             let checkedBoxes = document.querySelectorAll('#checkbox-grid input[type="checkbox"]:checked');
-            await fetch('http://localhost:8081/api/supplier-subcategories/supplier/' + saved.id, {
+            await fetch('https://construct-backend-production.up.railway.app/api/supplier-subcategories/supplier/' + saved.id, {
                 method: 'DELETE'
             });
             checkedBoxes.forEach(async function(box) {
                 let subCategoryId = Number(box.id.replace("cb-", ""));
-                await fetch('http://localhost:8081/api/supplier-subcategories', {
+                await fetch('https://construct-backend-production.up.railway.app/api/supplier-subcategories', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ supplierId: saved.id, subCategoryId: subCategoryId})
@@ -384,7 +384,7 @@ btn.addEventListener('click', function() {
 
         document.getElementById('delete-supplier-btn').addEventListener('click', async function() {
             if (confirm('Delete this supplier? This cannot be undone.')) {
-                await fetch('http://localhost:8081/api/suppliers/' + editingId, {
+                await fetch('https://construct-backend-production.up.railway.app/api/suppliers/' + editingId, {
                     method: 'DELETE'
                 });
                 modal.classList.remove('open');

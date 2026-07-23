@@ -134,7 +134,7 @@
         };
 
         async function loadProjects() {
-            let response = await fetch('http://localhost:8081/api/projects');
+            let response = await fetch('https://construct-backend-production.up.railway.app/api/projects');
             let projects = await response.json();
             let container = document.getElementById('projects-container');
             container.innerHTML = '';
@@ -255,7 +255,7 @@ card.innerHTML = `
         }
 
         async function editProject(id) {
-            let response = await fetch('http://localhost:8081/api/projects/' + id);
+            let response = await fetch('https://construct-backend-production.up.railway.app/api/projects/' + id);
             let project = await response.json();
             editingId = id;
             document.getElementById('proj-name').value = project.name || '';
@@ -318,13 +318,13 @@ let squareFootage = document.getElementById('proj-sft').value;
             let project = { name, location, status, priority, clientName, budget: parseFloat(budget), startDate, endDate, squareFootage: parseFloat(squareFootage) };
 
             if (editingId) {
-                await fetch('http://localhost:8081/api/projects/' + editingId, {
+                await fetch('https://construct-backend-production.up.railway.app/api/projects/' + editingId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(project)
                 });
             } else {
-                await fetch('http://localhost:8081/api/projects', {
+                await fetch('https://construct-backend-production.up.railway.app/api/projects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(project)
@@ -338,7 +338,7 @@ let squareFootage = document.getElementById('proj-sft').value;
 
         document.getElementById('delete-project-btn').addEventListener('click', async function() {
             if (confirm('Delete this project? This cannot be undone.')) {
-                await fetch('http://localhost:8081/api/projects/' + editingId, {
+                await fetch('https://construct-backend-production.up.railway.app/api/projects/' + editingId, {
                     method: 'DELETE'
                 });
                 if (localStorage.getItem('selectedProjectId') == editingId) {

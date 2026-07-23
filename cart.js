@@ -138,7 +138,7 @@ function isConfirmed(category) {
 }
 
 async function openRoomById(id) {
-    let response = await fetch('http://localhost:8081/api/rooms/single/' + id);
+    let response = await fetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + id);
     let room = await response.json();
     openRoomDetail(room);
 }

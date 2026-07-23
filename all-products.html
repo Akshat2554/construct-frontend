@@ -105,7 +105,7 @@
             document.getElementById('category-title').textContent = categoryName + ' - All Products';
 
             async function loadAllProducts() {
-                let productsResponse = await fetch('http://localhost:8081/api/products/by-category/' + categoryId);
+                let productsResponse = await fetch('https://construct-backend-production.up.railway.app/api/products/by-category/' + categoryId);
                 let products = await productsResponse.json();
 
                 let grid = document.querySelector('.product-grid');
