@@ -329,15 +329,18 @@ async function loadLayout() {
         }
     });
     fetch(drawings[0].fileName)
-            .then(r => r.blob())
-            .then(blob => {
-                let url = URL.createObjectURL(blob);
-                let img = document.getElementById('drawing-img');
-                if (img) {
-                    img.src = url;
-                    img.style.display = 'block';
-                }
-            });
+    .then(r => r.blob())
+    .then(blob => {
+        let url = URL.createObjectURL(blob);
+        console.log('blob url created:', url);
+        let img = document.getElementById('drawing-img');
+        console.log('img element:', img);
+        if (img) {
+            img.src = url;
+            img.style.display = 'block';
+            console.log('img src set to:', img.src);
+        }
+    });
     }
 }
 
