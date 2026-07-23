@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Construct — Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)">
+    <div style="width:360px;padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md)">
+        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Construct</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:32px">Internal Procurement Platform</div>
+        
+        <div style="display:flex;flex-direction:column;gap:12px">
+            <input type="text" id="username" placeholder="Username"
+                style="padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none"
+                onfocus="this.style.borderColor='var(--accent)'"
+                onblur="this.style.borderColor='var(--border)'">
+            <input type="password" id="password" placeholder="Password"
+                style="padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none"
+                onfocus="this.style.borderColor='var(--accent)'"
+                onblur="this.style.borderColor='var(--border)'"
+                onkeydown="if(event.key==='Enter') login()">
+            <div id="error-msg" style="font-size:12px;color:var(--destructive);display:none">Incorrect username or password</div>
+            <button onclick="login()" class="add-btn" style="width:100%;padding:11px">Sign In</button>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        if (localStorage.getItem('construct-auth') === 'true') {
+            window.location.href = 'index.html';
+        }
+
+        const USERS = {
+            'admin': 'construct2024',
+            'aps': 'construct123'
+        };
+
+        function login() {
+            let username = document.getElementById('username').value.trim();
+            let password = document.getElementById('password').value;
+            
+            if (USERS[username] && USERS[username] === password) {
+                localStorage.setItem('construct-auth', 'true');
+                localStorage.setItem('construct-user', username);
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

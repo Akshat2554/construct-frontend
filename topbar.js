@@ -34,4 +34,15 @@ document.getElementById('project-modal-close').addEventListener('click', functio
     document.getElementById('project-modal').classList.remove('open');
 });
 
+let logoutBtn = document.createElement('button');
+logoutBtn.className = 'nav-btn';
+logoutBtn.textContent = 'Sign Out';
+logoutBtn.style.marginLeft = '8px';
+logoutBtn.addEventListener('click', function() {
+    localStorage.removeItem('construct-auth');
+    localStorage.removeItem('construct-user');
+    window.location.replace('login.html');
+});
+document.querySelector('.global-topbar').appendChild(logoutBtn);
+
 loadProjectName();
