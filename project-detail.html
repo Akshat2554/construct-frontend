@@ -270,13 +270,12 @@ async function loadLayout() {
                     <iframe src="https://construct-backend-production.up.railway.app/api/files/${drawings[0].fileName}" 
                         style="width:100%;height:100%;border:none;display:block"></iframe>
                 ` : `
-                    <div style="position:relative;width:100%;height:100%">
-                        <img id="drawing-img" src="${drawings[0].fileName}"
-                        crossorigin="anonymous"
-                            style="width:100%;height:100%;object-fit:contain;display:block;cursor:crosshair">
-                        <div id="pins-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
-                    </div>
-                `}
+    <div style="position:relative;width:100%;height:100%">
+        <canvas id="drawing-canvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas>
+        <img id="drawing-img" style="width:100%;height:100%;object-fit:contain;display:block;cursor:crosshair;display:none">
+        <div id="pins-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+    </div>
+`}
             </div>
 
             <!-- Right: Room List -->
@@ -309,6 +308,7 @@ async function loadLayout() {
     
     openAddRoomModal(x, y);
 });
+
         } else {
             img.addEventListener('load', function() {
                 renderPins(rooms);
@@ -328,7 +328,17 @@ async function loadLayout() {
             });
         }
     });
-}
+    fetch(drawings[0].fileName)
+            .then(r => r.blob())
+            .then(blob => {
+                let url = URL.createObjectURL(blob);
+                let img = document.getElementById('drawing-img');
+                if (img) {
+                    img.src = url;
+                    img.style.display = 'block';
+                }
+            });
+    }
 }
 
 function getImageRenderRect(img) {
