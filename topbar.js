@@ -4,7 +4,7 @@ async function loadProjectName() {
 }
 
 async function openProjectModal() {
-    let response = await fetch('https://construct-backend-production.up.railway.app/api/projects');
+    let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects');
     let projects = await response.json();
     let container = document.getElementById('project-list-modal');
     container.innerHTML = '';

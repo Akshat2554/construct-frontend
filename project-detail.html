@@ -5,6 +5,7 @@
         <link rel="stylesheet" href="styles.css">
         <script src="cart.js"></script>
         <script src="auth.js"></script>
+        <script src="api.js"></script>
     </head>
 <body>
 
@@ -91,7 +92,7 @@
 }
 
     async function loadProjectDetails() {
-    let response = await fetch('https://construct-backend-production.up.railway.app/api/projects/' + projectId);
+    let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects/' + projectId);
     let project = await response.json();
     document.getElementById('project-title').textContent = project.name;
     document.getElementById('project-subtitle').textContent = 
@@ -101,7 +102,7 @@
         (project.budget ? ' · ₹' + Number(project.budget).toLocaleString('en-IN') : '');
 
     // Load rooms and vendors for overview stats
-    let roomsRes = await fetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
+    let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
     let rooms = await roomsRes.json();
 
     let cart = getCart();
@@ -193,7 +194,7 @@ if (returnToRoom) {
     switchView('layout');
     // Wait for layout to load then open the room
     setTimeout(async function() {
-        let response = await fetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + returnToRoom);
+        let response = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + returnToRoom);
         let room = await response.json();
         openRoomDetail(room);
     }, 500);
@@ -202,10 +203,10 @@ if (returnToRoom) {
 let currentFloor = 1;
 
 async function loadLayout() {
-    let drawingsRes = await fetch('https://construct-backend-production.up.railway.app/api/drawings/' + projectId);
+    let drawingsRes = await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + projectId);
     let allDrawings = await drawingsRes.json();
     
-    let roomsRes = await fetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
+    let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
     let allRooms = await roomsRes.json();
 
     let savedFloors = JSON.parse(localStorage.getItem('floors-' + projectId)) || [1];
@@ -328,8 +329,8 @@ async function loadLayout() {
         }
     });
     let proxyUrl = 'https://construct-backend-production.up.railway.app/api/files/proxy?url=' + encodeURIComponent(drawings[0].fileName);
-console.log('fetching proxy:', proxyUrl);
-fetch(proxyUrl)
+console.log('authFetching proxy:', proxyUrl);
+authFetch(proxyUrl)
     .then(r => {
         console.log('response status:', r.status);
         return r.blob();
@@ -339,7 +340,7 @@ fetch(proxyUrl)
         let blobUrl = URL.createObjectURL(blob);
         // Re-query the element in case DOM changed
         let img = document.getElementById('drawing-img');
-        console.log('img after fetch:', img);
+        console.log('img after authFetch:', img);
         if (img) {
             img.src = blobUrl;
             console.log('src set successfully');
@@ -347,7 +348,7 @@ fetch(proxyUrl)
             console.log('img element gone - DOM was re-rendered');
         }
     })
-    .catch(e => console.log('fetch error:', e));
+    .catch(e => console.log('authFetch error:', e));
     }
 }
 
@@ -382,20 +383,20 @@ async function uploadDrawing(input, floorNumber, existingId) {
     }
 
     if (existingId) {
-        await fetch('https://construct-backend-production.up.railway.app/api/drawings/' + existingId, { method: 'DELETE' });
+        await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + existingId, { method: 'DELETE' });
     }
 
     let formData = new FormData();
     formData.append('file', file);
 
-    let uploadRes = await fetch('https://construct-backend-production.up.railway.app/api/files/upload', {
+    let uploadRes = await authFetch('https://construct-backend-production.up.railway.app/api/files/upload', {
         method: 'POST',
         body: formData
     });
     let fileName = await uploadRes.text();
 
     let today = new Date().toISOString().split('T')[0];
-    await fetch('https://construct-backend-production.up.railway.app/api/drawings', {
+    await authFetch('https://construct-backend-production.up.railway.app/api/drawings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -416,7 +417,7 @@ async function uploadDrawing(input, floorNumber, existingId) {
 
 async function deleteDrawing(id) {
     if (confirm('Delete this drawing? This cannot be undone.')) {
-        await fetch('https://construct-backend-production.up.railway.app/api/drawings/' + id, { method: 'DELETE' });
+        await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + id, { method: 'DELETE' });
         createVersion('Drawing deleted on Floor ' + currentFloor);
         loadLayout();
     }
@@ -425,19 +426,19 @@ async function deleteDrawing(id) {
 async function deleteFloor(floorNum) {
     if (confirm('Delete Floor ' + floorNum + '? All rooms and drawings on this floor will be deleted.')) {
         // Delete all rooms on this floor
-        let roomsRes = await fetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
+        let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
         let allRooms = await roomsRes.json();
         let floorRooms = allRooms.filter(r => parseInt(r.floorNumber) === floorNum);
         for (let room of floorRooms) {
-            await fetch('https://construct-backend-production.up.railway.app/api/rooms/' + room.id, { method: 'DELETE' });
+            await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + room.id, { method: 'DELETE' });
         }
 
         // Delete all drawings on this floor
-        let drawingsRes = await fetch('https://construct-backend-production.up.railway.app/api/drawings/' + projectId);
+        let drawingsRes = await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + projectId);
         let allDrawings = await drawingsRes.json();
         let floorDrawings = allDrawings.filter(d => parseInt(d.floorNumber) === floorNum);
         for (let drawing of floorDrawings) {
-            await fetch('https://construct-backend-production.up.railway.app/api/drawings/' + drawing.id, { method: 'DELETE' });
+            await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + drawing.id, { method: 'DELETE' });
         }
 
         // Remove from localStorage floors list
@@ -889,7 +890,7 @@ function calcFlooring() {
 }
 
 async function updateRoomDimension(roomId, field, value) {
-    let response = await fetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + roomId);
+    let response = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + roomId);
     let room = await response.json();
     room[field] = parseFloat(value);
     
@@ -901,7 +902,7 @@ async function updateRoomDimension(roomId, field, value) {
         if (areaInput) areaInput.value = newArea;
     }
     
-    await fetch('https://construct-backend-production.up.railway.app/api/rooms/' + roomId, {
+    await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + roomId, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(room)
@@ -926,7 +927,7 @@ function getEffectiveArea(roomId) {
 
 async function deleteRoom(id) {
     if (confirm('Delete this room? This cannot be undone.')) {
-        await fetch('https://construct-backend-production.up.railway.app/api/rooms/' + id, { method: 'DELETE' });
+        await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + id, { method: 'DELETE' });
         createVersion(name + ' deleted');
         loadLayout();
     }
@@ -953,7 +954,7 @@ document.getElementById('room-confirm').addEventListener('click', async function
         drawingId: null
     };
 
-    await fetch('https://construct-backend-production.up.railway.app/api/rooms', {
+    await authFetch('https://construct-backend-production.up.railway.app/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(room)

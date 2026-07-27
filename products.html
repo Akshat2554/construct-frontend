@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="cart.js"></script>
     <script src="auth.js"></script>
+    <script src="api.js"></script>
 </head>
 <body>
     <div class="global-topbar">
@@ -241,10 +242,10 @@ if (addingToRoom) {
             let supplierId = localStorage.getItem('selectedSupplierId');
             console.log('supplierId is:', supplierId);
 
-            let catalogResponse = await fetch('https://construct-backend-production.up.railway.app/api/catalogs/' + supplierId);
+            let catalogResponse = await authFetch('https://construct-backend-production.up.railway.app/api/catalogs/' + supplierId);
             let catalogs = await catalogResponse.json();
 
-            let productsResponse = await fetch('https://construct-backend-production.up.railway.app/api/products/' + supplierId);
+            let productsResponse = await authFetch('https://construct-backend-production.up.railway.app/api/products/' + supplierId);
             let products = await productsResponse.json();
 
             let grid = document.querySelector('.product-grid');
@@ -370,7 +371,7 @@ card.addEventListener('click', function(e) {
 
         async function deleteCatalog(id) {
     if (confirm('Delete this catalog?')) {
-        await fetch('https://construct-backend-production.up.railway.app/api/catalogs/' + id, { method: 'DELETE' });
+        await authFetch('https://construct-backend-production.up.railway.app/api/catalogs/' + id, { method: 'DELETE' });
         loadSupplierCatalog();
     }
 }
@@ -546,7 +547,7 @@ row.addEventListener('click', function(e) {
 };
 
                     if (product.name) {
-                        await fetch('https://construct-backend-production.up.railway.app/api/products', {
+                        await authFetch('https://construct-backend-production.up.railway.app/api/products', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(product)
@@ -583,7 +584,7 @@ row.addEventListener('click', function(e) {
             formData.append('file', file);
             formData.append('displayName', displayName);
 
-            await fetch('https://construct-backend-production.up.railway.app/api/catalogs/upload/' + supplierId, {
+            await authFetch('https://construct-backend-production.up.railway.app/api/catalogs/upload/' + supplierId, {
                 method: 'POST',
                 body: formData
             });
@@ -649,13 +650,13 @@ row.addEventListener('click', function(e) {
     }
 
     if (editingProductId) {
-        await fetch('https://construct-backend-production.up.railway.app/api/products/' + editingProductId, {
+        await authFetch('https://construct-backend-production.up.railway.app/api/products/' + editingProductId, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(product)
         });
     } else {
-        await fetch('https://construct-backend-production.up.railway.app/api/products', {
+        await authFetch('https://construct-backend-production.up.railway.app/api/products', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(product)
@@ -711,7 +712,7 @@ async function uploadProductImage(file) {
     let formData = new FormData();
     formData.append('file', file);
     
-    let response = await fetch('https://construct-backend-production.up.railway.app/api/files/upload', {
+    let response = await authFetch('https://construct-backend-production.up.railway.app/api/files/upload', {
         method: 'POST',
         body: formData
     });
@@ -730,7 +731,7 @@ async function uploadProductImage(file) {
 }
 
         async function editProduct(id) {
-            let response = await fetch('https://construct-backend-production.up.railway.app/api/products/single/' + id);
+            let response = await authFetch('https://construct-backend-production.up.railway.app/api/products/single/' + id);
             let prod = await response.json();
 
 
@@ -791,7 +792,7 @@ window._existingImageUrl = prod.imageURL || null;
 
         document.getElementById('delete-product-btn').addEventListener('click', async function() {
             if (confirm('Delete this product? This cannot be undone.')) {
-                await fetch('https://construct-backend-production.up.railway.app/api/products/' + editingProductId, {
+                await authFetch('https://construct-backend-production.up.railway.app/api/products/' + editingProductId, {
                     method: 'DELETE'
                 });
                 modal.classList.remove('open');
