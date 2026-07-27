@@ -762,7 +762,12 @@ function openRoomDetail(room) {
                             Formula: (Wall Area × Coats) ÷ Coverage
                         </div>
                         <div id="paint-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                       <button onclick="calcPaint()">Calculate</button>
+                       <button onclick="calcPaint()" 
+    style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.15s"
+    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+    onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">
+    Calculate
+</button>
                     </div>
 
                     <!-- Flooring -->
@@ -780,7 +785,12 @@ function openRoomDetail(room) {
                             Formula: Floor Area × (1 + Wastage%) ÷ Tile Area
                         </div>
                         <div id="floor-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcFlooring()">Calculate</button>
+                        <button onclick="calcFlooring()" 
+    style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.15s"
+    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+    onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">
+    Calculate
+</button>
                     </div>
 
                     <!-- False Ceiling -->
@@ -790,7 +800,12 @@ function openRoomDetail(room) {
                             Formula: Floor Area (tiles) + Perimeter ÷ 0.6 (edge trim in rft)
                         </div>
                         <div id="ceiling-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcCeiling()">Calculate</button>
+                        <button onclick="calcCeiling()" 
+    style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.15s"
+    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+    onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">
+    Calculate
+</button>
                     </div>
                 </div>
             </div>
