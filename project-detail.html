@@ -592,9 +592,10 @@ function renderPins(rooms) {
     layer.innerHTML = '';
     
     let img = document.getElementById('drawing-img');
-    if (!img) return;
-    
-    let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(img);
+let rect = img.getBoundingClientRect();
+console.log('container rect:', rect.width, rect.height);
+let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(img);
+console.log('rendered area:', offsetX, offsetY, renderedW, renderedH);
     
     rooms.forEach(function(room, index) {
         if (room.pinX === null || room.pinY === null) return;
