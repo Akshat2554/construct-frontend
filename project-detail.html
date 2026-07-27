@@ -272,7 +272,7 @@ async function loadLayout() {
                 ` : `
     <div style="position:relative;width:100%;height:100%">
         <canvas id="drawing-canvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas>
-        <img id="drawing-img" style="width:100%;height:100%;object-fit:contain;display:block;cursor:crosshair;display:none">
+        <img id="drawing-img" style="width:100%;height:100%;object-fit:contain;display:block;cursor:crosshair">
         <div id="pins-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
     </div>
 `}
@@ -329,6 +329,7 @@ async function loadLayout() {
         }
     });
     let proxyUrl = 'https://construct-backend-production.up.railway.app/api/files/proxy?url=' + encodeURIComponent(drawings[0].fileName);
+    console.log('fetching proxy:', proxyUrl);
 fetch(proxyUrl)
     .then(r => r.blob())
     .then(blob => {
