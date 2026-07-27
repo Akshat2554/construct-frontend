@@ -328,17 +328,15 @@ async function loadLayout() {
             });
         }
     });
-    fetch(drawings[0].fileName)
+    let proxyUrl = 'https://construct-backend-production.up.railway.app/api/files/proxy?url=' + encodeURIComponent(drawings[0].fileName);
+fetch(proxyUrl)
     .then(r => r.blob())
     .then(blob => {
         let url = URL.createObjectURL(blob);
-        console.log('blob url created:', url);
         let img = document.getElementById('drawing-img');
-        console.log('img element:', img);
         if (img) {
             img.src = url;
             img.style.display = 'block';
-            console.log('img src set to:', img.src);
         }
     });
     }
