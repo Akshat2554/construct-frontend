@@ -135,54 +135,53 @@
         };
 
         async function loadProjects() {
-            let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects');
-            let projects = await response.json();
-            let container = document.getElementById('projects-container');
-            container.innerHTML = '';
+    let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects');
+    let projects = await response.json();
+    
+    // Filter and sort first
+    let statusFilter = document.getElementById('filter-status').value;
+    let priorityFilter = document.getElementById('filter-priority').value;
+    let sortValue = document.getElementById('sort-projects').value;
+    if (statusFilter) projects = projects.filter(p => p.status === statusFilter);
+    if (priorityFilter) projects = projects.filter(p => p.priority === priorityFilter);
+    const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+    if (sortValue === 'priority-high') projects.sort((a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99));
+    if (sortValue === 'priority-low') projects.sort((a, b) => (priorityOrder[b.priority] || 99) - (priorityOrder[a.priority] || 99));
+    if (sortValue === 'name') projects.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortValue === 'budget-high') projects.sort((a, b) => (b.budget || 0) - (a.budget || 0));
 
-            if (projects.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted);padding:20px">No projects yet. Click + New Project to get started.</p>';
-                return;
-            }
+    let container = document.getElementById('projects-container');
+    container.innerHTML = '';
 
-            // Filter
-let statusFilter = document.getElementById('filter-status').value;
-let priorityFilter = document.getElementById('filter-priority').value;
-let sortValue = document.getElementById('sort-projects').value;
+    if (projects.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:20px">No projects yet.</p>';
+        return;
+    }
 
-if (statusFilter) projects = projects.filter(p => p.status === statusFilter);
-if (priorityFilter) projects = projects.filter(p => p.priority === priorityFilter);
+    // Fetch all data in parallel for all projects
+    let [allBoqResults, allConfirmedResults] = await Promise.all([
+        Promise.all(projects.map(p => 
+            authFetch(`https://construct-backend-production.up.railway.app/api/boq/${p.id}`).then(r => r.json())
+        )),
+        Promise.all(projects.map(p => 
+            authFetch(`https://construct-backend-production.up.railway.app/api/confirmed-categories/${p.id}`).then(r => r.json())
+        ))
+    ]);
 
-// Sort
-const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
-if (sortValue === 'priority-high') projects.sort((a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99));
-if (sortValue === 'priority-low') projects.sort((a, b) => (priorityOrder[b.priority] || 99) - (priorityOrder[a.priority] || 99));
-if (sortValue === 'name') projects.sort((a, b) => a.name.localeCompare(b.name));
-if (sortValue === 'budget-high') projects.sort((a, b) => (b.budget || 0) - (a.budget || 0));
+    projects.forEach(function(project, index) {
+        let boqItems = allBoqResults[index];
+        let confirmedItems = allConfirmedResults[index];
+        
+        let groups = {};
+        boqItems.forEach(item => { let k = item.category || 'Other'; if (!groups[k]) groups[k] = true; });
+        let totalCats = Object.keys(groups).length;
+        let confirmedCatsCount = confirmedItems.length;
+        let progress = totalCats > 0 ? Math.round((confirmedCatsCount / totalCats) * 100) : 0;
 
-            projects.forEach(function(project) {
-                let card = document.createElement('div');
-                card.style.cssText = `
-                    background: var(--surface);
-                    border: 1px solid var(--border);
-                    border-radius: 10px;
-                    padding: 20px 24px;
-                    margin-bottom: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                `;
-                let confirmed = JSON.parse(localStorage.getItem('confirmed-' + project.id)) || [];
-let cart = JSON.parse(localStorage.getItem('cart-' + project.id)) || [];
-let groups = {};
-cart.forEach(item => { let k = item.category || 'Other'; if (!groups[k]) groups[k] = true; });
-let totalCats = Object.keys(groups).length;
-let confirmedCats = confirmed.length;
-let progress = totalCats > 0 ? Math.round((confirmedCats / totalCats) * 100) : 0;
-
-card.innerHTML = `
+        // render card
+        let card = document.createElement('div');
+        card.style.cssText = `background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;`;
+        card.innerHTML = `
     <div style="flex:1;cursor:pointer" onclick="selectProject(${project.id}, '${project.name}')">
         <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
             <div style="font-size:17px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${project.name}</div>
@@ -217,7 +216,7 @@ card.innerHTML = `
             <div style="flex:1;height:3px;background:var(--border);border-radius:99px;overflow:hidden">
                 <div style="height:100%;width:${progress}%;background:var(--accent);border-radius:99px;transition:width 0.3s"></div>
             </div>
-            <span style="font-size:11.5px;color:var(--text-muted);white-space:nowrap;font-weight:500">${confirmedCats}/${totalCats} confirmed</span>
+            <span style="font-size:11.5px;color:var(--text-muted);white-space:nowrap;font-weight:500">${confirmedCatsCount}/${totalCats} confirmed</span>
         </div>
     </div>
 
@@ -231,17 +230,9 @@ card.innerHTML = `
         <button class="dots-btn" onclick="event.stopPropagation(); editProject(${project.id})">⋮</button>
     </div>
 `;
-                card.addEventListener('mouseover', function() {
-                    this.style.borderColor = 'var(--border-subtle)';
-                    this.style.background = 'var(--surface-raised)';
-                });
-                card.addEventListener('mouseout', function() {
-                    this.style.borderColor = 'var(--border)';
-                    this.style.background = 'var(--surface)';
-                });
-                container.appendChild(card);
-            });
-        }
+        container.appendChild(card);
+    });
+}
 
         function selectProject(id, name) {
             localStorage.setItem('selectedProjectId', id);

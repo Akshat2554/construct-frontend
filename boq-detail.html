@@ -516,51 +516,50 @@ tbody.appendChild(addSubRow);
         }
 
         // ===== Vendor Shortlist =====
-        let shortlist = JSON.parse(localStorage.getItem('shortlist-' + projectId)) || [];
+        
+        async function loadShortlist() {
+    let response = await authFetch(`https://construct-backend-production.up.railway.app/api/vendor-shortlist/${projectId}`);
+    let shortlist = await response.json();
+    
+    let container = document.getElementById('shortlist-container');
+    container.innerHTML = '';
 
-        function loadShortlist() {
-            document.getElementById('vendor-category').value = '';
-            let container = document.getElementById('shortlist-container');
-            container.innerHTML = '';
+    if (shortlist.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:20px 0">No vendors shortlisted yet.</p>';
+        return;
+    }
 
-            if (shortlist.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted);padding:20px 0">No vendors shortlisted yet.</p>';
-                return;
-            }
+    let table = document.createElement('table');
+    table.className = 'list-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Supplier</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="shortlist-tbody"></tbody>
+    `;
+    container.appendChild(table);
 
-            let table = document.createElement('table');
-            table.className = 'list-table';
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Supplier</th>
-                        <th>Status</th>
-                        <th>Notes</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="shortlist-tbody"></tbody>
-            `;
-            container.appendChild(table);
-
-            
-
-            let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
-            shortlist.forEach(function(vendor, index) {
-                let tbody = table.querySelector('#shortlist-tbody');
-                let row = document.createElement('tr');
-                row.innerHTML = `
-                    <td style="font-weight:500;color:var(--text-primary)">
-    ${vendor.name}
-    ${vendor.category ? `<span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;margin-left:6px;font-weight:500">${vendor.category}</span>` : ''}
-</td>
-                    <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
-                    <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
-                    <td><button onclick="removeVendor(${index})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+    let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
+    shortlist.forEach(function(vendor) {
+        let tbody = table.querySelector('#shortlist-tbody');
+        let row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="font-weight:500;color:var(--text-primary)">
+                ${vendor.supplierName}
+                ${vendor.category ? `<span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;margin-left:6px;font-weight:500">${vendor.category}</span>` : ''}
+            </td>
+            <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
+            <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
+            <td><button onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
 
         function addSubItem(productId, encodedCategory) {
     let category = decodeURIComponent(encodedCategory);
@@ -584,11 +583,12 @@ function removeSubItem(productId, encodedCategory, index) {
     saveSubItems(productId, category, items);
 }
 
-        function removeVendor(index) {
-            shortlist.splice(index, 1);
-            localStorage.setItem('shortlist-' + projectId, JSON.stringify(shortlist));
-            loadShortlist();
-        }
+async function removeVendor(id) {
+    await authFetch(`https://construct-backend-production.up.railway.app/api/vendor-shortlist/${id}`, {
+        method: 'DELETE'
+    });
+    loadShortlist();
+}
 
         function openVendorModal() {
             document.getElementById('vendor-name').value = '';
@@ -601,21 +601,25 @@ function removeSubItem(productId, encodedCategory, index) {
             document.getElementById('vendor-modal').classList.remove('open');
         });
 
-        document.getElementById('vendor-confirm').addEventListener('click', function() {
+        document.getElementById('vendor-confirm').addEventListener('click', async function() {
     let name = document.getElementById('vendor-name').value.trim();
     if (!name) { alert('Please enter a supplier name'); return; }
-    shortlist.push({
-        name,
-        category: document.getElementById('vendor-category').value,
-        status: document.getElementById('vendor-status').value,
-        notes: document.getElementById('vendor-notes').value.trim()
+    
+    await authFetch('https://construct-backend-production.up.railway.app/api/vendor-shortlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            supplierName: name,
+            category: document.getElementById('vendor-category').value,
+            status: document.getElementById('vendor-status').value,
+            notes: document.getElementById('vendor-notes').value.trim()
+        })
     });
-    localStorage.setItem('shortlist-' + projectId, JSON.stringify(shortlist));
-    createVersion('Vendor added: ' + name + ' (' + document.getElementById('vendor-status').value + ')');
+    
+    await createVersion('Vendor added: ' + name);
     document.getElementById('vendor-modal').classList.remove('open');
-    loadShortlist(); // keep this
-    // Add this if shortlist view isn't visible:
-    document.getElementById('view-shortlist').style.display = 'block';
+    loadShortlist();
 });
 
 async function toggleLongLead(productId, isLongLead) {
