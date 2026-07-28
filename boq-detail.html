@@ -174,8 +174,8 @@
             return (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        function getGroups() {
-            let cart = getCart();
+        async function getGroups() {
+            let cart = await getCart();
             let groups = {};
             cart.forEach(function(item) {
                 let key = item.category || 'Other';
@@ -253,8 +253,8 @@ document.getElementById('confirm-btn-category').onclick = function() {
             loadCategoryDetail(category);
         }
 
-        function loadVendorsUsed() {
-    let cart = getCart();
+        async function loadVendorsUsed() {
+    let cart = await getCart();
     let container = document.getElementById('view-vendors-used');
     container.innerHTML = '';
 
@@ -397,8 +397,8 @@ function toggleVendorCard(header) {
         }
 
         // ===== Category Detail =====
-        function loadCategoryDetail(category) {
-            let cart = getCart();
+        async function loadCategoryDetail(category) {
+            let cart = await getCart();
             let items = cart.filter(i => (i.category || 'Other') === category);
             let tbody = document.getElementById('category-tbody');
             let tfoot = document.getElementById('category-tfoot');
@@ -619,8 +619,8 @@ function removeSubItem(productId, encodedCategory, index) {
     document.getElementById('view-shortlist').style.display = 'block';
 });
 
-function toggleLongLead(productId, isLongLead) {
-    let cart = getCart();
+async function toggleLongLead(productId, isLongLead) {
+    let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
         item.isLongLead = isLongLead;
@@ -630,8 +630,8 @@ function toggleLongLead(productId, isLongLead) {
     }
 }
 
-function updateLeadWeeks(productId, weeks) {
-    let cart = getCart();
+async function updateLeadWeeks(productId, weeks) {
+    let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
         item.leadWeeks = parseInt(weeks);
@@ -640,8 +640,8 @@ function updateLeadWeeks(productId, weeks) {
 }
 
         // ===== Excel Export =====
-        function generateExcel() {
-    let cart = getCart();
+        async function generateExcel() {
+    let cart = await getCart();
     if (cart.length === 0) {
         alert('No items in cart to export');
         return;

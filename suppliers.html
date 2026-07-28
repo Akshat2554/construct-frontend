@@ -194,8 +194,8 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
             if (untyped.length > 0) renderSection('Other', untyped);
         }
 
-        function getCartQuantity(productId) {
-    let cart = getCart();
+        async function getCartQuantity(productId) {
+    let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     return item ? item.quantity : 0;
 }

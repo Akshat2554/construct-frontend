@@ -100,8 +100,8 @@ async function deleteCategory(id) {
     loadCategories();
 }
 
-function getCartQuantity(productId) {
-    let cart = getCart();
+async function getCartQuantity(productId) {
+    let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     return item ? item.quantity : 0;
 }

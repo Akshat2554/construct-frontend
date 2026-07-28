@@ -105,7 +105,7 @@
     let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
     let rooms = await roomsRes.json();
 
-    let cart = getCart();
+    let cart = await getCart();
     let boqValue = cart.reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.quantity || 1)), 0);
     let confirmed = getConfirmed();
     let groups = {};
@@ -661,7 +661,7 @@ function addFloor(floorNum) {
     loadLayout();
 }
 
-function openRoomDetail(room) {
+async function openRoomDetail(room) {
     let area = room.length && room.breadth 
         ? ((room.length * room.breadth) / 92903).toFixed(1)
         : 0;
@@ -669,7 +669,7 @@ function openRoomDetail(room) {
         ? ((2 * (room.length + room.breadth) * room.height) / 92903).toFixed(1)
         : 0;
 
-        let cart = getCart();
+        let cart = await getCart();
         let roomShortlist = cart.filter(item => item.roomId === room.id);
 
     document.getElementById('view-layout').innerHTML = `

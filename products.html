@@ -309,7 +309,7 @@ if (addingToRoom) {
             loadSupplierCatalog();
         }
 
-        function addToCartPayload(product) {
+         function addToCartPayload(product) {
     let safeName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\r?\n/g, ' ').replace(/\r/g, ' ');
     let safeSupplier = (supplier || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
     let safeCategory = (categoryName || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
@@ -327,13 +327,16 @@ if (addingToRoom) {
     return `addToCart({productId: ${product.id}, name: '${safeName}', productNumber: '${safeNumber}', supplierName: '${safeSupplier}', category: '${safeCategory}', unit: '${safeUnit}', unitPrice: ${product.price}, quantity: 1, totalPrice: ${product.price}})`;
 }
 
-        function renderProductsGrid(grid, products) {
-            console.log('renderProductsGrid called, products:', products.length);
+        async function renderProductsGrid(grid, products) {
+            window._renderedProducts = products;
+            let cart = await getCart();
             let cardRow = document.createElement('div');
             cardRow.style.cssText = 'grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:16px';
             grid.appendChild(cardRow);
 
             products.forEach(function(product) {
+                let qty = cart.filter(i => i.productId === product.id)
+                  .reduce((sum, i) => sum + (i.quantity || 0), 0);
                 let card = document.createElement('div');
                 card.className = 'product-tile-card';
                 card.innerHTML = `
@@ -355,7 +358,7 @@ if (addingToRoom) {
             ${!product.name || !product.unit || !product.price 
                 ? `<button disabled title="Missing name, unit, or price" 
                     style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--text-muted);border:none;font-size:18px;cursor:not-allowed;display:flex;align-items:center;justify-content:center">+</button>`
-                : `<div data-product-id="${product.id}">${renderCartControl(product)}</div>`
+                : `<div data-product-id="${product.id}">${buildCartControl(product.id, qty)}</div>`
             }
         </div>
     </div>
@@ -376,32 +379,10 @@ card.addEventListener('click', function(e) {
     }
 }
 
-function getCartQuantity(productId) {
-    let cart = getCart();
+async function getCartQuantity(productId) {
+    let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     return item ? item.quantity : 0;
-}
-
-function renderCartControl(product) {
-    let qty = getCartQuantity(product.id);
-    if (qty === 0) {
-        return `<button class="add-to-cart-btn" onclick="event.stopPropagation(); ${addToCartPayload(product)}; rerenderCartControl(${product.id})">+</button>`;
-    } else {
-        return `
-            <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
-                <button onclick="updateQuantity(${product.id}, ${qty - 1 === 0 ? 0 : qty - 1}); ${qty - 1 === 0 ? `removeFromCart(${product.id});` : ''} rerenderCartControl(${product.id})"
-                    style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
-                <span style="font-size:13px;font-weight:600;color:var(--accent);min-width:16px;text-align:center">${qty}</span>
-                <button onclick="updateQuantity(${product.id}, ${qty + 1}); rerenderCartControl(${product.id})"
-                    style="width:24px;height:24px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
-            </div>
-        `;
-    }
-}
-
-function rerenderCartControl(productId) {
-    updateCartCount();
-    loadSupplierCatalog();
 }
 
 function openProductDetail(product) {
@@ -442,17 +423,32 @@ function openProductDetail(product) {
         detailsPanel.style.paddingLeft = '0';
     }
 
-    document.getElementById('pd-add-btn').onclick = function() {
-        let payload = addToCartPayload(product);
-        eval(payload);
-        document.getElementById('product-detail-modal').classList.remove('open');
-        loadSupplierCatalog();
-    };
+    document.getElementById('pd-add-btn').onclick = async function() {
+    if (!product.name || !product.unit || !product.price) {
+        alert('Cannot add to BOQ: missing name, unit, or price');
+        return;
+    }
+    await addToCart({
+        productId: product.id,
+        name: product.name,
+        productNumber: product.productNumber || '',
+        supplierName: supplier || '',
+        category: categoryName || '',
+        unit: product.unit || '',
+        unitPrice: product.price,
+        quantity: 1,
+        totalPrice: product.price
+    });
+    alert(product.name + ' added to BOQ');
+    document.getElementById('product-detail-modal').classList.remove('open');
+    loadSupplierCatalog();
+};
 
     document.getElementById('product-detail-modal').classList.add('open');
 }
 
-        function renderProductsList(grid, products) {
+        async function renderProductsList(grid, products) {
+            let cart = await getCart();
             window._renderedProducts = products;
             let table = document.createElement('table');
             table.className = 'list-table';
@@ -479,6 +475,8 @@ function openProductDetail(product) {
             let tbody = table.querySelector('#products-tbody');
 
             products.forEach(function(product) {
+                let qty = cart.filter(i => i.productId === product.id)
+                  .reduce((sum, i) => sum + (i.quantity || 0), 0);
                 let row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -494,7 +492,7 @@ function openProductDetail(product) {
                     <td>${product.availability || '—'}</td>
                     <td style="color:#e8742a;font-weight:600">₹${product.price}</td>
                     <td><button class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button></td>
-                    <td data-product-id="${product.id}">${renderCartControl(product)}</td>
+                    <td data-product-id="${product.id}">${buildCartControl(product.id, qty)}</td>
                 `;
                 row.style.cursor = 'pointer';
 row.addEventListener('click', function(e) {
@@ -697,6 +695,50 @@ row.addEventListener('click', function(e) {
         return;
     }
     await uploadProductImage(file);
+}
+
+async function handleAddToCart(productId) {
+    let product = window._renderedProducts.find(p => p.id === productId);
+    if (!product) return;
+    
+    let roomId = localStorage.getItem('addingToRoom');
+    
+    if (roomId) {
+        await addToRoomShortlist(product.id, product.name, product.price, product.unit || '', roomId);
+    } else {
+        if (!product.name || !product.unit || !product.price) {
+            alert('Cannot add to BOQ: missing name, unit, or price');
+            return;
+        }
+        await addToCart({
+            productId: product.id,
+            name: product.name,
+            productNumber: product.productNumber || '',
+            supplierName: supplier || '',
+            category: categoryName || '',
+            unit: product.unit || '',
+            unitPrice: product.price,
+            quantity: 1,
+            totalPrice: product.price
+        });
+        alert(product.name + ' added to BOQ');
+    }
+    
+    document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(el => {
+        el.innerHTML = buildCartControl(productId, 1);
+    });
+    updateCartCount();
+}
+
+function buildCartControl(productId, qty) {
+    if (qty > 0) {
+        return `<button class="add-to-cart-btn" 
+            style="background:var(--success);font-size:14px;font-weight:700" 
+            onclick="event.stopPropagation(); handleAddToCart(${productId})" 
+            title="Added to BOQ">&check;</button>`;
+    }
+    return `<button class="add-to-cart-btn" 
+        onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
 }
 
 async function handleImageFile(input) {
