@@ -334,6 +334,12 @@ async function getGroups() {
         // ===== Summary =====
         async function loadSummary() {
             let groups = await getGroups();
+
+            let notesRes = await authFetch('https://construct-backend-production.up.railway.app/api/boq-notes/' + projectId);
+    let notesArray = await notesRes.json();
+    let categoryNotes = {};
+    notesArray.forEach(n => { categoryNotes[encodeURIComponent(n.category)] = n.notes; });
+    
             let tbody = document.getElementById('summary-tbody');
             let tfoot = document.getElementById('summary-tfoot');
             tbody.innerHTML = '';
@@ -363,12 +369,12 @@ async function getGroups() {
                     <td style="font-weight:500;color:var(--text-primary)">${category}</td>
                     <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
                     <td>
-    <input type="text" value="${localStorage.getItem('boq-notes-' + projectId + '-' + encodeURIComponent(category)) || ''}" 
+    <input type="text" value="${categoryNotes[encodeURIComponent(category)] || ''}" 
         placeholder="—"
         style="width:100%;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:13px;background:transparent;color:var(--text-secondary)"
         onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
         onblur="this.style.borderColor='transparent';this.style.background='transparent'"
-        onchange="localStorage.setItem('boq-notes-${projectId}-${encodeURIComponent(category)}', this.value)">
+        onchange="saveBoqNote('${encodeURIComponent(category)}', this.value)">
 </td>
                 `;
                 row.addEventListener('click', function() {
@@ -467,7 +473,7 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
                 tbody.appendChild(row);
                 
                 // Add sub-items rows
-let subItems = getSubItems(item.productId, category);
+let subItems = await getSubItems(item.productId, category);
 let letters = 'abcdefghijklmnopqrstuvwxyz';
 
 subItems.forEach(function(sub, si) {
@@ -477,10 +483,10 @@ subItems.forEach(function(sub, si) {
         <td colspan="10">
             <input type="text" value="${sub.text || ''}" placeholder="Sub-item description..."
                 style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;color:var(--text-secondary);background:transparent;outline:none"
-                onchange="updateSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}, this.value)">
+                onchange="(async()=>{await updateSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}, this.value);})()">
         </td>
         <td>
-            <button onclick="removeSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}); loadCategoryDetail('${category}')"
+            <button onclick="(async()=>{await removeSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}); await loadCategoryDetail('${category}');})()"
                 style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
                 onmouseover="this.style.color='var(--destructive)'"
                 onmouseout="this.style.color='var(--text-muted)'">✕</button>
@@ -493,7 +499,7 @@ subItems.forEach(function(sub, si) {
 let addSubRow = document.createElement('tr');
 addSubRow.innerHTML = `
     <td colspan="12" style="padding:2px 8px">
-        <button onclick="addSubItem(${item.productId}, '${encodeURIComponent(category)}'); loadCategoryDetail('${category}')"
+        <button onclick="(async()=>{await addSubItem(${item.productId}, '${encodeURIComponent(category)}'); await loadCategoryDetail('${category}');})()"
             style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11.5px;font-family:inherit;padding:2px 4px"
             onmouseover="this.style.color='var(--accent)'"
             onmouseout="this.style.color='var(--text-muted)'">+ add note</button>
@@ -516,7 +522,7 @@ tbody.appendChild(addSubRow);
         }
 
         // ===== Vendor Shortlist =====
-        
+
         async function loadShortlist() {
     let response = await authFetch(`https://construct-backend-production.up.railway.app/api/vendor-shortlist/${projectId}`);
     let shortlist = await response.json();
@@ -574,6 +580,33 @@ function updateSubItem(productId, encodedCategory, index, value) {
     if (items[index]) {
         items[index].text = value;
         saveSubItems(productId, category, items);
+    }
+}
+
+async function saveBoqNote(encodedCategory, notes) {
+    let category = decodeURIComponent(encodedCategory);
+    
+    // Check if note exists first
+    let notesRes = await authFetch('https://construct-backend-production.up.railway.app/api/boq-notes/' + projectId);
+    let notesArray = await notesRes.json();
+    let existing = notesArray.find(n => n.category === category);
+    
+    if (existing) {
+        await authFetch('https://construct-backend-production.up.railway.app/api/boq-notes/' + existing.id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...existing, notes })
+        });
+    } else {
+        await authFetch('https://construct-backend-production.up.railway.app/api/boq-notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId: parseInt(projectId),
+                category,
+                notes
+            })
+        });
     }
 }
 

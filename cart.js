@@ -253,16 +253,52 @@ async function addToRoomShortlist(productId, name, price, unit, roomId) {
     alert(name + ' added to BOQ and room shortlist');
 }
 
-function getSubItems(productId, category) {
+async function getSubItems(productId, category) {
     let projectId = getProjectId();
-    let key = 'sub-items-' + projectId + '-' + productId + '-' + encodeURIComponent(category);
-    return JSON.parse(localStorage.getItem(key)) || [];
+    if (!projectId) return [];
+    let response = await authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${projectId}/${productId}?category=${encodeURIComponent(category)}`);
+    if (!response.ok) return [];
+    return await response.json();
 }
 
-function saveSubItems(productId, category, items) {
+async function addSubItem(productId, encodedCategory) {
+    let category = decodeURIComponent(encodedCategory);
     let projectId = getProjectId();
-    let key = 'sub-items-' + projectId + '-' + productId + '-' + encodeURIComponent(category);
-    localStorage.setItem(key, JSON.stringify(items));
+    let items = await getSubItems(productId, category);
+    await authFetch('https://construct-backend-production.up.railway.app/api/boq-subitems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            productId: parseInt(productId),
+            category,
+            sortOrder: items.length,
+            text: ''
+        })
+    });
+}
+
+async function updateSubItem(productId, encodedCategory, index, value) {
+    let category = decodeURIComponent(encodedCategory);
+    let items = await getSubItems(productId, category);
+    if (items[index]) {
+        await authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${items[index].id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...items[index], text: value })
+        });
+    }
+}
+
+async function removeSubItem(productId, encodedCategory, index) {
+    let category = decodeURIComponent(encodedCategory);
+    let items = await getSubItems(productId, category);
+    if (items[index]) {
+        await authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${items[index].id}`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+    }
 }
 
 async function createVersion(label, remarks) {
