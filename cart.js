@@ -15,14 +15,8 @@ function authHeaders() {
     };
 }
 
-let _cartCache = null;
-let _cartCacheTime = 0;
-
 async function getCart() {
-    let now = Date.now();
-    if (_cartCache && (now - _cartCacheTime) < 5000) {
-        return _cartCache; // use cache if less than 5 seconds old
-    }
+    if (_cartCache !== null) return _cartCache;
     let projectId = getProjectId();
     if (!projectId) return [];
     let response = await fetch(`${API}/api/boq/${projectId}`, {
@@ -30,21 +24,15 @@ async function getCart() {
     });
     if (!response.ok) return [];
     _cartCache = await response.json();
-    _cartCacheTime = now;
     return _cartCache;
 }
 
-function invalidateCartCache() {
-    _cartCache = null;
-}
-
+let _cartCache = null;
+let _cartCacheTime = 0;
 
 async function addToCart(product) {
     let projectId = getProjectId();
     if (!projectId) { alert('Please select a project first'); return; }
-    
-    console.log('addToCart called, projectId:', projectId);
-    console.log('token:', getToken());
     
     let response = await fetch(`${API}/api/boq`, {
         method: 'POST',
@@ -64,16 +52,25 @@ async function addToCart(product) {
             roomId: product.roomId || null
         })
     });
+    let saved = await response.json();
     
-    console.log('response status:', response.status);
-    let data = await response.text();
-    console.log('response body:', data);
-    
-    updateCartCount();
+    // Update cache directly instead of invalidating
+    if (_cartCache !== null) {
+        let existing = _cartCache.find(i => i.productId === saved.productId);
+        if (existing) {
+            existing.quantity = saved.quantity;
+        } else {
+            _cartCache.push(saved);
+        }
+    }
+    updateCartCountFromCache();
+}
+
+function invalidateCartCache() {
+    _cartCache = null;
 }
 
 async function removeFromCart(productId) {
-    invalidateCartCache();
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
@@ -81,8 +78,12 @@ async function removeFromCart(productId) {
             method: 'DELETE',
             headers: authHeaders()
         });
+        // Update cache directly
+        if (_cartCache !== null) {
+            _cartCache = _cartCache.filter(i => i.productId !== productId);
+        }
     }
-    updateCartCount();
+    updateCartCountFromCache();
 }
 
 async function updateCartCount() {
@@ -92,27 +93,18 @@ async function updateCartCount() {
     if (badge) badge.textContent = count;
 }
 
-async function updateCartCount() {
-    console.log('updateCartCount called, token:', getToken() ? 'exists' : 'missing');
-    let cart = await getCart();
-    console.log('cart length:', cart.length);
-    let badge = document.getElementById('cart-count');
-    console.log('badge element:', badge);
-    if (badge) badge.textContent = cart.length;
-}
-
 async function updateQuantity(productId, quantity) {
-    invalidateCartCache();
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
         item.quantity = parseInt(quantity);
-        item.totalPrice = item.quantity * item.unitPrice;
-        await fetch(`${API}/api/boq/${item.id}`, {
+        // Update API in background
+        fetch(`${API}/api/boq/${item.id}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
+        // Cache already updated since item is a reference
     }
 }
 
@@ -130,7 +122,6 @@ async function updatePrice(productId, price) {
 }
 
 async function updateInstallRate(productId, installRate) {
-    invalidateCartCache();
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
@@ -144,7 +135,6 @@ async function updateInstallRate(productId, installRate) {
 }
 
 async function updateRemarks(productId, remarks) {
-    invalidateCartCache();
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
@@ -249,14 +239,16 @@ async function addToRoomShortlist(productId, name, price, unit, roomId) {
             roomId: parseInt(roomId)
         })
     });
-    updateCartCount();
+    updateCartCountFromCache();
     alert(name + ' added to BOQ and room shortlist');
 }
 
 async function getSubItems(productId, category) {
     let projectId = getProjectId();
     if (!projectId) return [];
-    let response = await authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${projectId}/${productId}?category=${encodeURIComponent(category)}`);
+    let response = await fetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${projectId}/${productId}?category=${encodeURIComponent(category)}`, {
+        headers: authHeaders()
+    });
     if (!response.ok) return [];
     return await response.json();
 }
@@ -265,9 +257,9 @@ async function addSubItem(productId, encodedCategory) {
     let category = decodeURIComponent(encodedCategory);
     let projectId = getProjectId();
     let items = await getSubItems(productId, category);
-    await authFetch('https://construct-backend-production.up.railway.app/api/boq-subitems', {
+    await fetch('https://construct-backend-production.up.railway.app/api/boq-subitems', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
             projectId: parseInt(projectId),
             productId: parseInt(productId),
@@ -282,9 +274,9 @@ async function updateSubItem(productId, encodedCategory, index, value) {
     let category = decodeURIComponent(encodedCategory);
     let items = await getSubItems(productId, category);
     if (items[index]) {
-        await authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${items[index].id}`, {
+        await fetch(`${API}/api/boq-subitems/${items[index].id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({ ...items[index], text: value })
         });
     }
@@ -294,7 +286,7 @@ async function removeSubItem(productId, encodedCategory, index) {
     let category = decodeURIComponent(encodedCategory);
     let items = await getSubItems(productId, category);
     if (items[index]) {
-        await authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${items[index].id}`, {
+        await fetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${items[index].id}`, {
             method: 'DELETE',
             headers: authHeaders()
         });
@@ -314,9 +306,9 @@ async function createVersion(label, remarks) {
         vendorShortlist: []
     };
     
-    await authFetch('https://construct-backend-production.up.railway.app/api/versions', {
+    await fetch('https://construct-backend-production.up.railway.app/api/versions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
             projectId: parseInt(projectId),
             timestamp: new Date().toISOString(),

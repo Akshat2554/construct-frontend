@@ -91,6 +91,22 @@
     if (view === 'overview') loadProjectDetails();
 }
 
+let _projectData = null;
+
+async function loadAllProjectData() {
+    let [cart, confirmed, notes, subItems, shortlist, versions] = await Promise.all([
+        authFetch(`${API}/api/boq/${projectId}`).then(r => r.json()),
+        authFetch(`${API}/api/confirmed-categories/${projectId}`).then(r => r.json()),
+        authFetch(`${API}/api/boq-notes/${projectId}`).then(r => r.json()),
+        authFetch(`${API}/api/boq-subitems/project/${projectId}`).then(r => r.json()),
+        authFetch(`${API}/api/vendor-shortlist/${projectId}`).then(r => r.json()),
+        authFetch(`${API}/api/versions/${projectId}`).then(r => r.json())
+    ]);
+    
+    _projectData = { cart, confirmed, notes, subItems, shortlist, versions };
+    return _projectData;
+}
+
     async function loadProjectDetails() {
     let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects/' + projectId);
     let project = await response.json();

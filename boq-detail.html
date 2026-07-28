@@ -776,7 +776,11 @@ let remarks = localStorage.getItem(notesKey) || '';
 }
 
         // ===== Init =====
-        showSummary();
+        async function init() {
+            await loadSummary();
+            updateCartCountFromCache();
+        }
+        init();
         updateCartCount();
     </script>
 </body>
