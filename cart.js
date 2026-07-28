@@ -27,6 +27,12 @@ async function getCart() {
     return _cartCache;
 }
 
+function updateCartCountFromCache() {
+    let count = _cartCache ? _cartCache.length : 0;
+    let badge = document.getElementById('cart-count');
+    if (badge) badge.textContent = count;
+}
+
 let _cartCache = null;
 let _cartCacheTime = 0;
 

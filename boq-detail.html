@@ -6,10 +6,10 @@
     <title>BOQ — Construct</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-    <script src="cart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="auth.js"></script>
     <script src="api.js"></script>
+    <script src="cart.js"></script>
 </head>
 <body>
 
@@ -170,6 +170,12 @@
         let boqOpen = false;
 
         // ===== Helpers =====
+        function updateCartCountFromCache() {
+    let count = _cartCache ? _cartCache.length : 0;
+    let badge = document.getElementById('cart-count');
+    if (badge) badge.textContent = count;
+}
+
         function formatNum(n) {
             return (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -674,7 +680,7 @@ async function updateLeadWeeks(productId, weeks) {
     let categoryTotals = {};
 
     // ===== Category Sheets =====
-    Object.keys(groups).forEach(function(category) {
+    for (let category of Object.keys(groups)) {
     let items = groups[category];
     let sheetName = category.substring(0, 31);
     let letters = 'abcdefghijklmnopqrstuvwxyz';
@@ -685,7 +691,7 @@ async function updateLeadWeeks(productId, weeks) {
     let dataStartRow = 2;
     let currentRow = dataStartRow;
 
-    items.forEach(function(item, index) {
+    for (let [index, item] of items.entries()) {
         rows.push([
             index + 1,
             item.name,
@@ -701,14 +707,14 @@ async function updateLeadWeeks(productId, weeks) {
         currentRow++;
 
         // Sub-items
-        let subItems = getSubItems(item.productId, category);
+        let subItems = await getSubItems(item.productId, category);
         subItems.forEach(function(sub, si) {
             if (sub.text && sub.text.trim()) {
                 rows.push([letters[si], sub.text, '', '', '', '', '', '', '', '']);
                 currentRow++;
             }
         });
-    });
+    }
 
     let totalRow = currentRow;
     rows.push([
@@ -731,7 +737,7 @@ async function updateLeadWeeks(productId, weeks) {
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
-});
+}
         // ===== Summary Sheet =====
     let summaryRows = [];
     summaryRows.push(['S.No', 'Category', 'Grand Total (₹)', 'Remarks']);
@@ -739,11 +745,15 @@ async function updateLeadWeeks(productId, weeks) {
     let sno = 1;
     let firstDataRow = 2;
 
-    Object.keys(groups).forEach(function(category) {
+    let notesRes = await fetch(`${API}/api/boq-notes/${projectId}`, { headers: authHeaders() });
+let notesArray = await notesRes.json();
+let categoryNotes = {};
+notesArray.forEach(n => { categoryNotes[encodeURIComponent(n.category)] = n.notes; });
+
+    for (let category of Object.keys(groups)) {
     let sheetName = category.substring(0, 31);
     let totalRow = categoryTotals[sheetName];
-    let notesKey = 'boq-notes-' + projectId + '-' + encodeURIComponent(category);
-let remarks = localStorage.getItem(notesKey) || '';
+    let remarks = categoryNotes[encodeURIComponent(category)] || '';
     summaryRows.push([
         sno,
         category,
@@ -751,7 +761,7 @@ let remarks = localStorage.getItem(notesKey) || '';
         remarks
     ]);
     sno++;
-});
+}
 
     let lastDataRow = 1 + Object.keys(groups).length;
     summaryRows.push([
