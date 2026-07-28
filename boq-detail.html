@@ -203,8 +203,8 @@
             setActive('btn-boq');
         }
 
-        function buildCategoryNav() {
-            let groups = getGroups();
+        async function buildCategoryNav() {
+            let groups = await getGroups();
             let nav = document.getElementById('category-nav');
             nav.innerHTML = '';
             Object.keys(groups).forEach(function(cat) {
@@ -332,9 +332,20 @@ function toggleVendorCard(header) {
     loadVendorsUsed();
 }
 
+async function getGroups() {
+    let cart = await getCart();
+    let groups = {};
+    cart.forEach(function(item) {
+        let key = item.category || 'Other';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+    });
+    return groups;
+}
+
         // ===== Summary =====
-        function loadSummary() {
-            let groups = getGroups();
+        async function loadSummary() {
+            let groups = await getGroups();
             let tbody = document.getElementById('summary-tbody');
             let tfoot = document.getElementById('summary-tfoot');
             tbody.innerHTML = '';
@@ -647,7 +658,7 @@ async function updateLeadWeeks(productId, weeks) {
         return;
     }
 
-    let groups = getGroups();
+    let groups = await getGroups();
     let wb = XLSX.utils.book_new();
     let categoryTotals = {};
 
