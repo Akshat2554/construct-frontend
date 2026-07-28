@@ -412,7 +412,7 @@ async function getGroups() {
 
             let supTotal = 0, instTotal = 0, grandTotal = 0;
 
-            items.forEach(function(item, index) {
+            for (let [index, item] of items.entries()) {
                 let effectiveSupply = item.negotiatedSupplyRate !== null ? item.negotiatedSupplyRate : (item.unitPrice || 0);
 let effectiveInstall = item.negotiatedInstallRate !== null ? item.negotiatedInstallRate : (item.installRate || 0);
 let supAmt = (item.unitPrice || 0) * (item.quantity || 1);
@@ -507,7 +507,7 @@ addSubRow.innerHTML = `
 `;
 tbody.appendChild(addSubRow);
 
-            });
+            };
 
             tfoot.innerHTML = `
                 <tr style="font-weight:700;border-top:2px solid var(--border)">
