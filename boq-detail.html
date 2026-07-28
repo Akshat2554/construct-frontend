@@ -403,7 +403,11 @@ async function getGroups() {
 
         // ===== Category Detail =====
         async function loadCategoryDetail(category) {
-            let cart = await getCart();
+            let [cart, allSubItems] = await Promise.all([
+        getCart(),
+        authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/project/${projectId}`).then(r => r.json())
+    ]);
+
             let items = cart.filter(i => (i.category || 'Other') === category);
             let tbody = document.getElementById('category-tbody');
             let tfoot = document.getElementById('category-tfoot');
@@ -473,7 +477,10 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
                 tbody.appendChild(row);
                 
                 // Add sub-items rows
-let subItems = await getSubItems(item.productId, category);
+let subItems = allSubItems.filter(s => 
+        s.productId === item.productId && 
+        s.category === category
+    );
 let letters = 'abcdefghijklmnopqrstuvwxyz';
 
 subItems.forEach(function(sub, si) {
@@ -567,21 +574,6 @@ tbody.appendChild(addSubRow);
     });
 }
 
-        function addSubItem(productId, encodedCategory) {
-    let category = decodeURIComponent(encodedCategory);
-    let items = getSubItems(productId, category);
-    items.push({ text: '' });
-    saveSubItems(productId, category, items);
-}
-
-function updateSubItem(productId, encodedCategory, index, value) {
-    let category = decodeURIComponent(encodedCategory);
-    let items = getSubItems(productId, category);
-    if (items[index]) {
-        items[index].text = value;
-        saveSubItems(productId, category, items);
-    }
-}
 
 async function saveBoqNote(encodedCategory, notes) {
     let category = decodeURIComponent(encodedCategory);
@@ -608,12 +600,6 @@ async function saveBoqNote(encodedCategory, notes) {
             })
         });
     }
-}
-
-function removeSubItem(productId, encodedCategory, index) {
-    let category = decodeURIComponent(encodedCategory);
-    let items = getSubItems(productId, category).filter((_, i) => i !== index);
-    saveSubItems(productId, category, items);
 }
 
 async function removeVendor(id) {
