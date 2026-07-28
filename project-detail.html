@@ -572,9 +572,8 @@ function renderRoomList(rooms) {
     }
 
     rooms.forEach(function(room, index) {
-        let savedArea = localStorage.getItem('room-area-' + room.id);
-let area = savedArea !== null ? parseFloat(savedArea) : 
-    (room.length && room.breadth ? ((room.length * room.breadth) / 92903).toFixed(1) : 0);
+        let area = room.area || ((room.length && room.breadth) ? parseFloat(((room.length * room.breadth) / 92903).toFixed(1)) : 0);
+let wallArea = room.wallArea || 0;
 
         let card = document.createElement('div');
         card.style.cssText = `
@@ -911,12 +910,16 @@ async function updateRoomDimension(roomId, field, value) {
     let room = await response.json();
     room[field] = parseFloat(value);
     
-    // Recalculate area and wall area
     if (room.length && room.breadth) {
-        let newArea = ((room.length * room.breadth) / 92903).toFixed(1);
-        localStorage.setItem('room-area-' + roomId, newArea);
+        let newArea = parseFloat(((room.length * room.breadth) / 92903).toFixed(1));
+        let newWallArea = parseFloat((2 * (room.length + room.breadth) * (room.height || 3000) / 92903).toFixed(1));
+        room.area = newArea;
+        room.wallArea = newWallArea;
+        
         let areaInput = document.getElementById('area-input');
         if (areaInput) areaInput.value = newArea;
+        let wallInput = document.getElementById('wall-area-value');
+        if (wallInput) wallInput.value = newWallArea;
     }
     
     await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + roomId, {

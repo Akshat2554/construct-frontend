@@ -10,5 +10,9 @@ function authFetch(url, options = {}) {
             window.location.replace('login.html');
         }
         return response;
+    }).catch(err => {
+        console.error('Network error:', err);
+        alert('Connection error — please check your internet and try again.');
+        throw err;
     });
 }
