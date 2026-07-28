@@ -92,10 +92,13 @@ async function updateCartCount() {
     if (badge) badge.textContent = count;
 }
 
-function updateCartCountFromCache() {
-    let count = _cartCache ? _cartCache.length : 0;
+async function updateCartCount() {
+    console.log('updateCartCount called, token:', getToken() ? 'exists' : 'missing');
+    let cart = await getCart();
+    console.log('cart length:', cart.length);
     let badge = document.getElementById('cart-count');
-    if (badge) badge.textContent = count;
+    console.log('badge element:', badge);
+    if (badge) badge.textContent = cart.length;
 }
 
 async function updateQuantity(productId, quantity) {
