@@ -142,7 +142,8 @@ let shortlist = await shortlistRes.json();
             </div>
         </div>
     `;
-    let versions = JSON.parse(localStorage.getItem('versions-' + projectId)) || [];
+    let versionsRes = await authFetch('https://construct-backend-production.up.railway.app/api/versions/' + projectId);
+let versions = await versionsRes.json();
 
     let versionsHtml = versions.length === 0 
     ? '<p style="font-size:13px;color:var(--text-muted)">No activity yet.</p>'
@@ -452,11 +453,11 @@ async function deleteFloor(floorNum) {
     }
 }
 
-function addManualActivity() {
-    let label = prompt('Enter Activity');
+async function addManualActivity() {
+    let label = prompt('What happened?');
     if (!label) return;
-    let remarks = prompt('Any remarks or notes? (optional)');
-    createVersion(label, remarks || '');
+    let remarks = prompt('Any remarks? (optional)');
+    await createVersion(label, remarks || '');
     loadProjectDetails();
 }
 
@@ -466,7 +467,7 @@ function viewVersion(versionId) {
     if (!version) return;
 
     let date = new Date(version.timestamp).toLocaleString('en-IN');
-    let snapshot = version.snapshot;
+    let snapshot = JSON.parse(v.snapshotJson);
     let cart = snapshot.cart || [];
     let confirmed = snapshot.confirmed || [];
     let vendors = snapshot.vendorShortlist || [];

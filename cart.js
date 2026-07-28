@@ -266,11 +266,9 @@ function saveSubItems(productId, category, items) {
 }
 
 async function createVersion(label, remarks) {
-    // Version history stays in localStorage for now
     let projectId = getProjectId();
     if (!projectId) return;
     
-    let versions = JSON.parse(localStorage.getItem('versions-' + projectId)) || [];
     let cart = await getCart();
     let confirmed = await getConfirmed();
     
@@ -280,14 +278,15 @@ async function createVersion(label, remarks) {
         vendorShortlist: []
     };
     
-    versions.unshift({
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        label,
-        remarks: remarks || '',
-        snapshot
+    await authFetch('https://construct-backend-production.up.railway.app/api/versions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            timestamp: new Date().toISOString(),
+            label: label,
+            remarks: remarks || '',
+            snapshotJson: JSON.stringify(snapshot)
+        })
     });
-    
-    versions = versions.slice(0, 20);
-    localStorage.setItem('versions-' + projectId, JSON.stringify(versions));
 }
