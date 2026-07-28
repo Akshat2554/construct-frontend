@@ -110,11 +110,11 @@
                 </div>
                 <div id="shortlist-container"></div>
             </div>
+            <div id="view-vendors-used" style="display:none"></div>
         </div>
     </div>
 
     <!-- Used vendors view-->
-     <div id="view-vendors-used" style="display:none"></div>
 
     <!-- Add Vendor Modal -->
     <div class="modal-overlay" id="vendor-modal">
@@ -174,17 +174,6 @@
             return (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        async function getGroups() {
-            let cart = await getCart();
-            let groups = {};
-            cart.forEach(function(item) {
-                let key = item.category || 'Other';
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(item);
-            });
-            return groups;
-        }
-
         // ===== Sidebar nav =====
         function setActive(btnId) {
             document.querySelectorAll('.boq-nav-btn, .boq-cat-btn').forEach(b => b.classList.remove('active'));
@@ -236,20 +225,19 @@
             loadSummary();
         }
 
-        function showCategory(category) {
+        async function showCategory(category) {
             hideAll();
             document.getElementById('view-category').style.display = 'block';
             document.getElementById('confirm-btn-category').style.display = 'block';
             document.getElementById('view-label').textContent = category;
-let confirmed = isConfirmed(category);
+let confirmed = await isConfirmed(category);
 document.getElementById('confirm-btn-category').textContent = confirmed ? '✓ Confirmed' : 'Confirm BOQ';
 document.getElementById('confirm-btn-category').style.background = confirmed ? 'var(--success)' : 'var(--accent)';
-document.getElementById('confirm-btn-category').onclick = function() {
-    toggleConfirmed(category);
-    createVersion('BOQ confirmed: ' + category);
+document.getElementById('confirm-btn-category').onclick = async function() {
+    await toggleConfirmed(category);
+    await createVersion('BOQ confirmed: ' + category);
     showCategory(category);
 };
-            console.log('tbody exists?', document.getElementById('category-tbody'));
             loadCategoryDetail(category);
         }
 
@@ -421,8 +409,8 @@ async function getGroups() {
             items.forEach(function(item, index) {
                 let effectiveSupply = item.negotiatedSupplyRate !== null ? item.negotiatedSupplyRate : (item.unitPrice || 0);
 let effectiveInstall = item.negotiatedInstallRate !== null ? item.negotiatedInstallRate : (item.installRate || 0);
-let supAmt = effectiveSupply * (item.quantity || 1);
-let instAmt = effectiveInstall * (item.quantity || 1);
+let supAmt = (item.unitPrice || 0) * (item.quantity || 1);
+let instAmt = (item.installRate || 0) * (item.quantity || 1);
                 let total = supAmt + instAmt;
                 supTotal += supAmt;
                 instTotal += instAmt;
@@ -433,44 +421,44 @@ let instAmt = effectiveInstall * (item.quantity || 1);
                     <td>${index + 1}</td>
                     <td style="font-weight:500;color:var(--text-primary);min-width:160px">${item.name}</td>
                     <td style="padding:6px">
-                        ${item.imageUrl
-                            ? `<img src="${item.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">`
+                        ${item.imageURL
+                            ? `<img src="${item.imageURL}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">`
                             : `<div style="width:40px;height:40px;border-radius:4px;border:1px solid var(--border);background:var(--bg)"></div>`}
                     </td>
                     <td>${item.unit || '—'}</td>
                     <td>
                         <input type="number" value="${item.quantity || 1}" min="1"
                             style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="updateQuantity(${item.productId}, this.value); loadCategoryDetail('${category}'); loadSummary()">
+                            onchange="(async()=>{await updateQuantity(${item.productId}, this.value); await loadCategoryDetail('${category}'); await loadSummary();})()">
                     </td>
                     <td>
                         <input type="number" value="${item.unitPrice || 0}"
                             style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="updatePrice(${item.productId}, this.value); loadCategoryDetail('${category}'); loadSummary()">
+                            onchange="(async()=>{await updatePrice(${item.productId}, this.value); await loadCategoryDetail('${category}'); await loadSummary();})()">
                     </td>
                     <td>
                         <input type="number" value="${item.installRate || 0}"
                             style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="updateInstallRate(${item.productId}, this.value); loadCategoryDetail('${category}'); loadSummary()">
+                            onchange="(async()=>{await updateInstallRate(${item.productId}, this.value); await loadCategoryDetail('${category}'); await loadSummary();})()">
                     </td>
                     <td>
     <input type="number" value="${supAmt.toFixed(2)}"
         style="width:90px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
-        onchange="updatePrice(${item.productId}, this.value / ${item.quantity || 1}); loadCategoryDetail('${category}'); loadSummary()">
+        onchange="(async()=>{await updatePrice(${item.productId}, this.value / ${item.quantity || 1}); await loadCategoryDetail('${category}'); await loadSummary();})()">
 </td>
 <td>
     <input type="number" value="${instAmt.toFixed(2)}"
         style="width:90px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
-        onchange="updateInstallRate(${item.productId}, this.value / ${item.quantity || 1}); loadCategoryDetail('${category}'); loadSummary()">
+        onchange="(async()=>{await updateInstallRate(${item.productId}, this.value / ${item.quantity || 1}); await loadCategoryDetail('${category}'); await loadSummary();})()">
 </td>
                     <td>
                         <input type="text" value="${item.remarks || ''}" placeholder="—"
                             style="width:100px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="updateRemarks(${item.productId}, this.value)">
+                            onchange="(async()=>{await updateRemarks(${item.productId}, this.value);})()">
                     </td>
                     <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
                     <td>
-                        <button onclick="removeFromCart(${item.productId}); loadCategoryDetail('${category}'); loadSummary(); buildCategoryNav();"
+                        <button onclick="(async () => { await removeFromCart(${item.productId}); await loadCategoryDetail('${category}'); await loadSummary(); buildCategoryNav(); })()"
                             style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px"
                             onmouseover="this.style.color='var(--destructive)'"
                             onmouseout="this.style.color='var(--text-muted)'">✕</button>

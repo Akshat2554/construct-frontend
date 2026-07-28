@@ -250,6 +250,18 @@ async function addToRoomShortlist(productId, name, price, unit, roomId) {
     alert(name + ' added to BOQ and room shortlist');
 }
 
+function getSubItems(productId, category) {
+    let projectId = getProjectId();
+    let key = 'sub-items-' + projectId + '-' + productId + '-' + encodeURIComponent(category);
+    return JSON.parse(localStorage.getItem(key)) || [];
+}
+
+function saveSubItems(productId, category, items) {
+    let projectId = getProjectId();
+    let key = 'sub-items-' + projectId + '-' + productId + '-' + encodeURIComponent(category);
+    localStorage.setItem(key, JSON.stringify(items));
+}
+
 async function createVersion(label, remarks) {
     // Version history stays in localStorage for now
     let projectId = getProjectId();
