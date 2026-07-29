@@ -831,24 +831,25 @@ async function openRoomDetail(room) {
         let table = document.createElement('table');
         table.className = 'list-table';
         table.innerHTML = `
-            <thead><tr><th>Product</th><th>Remarks</th><th></th></tr></thead>
-            <tbody id="room-shortlist-tbody"></tbody>
-        `;
+    <thead><tr><th>Product</th><th>Qty</th><th>Remarks</th><th></th></tr></thead>
+    <tbody id="room-shortlist-tbody"></tbody>
+`;
         shortlistContainer.appendChild(table);
         let tbody = table.querySelector('#room-shortlist-tbody');
         assignments.forEach(function(assignment) {
-            let row = document.createElement('tr');
-            row.innerHTML = `
-                <td style="font-weight:500;color:var(--text-primary)">${assignment.productName}</td>
-                <td><input type="text" placeholder="Remarks..."
-                    style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;background:transparent;outline:none"></td>
-                <td><button onclick="removeRoomAssignment(${assignment.id})"
-                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
-                    onmouseover="this.style.color='var(--destructive)'"
-                    onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
-            `;
-            tbody.appendChild(row);
-        });
+    let row = document.createElement('tr');
+    row.innerHTML = `
+        <td style="font-weight:500;color:var(--text-primary)">${assignment.productName}</td>
+        <td style="color:var(--text-muted);font-size:13px">${assignment.quantity || '—'}</td>
+        <td><input type="text" placeholder="Remarks..." 
+            style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;background:transparent;outline:none"></td>
+        <td><button onclick="removeRoomAssignment(${assignment.id})"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
+            onmouseover="this.style.color='var(--destructive)'"
+            onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+    `;
+    tbody.appendChild(row);
+});
     }
 }
 

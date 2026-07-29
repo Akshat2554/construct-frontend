@@ -516,13 +516,19 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
                         <input type="number" value="${item.quantity || 1}" min="1"
                             style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
                             onchange="(async()=>{
-    let roomTotal = ${roomItems.filter(r => r.productId === item.productId).reduce((s,r) => s + (r.quantity||1), 0)};
     let newQty = parseInt(this.value);
-    if (newQty < roomTotal) {
-        alert('Cannot reduce below ' + roomTotal + ' — ' + roomTotal + ' units are assigned to rooms. Reduce from room shortlists first.');
+    let assignRes = await authFetch('${API}/api/room-assignments/boq/${item.id}?projectId=${projectId}');
+    let assignments = await assignRes.json();
+    let totalAssigned = assignments.reduce((s, a) => s + (a.quantity || 0), 0);
+    
+    if (newQty < totalAssigned) {
+        // Build room list for the popup
+        let roomDetails = assignments.map(a => a.roomName + ': ' + a.quantity).join('\\n');
+        alert('Cannot reduce to ' + newQty + ' — ' + totalAssigned + ' are already assigned to rooms:\\n' + roomDetails + '\\nPlease reassign from the BOQ Assign button first.');
         this.value = ${item.quantity};
         return;
     }
+    
     await updateQuantity(${item.productId}, this.value); 
     await loadCategoryDetail('${category}'); 
     await loadSummary();
@@ -738,34 +744,58 @@ async function openAssignModal(boqItemId, productName) {
     _assigningBoqItemId = boqItemId;
     _assigningProductName = productName;
     
-    document.getElementById('assign-product-name').textContent = productName;
+    // Get the BOQ item to know total quantity
+    let cart = await getCart();
+    let boqItem = cart.find(i => i.id === boqItemId);
+    let totalQty = boqItem ? (boqItem.quantity || 1) : 1;
     
-    // Fetch all rooms for this project
+    // Get existing assignments
+    let assignRes = await authFetch(`${API}/api/room-assignments/boq/${boqItemId}?projectId=${projectId}`);
+    let existing = await assignRes.json();
+    let totalAssigned = existing.reduce((s, a) => s + (a.quantity || 0), 0);
+    let remaining = totalQty - totalAssigned;
+    
+    // Set header info
+    document.getElementById('assign-product-name').innerHTML = `
+        <span style="font-weight:600;color:var(--text-primary)">${productName}</span>
+        <div style="display:flex;gap:16px;margin-top:8px">
+            <span style="font-size:12px;color:var(--text-muted)">BOQ Qty: <strong style="color:var(--text-primary)">${totalQty}</strong></span>
+            <span style="font-size:12px;color:var(--text-muted)">Assigned: <strong style="color:var(--accent)">${totalAssigned}</strong></span>
+            <span style="font-size:12px;color:var(--text-muted)">Remaining: <strong id="assign-remaining" style="color:${remaining < 0 ? 'var(--destructive)' : 'var(--success)'}">${remaining}</strong></span>
+        </div>
+    `;
+    
+    // Fetch all rooms
     let roomsRes = await authFetch(`${API}/api/rooms/${projectId}`);
     let rooms = await roomsRes.json();
     
-    // Fetch existing assignments for this BOQ item
-    let assignRes = await authFetch(`${API}/api/room-assignments/boq/${boqItemId}?projectId=${projectId}`);
-    let existing = await assignRes.json();
-    let assignedRoomIds = existing.map(a => a.roomId);
-    
-    // Build checklist
     let checklist = document.getElementById('assign-room-checklist');
     checklist.innerHTML = '';
     
     if (rooms.length === 0) {
-        checklist.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No rooms added to this project yet.</p>';
+        checklist.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No rooms added yet.</p>';
     }
     
     rooms.forEach(function(room) {
-        let checked = assignedRoomIds.includes(room.id);
-        let item = document.createElement('label');
-        item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer';
+        let existingAssignment = existing.find(a => a.roomId === room.id);
+        let assignedQty = existingAssignment ? existingAssignment.quantity : 0;
+        let checked = assignedQty > 0;
+        
+        let item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px';
         item.innerHTML = `
-            <input type="checkbox" value="${room.id}" ${checked ? 'checked' : ''}
-                style="width:16px;height:16px;accent-color:var(--accent)">
-            <span style="font-size:13px;color:var(--text-primary)">${room.name}</span>
-            <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${room.roomType || ''}</span>
+            <input type="checkbox" data-room-id="${room.id}" data-room-name=${room.name}" ${checked ? 'checked' : ''}
+                style="width:16px;height:16px;accent-color:var(--accent)"
+                onchange="toggleRoomQtyInput(this, ${room.id})">
+            <span style="font-size:13px;color:var(--text-primary);flex:1">${room.name}</span>
+            <span style="font-size:11px;color:var(--text-muted)">${room.roomType || ''}</span>
+            <div id="qty-input-${room.id}" style="display:${checked ? 'flex' : 'none'};align-items:center;gap:6px">
+                <input type="number" value="${assignedQty || 1}" min="1" max="${totalQty}"
+                    data-room-id="${room.id}"
+                    style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;text-align:center;background:var(--bg)"
+                    onchange="updateAssignTotal()">
+                <span style="font-size:12px;color:var(--text-muted)">${boqItem ? boqItem.unit || '' : ''}</span>
+            </div>
         `;
         checklist.appendChild(item);
     });
@@ -778,33 +808,78 @@ document.getElementById('assign-cancel').addEventListener('click', function() {
 });
 
 document.getElementById('assign-confirm').addEventListener('click', async function() {
-    let checklist = document.getElementById('assign-room-checklist');
-    let checkboxes = checklist.querySelectorAll('input[type="checkbox"]');
+    let cart = await getCart();
+    let boqItem = cart.find(i => i.id === _assigningBoqItemId);
+    let totalQty = boqItem ? (boqItem.quantity || 1) : 1;
     
-    // Delete all existing assignments for this BOQ item
+    // Calculate total being assigned
+    let checkboxes = document.querySelectorAll('#assign-room-checklist input[type="checkbox"]:checked');
+    let assignedTotal = 0;
+    let assignments = [];
+    
+    checkboxes.forEach(cb => {
+    let roomId = cb.dataset.roomId;
+    let roomName = cb.dataset.roomName;  // read from data attribute
+    let qtyInput = document.querySelector(`#qty-input-${roomId} input[type="number"]`);
+    let qty = parseInt(qtyInput?.value) || 1;
+    assignedTotal += qty;
+    assignments.push({ roomId: parseInt(roomId), roomName: roomName, quantity: qty });
+});
+    
+    if (assignedTotal > totalQty) {
+        alert(`Cannot assign ${assignedTotal} — BOQ only has ${totalQty}. Please reduce room quantities.`);
+        return;
+    }
+    
+    // Delete existing and recreate
     await authFetch(`${API}/api/room-assignments/boq/${_assigningBoqItemId}?projectId=${projectId}`, {
         method: 'DELETE'
     });
     
-    // Create new assignments for checked rooms
-    for (let checkbox of checkboxes) {
-        if (checkbox.checked) {
-            await authFetch(`${API}/api/room-assignments`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    projectId: parseInt(projectId),
-                    boqItemId: parseInt(_assigningBoqItemId),
-                    roomId: parseInt(checkbox.value),
-                    productName: _assigningProductName
-                })
-            });
-        }
+    for (let a of assignments) {
+        await authFetch(`${API}/api/room-assignments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId: parseInt(projectId),
+                boqItemId: parseInt(_assigningBoqItemId),
+                roomId: a.roomId,
+                quantity: a.quantity,
+                productName: _assigningProductName
+            })
+        });
     }
     
     document.getElementById('assign-modal').classList.remove('open');
     alert('Assignments saved');
 });
+
+function toggleRoomQtyInput(checkbox, roomId) {
+    let qtyDiv = document.getElementById('qty-input-' + roomId);
+    qtyDiv.style.display = checkbox.checked ? 'flex' : 'none';
+    updateAssignTotal();
+}
+
+async function updateAssignTotal() {
+    let cart = await getCart();
+    let boqItem = cart.find(i => i.id === _assigningBoqItemId);
+    let totalQty = boqItem ? (boqItem.quantity || 1) : 1;
+    
+    let checkboxes = document.querySelectorAll('#assign-room-checklist input[type="checkbox"]:checked');
+    let assignedTotal = 0;
+    checkboxes.forEach(cb => {
+        let roomId = cb.dataset.roomId;
+        let qtyInput = document.querySelector(`#qty-input-${roomId} input[type="number"]`);
+        if (qtyInput) assignedTotal += parseInt(qtyInput.value) || 0;
+    });
+    
+    let remaining = totalQty - assignedTotal;
+    // Update the remaining display
+    let assignedEl = document.querySelector('#assign-product-name strong:nth-child(2)');
+    // Simpler — just update the header text
+    document.getElementById('assign-remaining').textContent = remaining;
+    document.getElementById('assign-remaining').style.color = remaining < 0 ? 'var(--destructive)' : 'var(--success)';
+}
 
 function openProductDetail(product) {
     let modal = document.getElementById('product-detail-modal');
