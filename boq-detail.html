@@ -81,7 +81,7 @@
                         <tr>
                             <th rowspan="2" style="background:var(--bg)">S.No</th>
                             <th rowspan="2" style="background:var(--bg)">Description</th>
-                            <th rowspan="2" style="background:var(--bg)">Image</th>
+                            <th rowspan="2" style="background:var(--bg)">  </th>
                             <th rowspan="2" style="background:var(--bg)">Unit</th>
                             <th rowspan="2" style="background:var(--bg)">Qty</th>
                             <th colspan="2" style="text-align:center;background:var(--bg)">Rate (₹)</th>
@@ -148,6 +148,70 @@
             </div>
         </div>
     </div>
+
+    <div class="modal-overlay" id="assign-modal">
+        <div class="modal" style="width:420px">
+            <h2>Assign to Rooms</h2>
+            <p id="assign-product-name" style="font-size:13px;color:var(--text-muted);margin-bottom:16px"></p>
+            <div id="assign-room-checklist" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
+            <div class="modal-buttons">
+                <button id="assign-cancel">Cancel</button>
+                <button id="assign-confirm" class="add-btn">Assign</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="product-detail-modal">
+        <div class="modal" style="width:580px;max-width:95vw">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <h2 id="pd-name" style="font-size:18px;max-width:680px"></h2>
+                <button onclick="document.getElementById('product-detail-modal').classList.remove('open')"
+                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0">✕</button>
+            </div>
+    
+            <div style="display:flex;gap:0">
+                <!-- Image panel -->
+                <div id="pd-image-panel" style="display:none;width:280px;flex-shrink:0;min-height:200px;border-radius:8px;overflow:hidden;background:var(--bg)"></div>
+    
+                <!-- Details panel -->
+                <div id="pd-details-panel" style="flex:1">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Brand</div>
+                            <div id="pd-brand" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Code</div>
+                            <div id="pd-code" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Dimensions</div>
+                            <div id="pd-dimensions" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Unit</div>
+                            <div id="pd-unit" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Availability</div>
+                            <div id="pd-availability" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Price</div>
+                            <div id="pd-price" style="font-size:18px;font-weight:700;color:var(--accent)"></div>
+                        </div>
+                    </div>
+    
+                    <div id="pd-description-section" style="display:none;margin-bottom:16px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Description</div>
+                            <button class="desc-toggle" onclick="let d=document.getElementById('pd-description'); d.style.display=d.style.display==='none'?'block':'none'; this.textContent=d.style.display==='none'?'Show':'Hide'"
+                                style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit">Show</button>
+                        </div>
+                        <div id="pd-description" style="display:none;font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;white-space:pre-wrap;max-height:200px;overflow-y:auto"></div>
+                    </div>
+                </div>
+            </div>
 
     <!-- Project Selector Modal -->
     <div class="modal-overlay" id="project-modal">
@@ -360,43 +424,46 @@ async function getGroups() {
             let sno = 1;
 
             Object.keys(groups).forEach(function(category) {
-                let items = groups[category];
-                let supTotal = items.reduce((s, i) => s + (i.unitPrice * i.quantity), 0);
-                let instTotal = items.reduce((s, i) => s + ((i.installRate || 0) * i.quantity), 0);
-                let total = supTotal + instTotal;
-                grandSupply += supTotal;
-                grandInstall += instTotal;
-                grandTotal += total;
+    let items = groups[category];
+    let supTotal = items.reduce((s, i) => s + (i.unitPrice * i.quantity), 0);
+    let instTotal = items.reduce((s, i) => s + ((i.installRate || 0) * i.quantity), 0);
+    let total = supTotal + instTotal;
+    grandSupply += supTotal;
+    grandInstall += instTotal;
+    grandTotal += total;
 
-                let row = document.createElement('tr');
-                row.style.cursor = 'pointer';
-                row.innerHTML = `
-                    <td>${sno++}</td>
-                    <td style="font-weight:500;color:var(--text-primary)">${category}</td>
-                    <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
-                    <td>
-    <input type="text" value="${categoryNotes[encodeURIComponent(category)] || ''}" 
-        placeholder="—"
-        style="width:100%;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:13px;background:transparent;color:var(--text-secondary)"
-        onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
-        onblur="this.style.borderColor='transparent';this.style.background='transparent'"
-        onchange="saveBoqNote('${encodeURIComponent(category)}', this.value)">
-</td>
-                `;
-                row.addEventListener('click', function() {
-                    if (!boqOpen) {
-                        boqOpen = true;
-                        document.getElementById('category-nav').style.display = 'flex';
-                        document.getElementById('boq-arrow').textContent = '▴';
-                        buildCategoryNav();
-                    }
-                    showCategory(category);
-                    setActive('cat-btn-' + category.replace(/\s/g, ''));
-                });
-                row.addEventListener('mouseover', function() { this.style.background = 'var(--surface-raised)'; });
-                row.addEventListener('mouseout', function() { this.style.background = ''; });
-                tbody.appendChild(row);
-            });
+    let row = document.createElement('tr');
+    row.style.cursor = 'pointer';
+    row.innerHTML = `
+        <td>${sno++}</td>
+        <td style="font-weight:500;color:var(--text-primary)">${category}</td>
+        <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
+        <td>
+            <input type="text" value="${categoryNotes[encodeURIComponent(category)] || ''}" 
+                placeholder="—"
+                style="width:100%;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:13px;background:transparent;color:var(--text-secondary)"
+                onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+                onblur="this.style.borderColor='transparent';this.style.background='transparent'"
+                onchange="saveBoqNote('${encodeURIComponent(category)}', this.value)">
+        </td>
+    `;
+    row.addEventListener('click', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+        if (!boqOpen) {
+            boqOpen = true;
+            document.getElementById('category-nav').style.display = 'flex';
+            document.getElementById('boq-arrow').textContent = '▴';
+            buildCategoryNav();
+        }
+        showCategory(category);
+        setActive('cat-btn-' + category.replace(/\s/g, ''));
+    });
+    row.addEventListener('mouseover', function() { this.style.background = 'var(--surface-raised)'; });
+    row.addEventListener('mouseout', function() { this.style.background = ''; });
+    tbody.appendChild(row);
+});
+        
+
 
             tfoot.innerHTML = `
     <tr style="font-weight:700;border-top:2px solid var(--border)">
@@ -413,7 +480,7 @@ async function getGroups() {
         getCart(),
         authFetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/project/${projectId}`).then(r => r.json())
     ]);
-
+            let roomItems = cart.filter(i => i.roomId !== null && i.roomId !== undefined);
             let items = cart.filter(i => (i.category || 'Other') === category);
             let tbody = document.getElementById('category-tbody');
             let tfoot = document.getElementById('category-tfoot');
@@ -437,15 +504,29 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
                     <td>${index + 1}</td>
                     <td style="font-weight:500;color:var(--text-primary);min-width:160px">${item.name}</td>
                     <td style="padding:6px">
-                        ${item.imageURL
-                            ? `<img src="${item.imageURL}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">`
-                            : `<div style="width:40px;height:40px;border-radius:4px;border:1px solid var(--border);background:var(--bg)"></div>`}
-                    </td>
+    <button onclick="openAssignModal(${item.id}, '${item.name.replace(/'/g, "\\'")}')"
+        style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
+        Assign
+    </button>
+</td>
                     <td>${item.unit || '—'}</td>
                     <td>
                         <input type="number" value="${item.quantity || 1}" min="1"
                             style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="(async()=>{await updateQuantity(${item.productId}, this.value); await loadCategoryDetail('${category}'); await loadSummary();})()">
+                            onchange="(async()=>{
+    let roomTotal = ${roomItems.filter(r => r.productId === item.productId).reduce((s,r) => s + (r.quantity||1), 0)};
+    let newQty = parseInt(this.value);
+    if (newQty < roomTotal) {
+        alert('Cannot reduce below ' + roomTotal + ' — ' + roomTotal + ' units are assigned to rooms. Reduce from room shortlists first.');
+        this.value = ${item.quantity};
+        return;
+    }
+    await updateQuantity(${item.productId}, this.value); 
+    await loadCategoryDetail('${category}'); 
+    await loadSummary();
+})()">
                     </td>
                     <td>
                         <input type="number" value="${item.unitPrice || 0}"
@@ -480,6 +561,16 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
                             onmouseout="this.style.color='var(--text-muted)'">✕</button>
                     </td>
                 `;
+                let nameCell = row.querySelector('td:nth-child(2)');
+if (nameCell) {
+    nameCell.style.cursor = 'pointer';
+    nameCell.style.textDecoration = 'underline';
+    nameCell.addEventListener('click', async function(e) {
+        let response = await authFetch(`${API}/api/products/single/${item.productId}`);
+        let product = await response.json();
+        openProductDetail(product);
+    });
+}
                 tbody.appendChild(row);
                 
                 // Add sub-items rows
@@ -535,7 +626,67 @@ tbody.appendChild(addSubRow);
         }
 
         // ===== Vendor Shortlist =====
+        function openProductDetail(product) {
+    let modal = document.getElementById('product-detail-modal');
+    let hasImage = product.imageURL && product.imageURL.trim();
 
+    modal.querySelector('.modal').style.width = hasImage ? '780px' : '580px';
+
+    document.getElementById('pd-name').textContent = product.name || '—';
+    document.getElementById('pd-brand').textContent = product.brandName || '—';
+    document.getElementById('pd-code').textContent = product.productNumber || '—';
+    document.getElementById('pd-dimensions').textContent = product.dimensions || '—';
+    document.getElementById('pd-unit').textContent = product.unit || '—';
+    document.getElementById('pd-availability').textContent = product.availability ? product.availability + ' nos' : '—';
+    document.getElementById('pd-price').textContent = product.price ? '₹' + Number(product.price).toLocaleString('en-IN') : '—';
+
+    let descSection = document.getElementById('pd-description-section');
+    let descEl = document.getElementById('pd-description');
+    if (product.description && product.description.trim()) {
+        descEl.textContent = product.description;
+        descSection.style.display = 'block';
+    } else {
+        descSection.style.display = 'none';
+    }
+
+    // Show/hide image panel
+    let imagePanel = document.getElementById('pd-image-panel');
+    let detailsPanel = document.getElementById('pd-details-panel');
+    
+    if (hasImage) {
+        imagePanel.style.display = 'block';
+        imagePanel.innerHTML = `<img src="${product.imageURL}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;background:var(--bg)">`;
+        detailsPanel.style.borderLeft = '1px solid var(--border)';
+        detailsPanel.style.paddingLeft = '20px';
+    } else {
+        imagePanel.style.display = 'none';
+        detailsPanel.style.borderLeft = 'none';
+        detailsPanel.style.paddingLeft = '0';
+    }
+
+    document.getElementById('pd-add-btn').onclick = async function() {
+    if (!product.name || !product.unit || !product.price) {
+        alert('Cannot add to BOQ: missing name, unit, or price');
+        return;
+    }
+    await addToCart({
+        productId: product.id,
+        name: product.name,
+        productNumber: product.productNumber || '',
+        supplierName: supplier || '',
+        category: categoryName || '',
+        unit: product.unit || '',
+        unitPrice: product.price,
+        quantity: 1,
+        totalPrice: product.price
+    });
+    alert(product.name + ' added to BOQ');
+    document.getElementById('product-detail-modal').classList.remove('open');
+    loadSupplierCatalog();
+};
+
+    document.getElementById('product-detail-modal').classList.add('open');
+}
         async function loadShortlist() {
     let response = await authFetch(`https://construct-backend-production.up.railway.app/api/vendor-shortlist/${projectId}`);
     let shortlist = await response.json();
@@ -580,6 +731,121 @@ tbody.appendChild(addSubRow);
     });
 }
 
+let _assigningBoqItemId = null;
+let _assigningProductName = null;
+
+async function openAssignModal(boqItemId, productName) {
+    _assigningBoqItemId = boqItemId;
+    _assigningProductName = productName;
+    
+    document.getElementById('assign-product-name').textContent = productName;
+    
+    // Fetch all rooms for this project
+    let roomsRes = await authFetch(`${API}/api/rooms/${projectId}`);
+    let rooms = await roomsRes.json();
+    
+    // Fetch existing assignments for this BOQ item
+    let assignRes = await authFetch(`${API}/api/room-assignments/boq/${boqItemId}?projectId=${projectId}`);
+    let existing = await assignRes.json();
+    let assignedRoomIds = existing.map(a => a.roomId);
+    
+    // Build checklist
+    let checklist = document.getElementById('assign-room-checklist');
+    checklist.innerHTML = '';
+    
+    if (rooms.length === 0) {
+        checklist.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No rooms added to this project yet.</p>';
+    }
+    
+    rooms.forEach(function(room) {
+        let checked = assignedRoomIds.includes(room.id);
+        let item = document.createElement('label');
+        item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer';
+        item.innerHTML = `
+            <input type="checkbox" value="${room.id}" ${checked ? 'checked' : ''}
+                style="width:16px;height:16px;accent-color:var(--accent)">
+            <span style="font-size:13px;color:var(--text-primary)">${room.name}</span>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${room.roomType || ''}</span>
+        `;
+        checklist.appendChild(item);
+    });
+    
+    document.getElementById('assign-modal').classList.add('open');
+}
+
+document.getElementById('assign-cancel').addEventListener('click', function() {
+    document.getElementById('assign-modal').classList.remove('open');
+});
+
+document.getElementById('assign-confirm').addEventListener('click', async function() {
+    let checklist = document.getElementById('assign-room-checklist');
+    let checkboxes = checklist.querySelectorAll('input[type="checkbox"]');
+    
+    // Delete all existing assignments for this BOQ item
+    await authFetch(`${API}/api/room-assignments/boq/${_assigningBoqItemId}?projectId=${projectId}`, {
+        method: 'DELETE'
+    });
+    
+    // Create new assignments for checked rooms
+    for (let checkbox of checkboxes) {
+        if (checkbox.checked) {
+            await authFetch(`${API}/api/room-assignments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectId: parseInt(projectId),
+                    boqItemId: parseInt(_assigningBoqItemId),
+                    roomId: parseInt(checkbox.value),
+                    productName: _assigningProductName
+                })
+            });
+        }
+    }
+    
+    document.getElementById('assign-modal').classList.remove('open');
+    alert('Assignments saved');
+});
+
+function openProductDetail(product) {
+    let modal = document.getElementById('product-detail-modal');
+    let hasImage = product.imageURL && product.imageURL.trim();
+
+    modal.querySelector('.modal').style.width = hasImage ? '780px' : '580px';
+
+    document.getElementById('pd-name').textContent = product.name || '—';
+    document.getElementById('pd-brand').textContent = product.brandName || '—';
+    document.getElementById('pd-code').textContent = product.productNumber || '—';
+    document.getElementById('pd-dimensions').textContent = product.dimensions || '—';
+    document.getElementById('pd-unit').textContent = product.unit || '—';
+    document.getElementById('pd-availability').textContent = product.availability ? product.availability + ' nos' : '—';
+    document.getElementById('pd-price').textContent = product.price ? '₹' + Number(product.price).toLocaleString('en-IN') : '—';
+
+    let descSection = document.getElementById('pd-description-section');
+    let descEl = document.getElementById('pd-description');
+    if (product.description && product.description.trim()) {
+        descEl.textContent = product.description;
+        descSection.style.display = 'block';
+    } else {
+        descSection.style.display = 'none';
+    }
+
+    // Show/hide image panel
+    let imagePanel = document.getElementById('pd-image-panel');
+    let detailsPanel = document.getElementById('pd-details-panel');
+    
+    if (hasImage) {
+        imagePanel.style.display = 'block';
+        imagePanel.innerHTML = `<img src="${product.imageURL}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;background:var(--bg)">`;
+        detailsPanel.style.borderLeft = '1px solid var(--border)';
+        detailsPanel.style.paddingLeft = '20px';
+    } else {
+        imagePanel.style.display = 'none';
+        detailsPanel.style.borderLeft = 'none';
+        detailsPanel.style.paddingLeft = '0';
+    }
+
+    document.getElementById('product-detail-modal').classList.add('open');
+}
 
 async function saveBoqNote(encodedCategory, notes) {
     let category = decodeURIComponent(encodedCategory);

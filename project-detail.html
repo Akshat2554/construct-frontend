@@ -667,6 +667,13 @@ function openAddRoomModal(x, y) {
     document.getElementById('room-modal').classList.add('open');
 }
 
+async function removeRoomAssignment(id) {
+    await authFetch(`${API}/api/room-assignments/${id}`, { method: 'DELETE' });
+    let roomRes = await authFetch(`${API}/api/rooms/single/${currentRoomId}`);
+    let room = await roomRes.json();
+    openRoomDetail(room);
+}
+
 function addFloor(floorNum) {
     currentFloor = floorNum;
     let floors = JSON.parse(localStorage.getItem('floors-' + projectId)) || [1];
@@ -677,16 +684,17 @@ function addFloor(floorNum) {
     loadLayout();
 }
 
+let currentRoomId = null;
+
 async function openRoomDetail(room) {
+    currentRoomId = room.id;
+    
     let area = room.length && room.breadth 
         ? ((room.length * room.breadth) / 92903).toFixed(1)
         : 0;
     let wallArea = room.length && room.breadth && room.height
         ? ((2 * (room.length + room.breadth) * room.height) / 92903).toFixed(1)
         : 0;
-
-        let cart = await getCart();
-        let roomShortlist = cart.filter(item => item.roomId === room.id);
 
     document.getElementById('view-layout').innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
@@ -706,8 +714,6 @@ async function openRoomDetail(room) {
 
             <!-- Left: Dimensions + Calculators -->
             <div style="display:flex;flex-direction:column;gap:16px">
-
-                <!-- Dimensions card -->
                 <input type="hidden" id="wall-area-value" value="${wallArea}">
                 <input type="hidden" id="room-length-val" value="${room.length || 0}">
                 <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
@@ -715,56 +721,53 @@ async function openRoomDetail(room) {
                     <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Dimensions</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
                         <div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Length (mm)</div>
-    <input type="number" value="${room.length || ''}"
-        onclick="event.stopPropagation()"
-        onchange="updateRoomDimension(${room.id}, 'length', this.value)"
-        style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
-</div>
-<div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Breadth (mm)</div>
-    <input type="number" value="${room.breadth || ''}"
-        onclick="event.stopPropagation()"
-        onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
-        style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
-</div>
-<div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Height (mm)</div>
-    <input type="number" value="${room.height || ''}"
-        onclick="event.stopPropagation()"
-        onchange="updateRoomDimension(${room.id}, 'height', this.value)"
-        style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
-</div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Length (mm)</div>
+                            <input type="number" value="${room.length || ''}"
+                                onclick="event.stopPropagation()"
+                                onchange="updateRoomDimension(${room.id}, 'length', this.value)"
+                                style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Breadth (mm)</div>
+                            <input type="number" value="${room.breadth || ''}"
+                                onclick="event.stopPropagation()"
+                                onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
+                                style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Height (mm)</div>
+                            <input type="number" value="${room.height || ''}"
+                                onclick="event.stopPropagation()"
+                                onchange="updateRoomDimension(${room.id}, 'height', this.value)"
+                                style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+                        </div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--border)">
                         <div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Floor Area (editable)</div>
-    <div style="display:flex;align-items:baseline;gap:6px">
-        <input type="number" id="area-input" value="${area}"
-            onclick="event.stopPropagation()"
-            onchange="localStorage.setItem('room-area-${room.id}', this.value)"
-            style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
-        <span style="font-size:13px;color:var(--text-muted)">sqft</span>
-    </div>
-</div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Floor Area</div>
+                            <div style="display:flex;align-items:baseline;gap:6px">
+                                <input type="number" id="area-input" value="${area}"
+                                    onclick="event.stopPropagation()"
+                                    onchange="localStorage.setItem('room-area-${room.id}', this.value)"
+                                    style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
+                                <span style="font-size:13px;color:var(--text-muted)">sqft</span>
+                            </div>
+                        </div>
                         <div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Wall Area (editable)</div>
-    <div style="display:flex;align-items:baseline;gap:6px">
-        <input type="number" id="wall-area-value" value="${wallArea}"
-            onclick="event.stopPropagation()"
-            onchange="document.getElementById('wall-area-value').value = this.value"
-            style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
-        <span style="font-size:13px;color:var(--text-muted)">sqft</span>
-    </div>
-</div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Wall Area</div>
+                            <div style="display:flex;align-items:baseline;gap:6px">
+                                <input type="number" id="wall-area-input" value="${wallArea}"
+                                    onclick="event.stopPropagation()"
+                                    style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
+                                <span style="font-size:13px;color:var(--text-muted)">sqft</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Calculators -->
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
                     <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px">Calculators</div>
-                    
-                    <!-- Paint -->
                     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
                         <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Paint</div>
                         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
@@ -775,113 +778,78 @@ async function openRoomDetail(room) {
                             <input type="number" id="paint-coverage" value="120" min="1"
                                 style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
                         </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
-                            Formula: (Wall Area × Coats) ÷ Coverage
-                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Formula: (Wall Area × Coats) ÷ Coverage</div>
                         <div id="paint-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                       <button onclick="calcPaint()" 
-    style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.15s"
-    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-    onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">
-    Calculate
-</button>
+                        <button onclick="calcPaint()" style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer"
+                            onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+                            onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">Calculate</button>
                     </div>
-
-                    <!-- Flooring -->
                     <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
                         <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Flooring</div>
                         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
                             <label style="font-size:12px;color:var(--text-muted);width:80px">Tile (mm)</label>
-                            <input type="number" id="floor-tile" value="600" 
+                            <input type="number" id="floor-tile" value="600"
                                 style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
                             <label style="font-size:12px;color:var(--text-muted);width:80px">Wastage %</label>
                             <input type="number" id="floor-wastage" value="10"
                                 style="width:55px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
                         </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
-                            Formula: Floor Area × (1 + Wastage%) ÷ Tile Area
-                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Formula: Floor Area × (1 + Wastage%) ÷ Tile Area</div>
                         <div id="floor-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcFlooring()" 
-    style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.15s"
-    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-    onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">
-    Calculate
-</button>
+                        <button onclick="calcFlooring()" style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer"
+                            onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+                            onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">Calculate</button>
                     </div>
-
-                    <!-- False Ceiling -->
                     <div>
                         <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">False Ceiling</div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
-                            Formula: Floor Area (tiles) + Perimeter ÷ 0.6 (edge trim in rft)
-                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Formula: Floor Area (tiles) + Perimeter ÷ 0.6 (edge trim in rft)</div>
                         <div id="ceiling-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcCeiling()" 
-    style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.15s"
-    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-    onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">
-    Calculate
-</button>
+                        <button onclick="calcCeiling()" style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer"
+                            onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+                            onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">Calculate</button>
                     </div>
                 </div>
             </div>
 
             <!-- Right: Room Shortlist -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:12px">
-                <div style="display:flex;align-items:center;justify-content:space-between">
-                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Room Shortlist</div>
-                    <a href="catalog.html" onclick="localStorage.setItem('addingToRoom', '${room.id}')" 
-                        class="add-btn" style="font-size:11.5px;padding:5px 12px;text-decoration:none">+ Add from Catalog</a>
-                </div>
-
-                ${roomShortlist.length === 0 
-    ? `<p style="font-size:13px;color:var(--text-muted)">No items added yet.</p>`
-    : `<table class="list-table">
-        <thead>
-            <tr>
-                <th>S.No</th>
-                <th>Product</th>
-                <th>Price (₹)</th>
-                <th>Qty</th>
-                <th>Total (₹)</th>
-                <th>Remarks</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            ${roomShortlist.map((item, i) => `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td style="font-weight:500">${item.name}</td>
-                    <td>₹${(item.unitPrice || 0).toLocaleString('en-IN')}</td>
-                    <td>
-                        <input type="number" value="${item.quantity || 1}" min="1"
-                            style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="(async()=>{await updateQuantity(${item.productId}, this.value); openRoomById(${room.id});})()">
-                    </td>
-                    <td style="color:var(--accent);font-weight:600">₹${((item.unitPrice || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</td>
-                    <td>
-                        <input type="text" value="${item.remarks || ''}" placeholder="—"
-                            style="width:100px;padding:4px;border:1px solid transparent;border-radius:4px;font-family:inherit;font-size:12px;background:transparent"
-                            onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
-                            onblur="this.style.borderColor='transparent';this.style.background='transparent'"
-                            onchange="(async()=>{await updateRemarks(${item.productId}, this.value);})()">
-                    </td>
-                    <td>
-                        <button onclick="(async()=>{await removeFromCart(${item.productId}); openRoomById(${room.id});})()"
-                            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px"
-                            onmouseover="this.style.color='var(--destructive)'"
-                            onmouseout="this.style.color='var(--text-muted)'">✕</button>
-                    </td>
-                </tr>
-            `).join('')}
-        </tbody>
-    </table>`
-}
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Room Shortlist</div>
+                <div id="room-shortlist-container"></div>
             </div>
         </div>
     `;
+
+    // Load room assignments
+    let assignRes = await authFetch(`${API}/api/room-assignments/room/${room.id}?projectId=${projectId}`);
+    let assignments = await assignRes.json();
+
+    let shortlistContainer = document.getElementById('room-shortlist-container');
+
+    if (assignments.length === 0) {
+        shortlistContainer.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted)">No products assigned to this room yet. Assign from the BOQ.</p>';
+    } else {
+        let table = document.createElement('table');
+        table.className = 'list-table';
+        table.innerHTML = `
+            <thead><tr><th>Product</th><th>Remarks</th><th></th></tr></thead>
+            <tbody id="room-shortlist-tbody"></tbody>
+        `;
+        shortlistContainer.appendChild(table);
+        let tbody = table.querySelector('#room-shortlist-tbody');
+        assignments.forEach(function(assignment) {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="font-weight:500;color:var(--text-primary)">${assignment.productName}</td>
+                <td><input type="text" placeholder="Remarks..."
+                    style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;background:transparent;outline:none"></td>
+                <td><button onclick="removeRoomAssignment(${assignment.id})"
+                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
+                    onmouseover="this.style.color='var(--destructive)'"
+                    onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
 }
 
 // Calculator functions
