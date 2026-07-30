@@ -26,7 +26,7 @@
 
         <div class="page-body">
             <div class="sidebar">
-                <a href="suppliers.html" class="back-btn">Back to suppliers</a>
+                <a href="suppliers.html" class="back-btn">← Back to suppliers</a>
             </div>
 
             <div class="main-content">
@@ -219,14 +219,85 @@
 });
 
 function buildCartControl(productId, qty) {
-    if (qty > 0) {
+    let roomId = localStorage.getItem('addingToRoom');
+    if (roomId) {
         return `<button class="add-to-cart-btn" 
-            style="background:var(--success);font-size:16px;font-weight:100" 
-            onclick="event.stopPropagation(); handleAddToCart(${productId})" 
-            title="Added to BOQ — click to add again">✓</button>`;
+            onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
+    }
+    if (qty > 0) {
+        return `
+            <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden" onclick="event.stopPropagation()">
+                <button onclick="handleDecrease(${productId})"
+                    style="width:28px;height:28px;border:none;background:transparent;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                    onmouseover="this.style.background='var(--bg)'"
+                    onmouseout="this.style.background='transparent'">−</button>
+                <input type="number" value="${qty}" min="1"
+                    style="width:36px;height:28px;border:none;text-align:center;font-family:inherit;font-size:13px;font-weight:600;color:var(--text-primary);background:transparent;outline:none;-moz-appearance:textfield;appearance:textfield"
+                    onchange="handleQtyInput(${productId}, this.value)"
+                    onclick="event.stopPropagation()">
+                <button onclick="handleIncrease(${productId})"
+                    style="width:28px;height:28px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                    onmouseover="this.style.background='var(--bg)'"
+                    onmouseout="this.style.background='transparent'">+</button>
+            </div>
+        `;
     }
     return `<button class="add-to-cart-btn" 
         onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
+}
+
+async function handleIncrease(productId) {
+    if (!_cartCache) _cartCache = await getCart();
+    let item = _cartCache.find(i => i.productId === productId);
+    if (item) {
+        item.quantity += 1;
+        document.querySelectorAll(`[data-product-id="${productId}"] input`).forEach(el => el.value = item.quantity);
+        updateCartCountFromCache();
+        fetch(`${API}/api/boq/${item.id}`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify(item)
+        });
+    }
+}
+
+async function handleDecrease(productId) {
+    if (!_cartCache) _cartCache = await getCart();
+    let item = _cartCache.find(i => i.productId === productId);
+    if (!item) return;
+    if (item.quantity <= 1) {
+        _cartCache = _cartCache.filter(i => i.productId !== productId);
+        document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(el => {
+            el.innerHTML = buildCartControl(productId, 0);
+        });
+        updateCartCountFromCache();
+        fetch(`${API}/api/boq/${item.id}`, { method: 'DELETE', headers: authHeaders() });
+    } else {
+        item.quantity -= 1;
+        document.querySelectorAll(`[data-product-id="${productId}"] input`).forEach(el => el.value = item.quantity);
+        updateCartCountFromCache();
+        fetch(`${API}/api/boq/${item.id}`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify(item)
+        });
+    }
+}
+
+async function handleQtyInput(productId, value) {
+    let qty = parseInt(value);
+    if (isNaN(qty) || qty < 1) return;
+    if (!_cartCache) _cartCache = await getCart();
+    let item = _cartCache.find(i => i.productId === productId);
+    if (item) {
+        item.quantity = qty;
+        updateCartCountFromCache();
+        fetch(`${API}/api/boq/${item.id}`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify(item)
+        });
+    }
 }
 
 async function renderProductsList(grid, products) {

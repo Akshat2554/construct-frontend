@@ -513,27 +513,51 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
 </td>
                     <td>${item.unit || '—'}</td>
                     <td>
-                        <input type="number" value="${item.quantity || 1}" min="1"
-                            style="width:55px;padding:4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-family:inherit;font-size:13px;background:var(--bg)"
-                            onchange="(async()=>{
-    let newQty = parseInt(this.value);
-    let assignRes = await authFetch('${API}/api/room-assignments/boq/${item.id}?projectId=${projectId}');
-    let assignments = await assignRes.json();
-    let totalAssigned = assignments.reduce((s, a) => s + (a.quantity || 0), 0);
-    
-    if (newQty < totalAssigned) {
-        // Build room list for the popup
-        let roomDetails = assignments.map(a => a.roomName + ': ' + a.quantity).join('\\n');
-        alert('Cannot reduce to ' + newQty + ' — ' + totalAssigned + ' are already assigned to rooms:\\n' + roomDetails + '\\nPlease reassign from the BOQ Assign button first.');
-        this.value = ${item.quantity};
-        return;
-    }
-    
-    await updateQuantity(${item.productId}, this.value); 
-    await loadCategoryDetail('${category}'); 
-    await loadSummary();
-})()">
-                    </td>
+    <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <button onclick="(async()=>{
+            let newQty = ${(item.quantity||1)-1 < 1 ? 1 : (item.quantity||1)-1};
+            let assignRes = await authFetch('${API}/api/room-assignments/boq/${item.id}?projectId=${projectId}');
+            let assignments = await assignRes.json();
+            let totalAssigned = assignments.reduce((s, a) => s + (a.quantity || 0), 0);
+            if (newQty < totalAssigned) {
+                let roomDetails = assignments.map(a => a.roomName + ': ' + a.quantity).join('\\n');
+                alert('Cannot reduce to ' + newQty + ' — ' + totalAssigned + ' assigned to rooms:\\n' + roomDetails);
+                return;
+            }
+            await updateQuantity(${item.productId}, newQty);
+            await loadCategoryDetail('${category}');
+            await loadSummary();
+        })()"
+            style="width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+            onmouseover="this.style.background='var(--bg)'"
+            onmouseout="this.style.background='transparent'">−</button>
+        <input type="number" value="${item.quantity || 1}" min="1"
+            style="width:26px;height:20px;border:none;text-align:center;font-family:inherit;font-size:10px;font-weight:600;color:var(--text-primary);background:transparent;outline:none;-moz-appearance:textfield;appearance:textfield"
+            onchange="(async()=>{
+                let newQty = parseInt(this.value);
+                let assignRes = await authFetch('${API}/api/room-assignments/boq/${item.id}?projectId=${projectId}');
+                let assignments = await assignRes.json();
+                let totalAssigned = assignments.reduce((s, a) => s + (a.quantity || 0), 0);
+                if (newQty < totalAssigned) {
+                    let roomDetails = assignments.map(a => a.roomName + ': ' + a.quantity).join('\\n');
+                    alert('Cannot reduce to ' + newQty + ' — ' + totalAssigned + ' assigned to rooms:\\n' + roomDetails);
+                    this.value = ${item.quantity};
+                    return;
+                }
+                await updateQuantity(${item.productId}, newQty);
+                await loadCategoryDetail('${category}');
+                await loadSummary();
+            })()">
+        <button onclick="(async()=>{
+            await updateQuantity(${item.productId}, ${(item.quantity||1)+1});
+            await loadCategoryDetail('${category}');
+            await loadSummary();
+        })()"
+            style="width:22px;height:22px;border:none;background:transparent;color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+            onmouseover="this.style.background='var(--bg)'"
+            onmouseout="this.style.background='transparent'">+</button>
+    </div>
+</td>
                     <td>
                         <input type="number" value="${item.unitPrice || 0}"
                             style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
