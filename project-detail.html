@@ -38,6 +38,76 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="pin-modal">
+        <div class="modal" style="width:380px">
+            <h2 style="margin-bottom:8px">Pin Product</h2>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Which product is at this location?</p>
+            <div id="pin-product-checklist" style="max-height:240px;overflow-y:auto;margin-bottom:16px"></div>
+            <input type="text" id="pin-note-field" placeholder="Add a note (optional)"
+                style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);margin-bottom:16px">
+            <div class="modal-buttons">
+                <button id="pin-modal-cancel">Cancel</button>
+                <button id="pin-modal-confirm" class="add-btn">Place Pin</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="calc-modal">
+        <div class="modal" style="width:500px;max-width:95vw">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <h2 id="calc-modal-title" style="margin:0"></h2>
+                <button onclick="document.getElementById('calc-modal').classList.remove('open')"
+                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+            </div>
+    
+            <!-- Base area -->
+            <div style="background:var(--bg);border-radius:8px;padding:12px 16px;margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:12px;color:var(--text-muted)">Base Area</span>
+                    <span id="calc-base-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">—</span>
+                </div>
+            </div>
+    
+            <!-- Exclusions -->
+            <div style="margin-bottom:16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Exclusions</span>
+                    <button onclick="addCalcItem('exclusion')"
+                        style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Add</button>
+                </div>
+                <div id="calc-exclusions"></div>
+            </div>
+    
+            <!-- Inclusions -->
+            <div style="margin-bottom:16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Inclusions</span>
+                    <button onclick="addCalcItem('inclusion')"
+                        style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Add</button>
+                </div>
+                <div id="calc-inclusions"></div>
+            </div>
+    
+            <!-- Calculator specific inputs -->
+            <div id="calc-specific-inputs" style="margin-bottom:16px"></div>
+    
+            <!-- Working -->
+            <div style="background:var(--bg);border-radius:8px;padding:12px 16px;margin-bottom:16px">
+                <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Working</div>
+                <div id="calc-working" style="font-size:12.5px;color:var(--text-secondary);line-height:1.8"></div>
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:12px;color:var(--text-muted)">Result</span>
+                    <span id="calc-result-display" style="font-size:16px;font-weight:700;color:var(--accent)">—</span>
+                </div>
+            </div>
+    
+            <div class="modal-buttons">
+                <button onclick="document.getElementById('calc-modal').classList.remove('open')">Close</button>
+                <button id="calc-apply-btn" class="add-btn">Apply</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="room-modal">
         <div class="modal">
             <h2 id="room-modal-title">Add Room</h2>
@@ -69,6 +139,7 @@
 <script>
     let projectId = localStorage.getItem('selectedProjectId');
     let projectName = localStorage.getItem('selectedProjectName');
+    let _roomCalcValues = { paintCoats: 2, paintCoverage: 120, floorTile: 600, floorWastage: 10 };
 
     function switchView(view) {
     if (view === 'boq') {
@@ -603,8 +674,63 @@ let wallArea = room.wallArea || 0;
     });
 }
 
+async function renderRenderPins(renderId) {
+    let layer = document.getElementById('render-pins-layer');
+    if (!layer) return;
+    layer.innerHTML = '';
+    
+    let pinsRes = await authFetch(`${API}/api/render-pins/${renderId}`);
+    if (!pinsRes.ok) return;
+    let pins = await pinsRes.json();
+    console.log('render pins:', pins);
+    
+    pins.forEach(function(pin) {
+        let assignment = _renderAssignments.find(a => a.id === pin.roomAssignmentId);
+        let productName = assignment ? assignment.productName : 'Product';
+        
+        let pinEl = document.createElement('div');
+        pinEl.style.cssText = `
+            position:absolute;
+            left:${pin.pinX}%;
+            top:${pin.pinY}%;
+            transform:translate(-50%,-50%);
+            pointer-events:all;
+            z-index:10;
+        `;
+        
+        pinEl.innerHTML = `
+    <div style="width:20px;height:20px;background:var(--accent);border:2px solid white;border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white"
+        onmouseenter="document.getElementById('pin-tooltip-${pin.id}').style.display='block'"
+        onmouseleave="setTimeout(function(){var t=document.getElementById('pin-tooltip-${pin.id}');if(t&&!t.matches(':hover'))t.style.display='none'},200)">
+        ${pins.indexOf(pin) + 1}
+        <div id="pin-tooltip-${pin.id}" 
+            style="display:none;position:absolute;bottom:28px;left:50%;transform:translateX(-50%);background:white;border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,0.15);pointer-events:all;z-index:100;font-weight:normal"
+            onmouseleave="this.style.display='none'">
+            <div style="font-size:12.5px;font-weight:600;color:var(--text-primary);margin-bottom:4px">${productName}</div>
+            ${pin.note ? `<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:6px">${pin.note}</div>` : ''}
+            <button data-pin-id="${pin.id}"
+    style="font-size:11px;color:var(--destructive);background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Remove pin</button>
+        </div>
+    </div>
+`;
+        layer.appendChild(pinEl);
+
+        
+    });
+}
+
+async function deleteRenderPin(pinId) {
+    console.log('deleteRenderPin called, pinId:', pinId, 'currentRenderId:', currentRenderId);
+    let response = await authFetch(`${API}/api/render-pins/${pinId}`, { method: 'DELETE' });
+    console.log('delete status:', response.status);
+    if (response.ok) {
+        await renderRenderPins(currentRenderId);
+    }
+}
+
 function renderPins(rooms) {
     let layer = document.getElementById('pins-layer');
+    console.log('renderPins called, layer:', layer);
     if (!layer) return;
     layer.innerHTML = '';
     
@@ -689,179 +815,650 @@ let currentRoomId = null;
 async function openRoomDetail(room) {
     currentRoomId = room.id;
     
-    let area = room.length && room.breadth 
-        ? ((room.length * room.breadth) / 92903).toFixed(1)
-        : 0;
-    let wallArea = room.length && room.breadth && room.height
-        ? ((2 * (room.length + room.breadth) * room.height) / 92903).toFixed(1)
-        : 0;
+    let area = room.area || (room.length && room.breadth 
+        ? parseFloat(((room.length * room.breadth) / 92903).toFixed(1)) : 0);
+    let wallArea = room.wallArea || (room.length && room.breadth && room.height
+        ? parseFloat(((2 * (room.length + room.breadth) * room.height) / 92903).toFixed(1)) : 0);
+    let ceilingArea = area;
+
+    let [rendersRes, assignmentsRes] = await Promise.all([
+        authFetch(`${API}/api/room-renders/${room.id}`),
+        authFetch(`${API}/api/room-assignments/room/${room.id}?projectId=${projectId}`)
+    ]);
+    _renders = await rendersRes.json();
+    _renderAssignments = await assignmentsRes.json();
+    currentRenderId = _renders.length > 0 ? _renders[0].id : null;
+
+    // Hide sidebar, take full width
+    document.querySelector('.sidebar').style.display = 'none';
+    document.querySelector('.main-content > div:first-child').style.display = 'none';
+    document.querySelector('.main-content').style.padding = '0';
+    document.querySelector('.page-body').style.gridTemplateColumns = '1fr';
 
     document.getElementById('view-layout').innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-            <button onclick="loadLayout()" 
-                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:inherit;padding:0">
-                ← Back to Layout
-            </button>
-            <span style="color:var(--border)">|</span>
-            <span style="font-size:15px;font-weight:600;color:var(--text-primary)">${room.name}</span>
-            <span style="font-size:11px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:4px;font-weight:500">${room.roomType || '—'}</span>
-            <button onclick="deleteRoom(${room.id}, '${room.name}')" 
-                style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:inherit"
+
+        <!-- HEADER -->
+        <div style="display:flex;align-items:center;gap:0;padding:0 20px;height:56px;background:var(--surface);border-bottom:1px solid var(--border)">
+            
+            <!-- Back + Room name + tag -->
+            <div style="display:flex;align-items:center;gap:10px;min-width:200px">
+                <button onclick="loadLayout()" 
+                    style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;padding:0;line-height:1;transition:color 0.15s"
+                    onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">←</button>
+                <span style="font-size:17px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${room.name}</span>
+                <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:20px;font-weight:600">${room.roomType || '—'}</span>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
+
+            <!-- Dimensions — inline label + value -->
+            <div style="display:flex;align-items:center;gap:16px;flex:1">
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:500">L</span>
+                    <input type="number" value="${room.length || ''}" 
+                        onchange="updateRoomDimension(${room.id}, 'length', this.value)"
+                        placeholder="—"
+                        style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                    <span style="font-size:10px;color:var(--text-muted)">mm</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:500">B</span>
+                    <input type="number" value="${room.breadth || ''}" 
+                        onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
+                        placeholder="—"
+                        style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                    <span style="font-size:10px;color:var(--text-muted)">mm</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:500">H</span>
+                    <input type="number" value="${room.height || ''}" 
+                        onchange="updateRoomDimension(${room.id}, 'height', this.value)"
+                        placeholder="—"
+                        style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                    <span style="font-size:10px;color:var(--text-muted)">mm</span>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
+
+            <!-- Area stats — clean text, no boxes -->
+            <div style="display:flex;align-items:center;gap:20px">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Wall</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${wallArea} <span style="font-size:10px;color:var(--text-muted);font-weight:400">sqft</span></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Floor</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${area} <span style="font-size:10px;color:var(--text-muted);font-weight:400">sqft</span></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Ceiling</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${ceilingArea} <span style="font-size:10px;color:var(--text-muted);font-weight:400">sqft</span></span>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
+
+            <!-- Delete -->
+            <button onclick="deleteRoom(${room.id}, '${room.name}')"
+                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;font-family:inherit;transition:color 0.15s"
                 onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">Delete Room</button>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- hidden inputs for calculators -->
+        <input type="hidden" id="area-input" value="${area}">
+        <input type="hidden" id="wall-area-value" value="${wallArea}">
+        <input type="hidden" id="room-length-val" value="${room.length || 0}">
+        <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
 
-            <!-- Left: Dimensions + Calculators -->
-            <div style="display:flex;flex-direction:column;gap:16px">
-                <input type="hidden" id="wall-area-value" value="${wallArea}">
-                <input type="hidden" id="room-length-val" value="${room.length || 0}">
-                <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
-                <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Dimensions</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Length (mm)</div>
-                            <input type="number" value="${room.length || ''}"
-                                onclick="event.stopPropagation()"
-                                onchange="updateRoomDimension(${room.id}, 'length', this.value)"
-                                style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
+        <!-- THREE COLUMN BODY -->
+<div style="display:grid;grid-template-columns:55fr 25fr 20fr;gap:10px;padding:12px;height:calc(100vh - 80px);background:var(--bg)">
+
+            <!-- LEFT: Renders -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden">
+                
+                <!-- Thumbnail strip -->
+<div style="display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;min-height:140px;align-items:center">
+                            ${_renders.map((r, i) => `
+                        <div onclick="switchRender(${r.id})" id="thumb-${r.id}"
+                            style="position:relative;flex-shrink:0;width:160px;height:110px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ${i === 0 ? 'var(--accent)' : 'var(--border)'}">
+                            <img src="${r.fileName}" style="width:100%;height:100%;object-fit:cover">
+                            <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);padding:2px 5px;font-size:9px;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.displayName || 'View ' + (i+1)}</div>
+                            <button onclick="event.stopPropagation();deleteRender(${r.id})"
+                                style="position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:white;font-size:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
                         </div>
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Breadth (mm)</div>
-                            <input type="number" value="${room.breadth || ''}"
-                                onclick="event.stopPropagation()"
-                                onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
-                                style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
-                        </div>
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Height (mm)</div>
-                            <input type="number" value="${room.height || ''}"
-                                onclick="event.stopPropagation()"
-                                onchange="updateRoomDimension(${room.id}, 'height', this.value)"
-                                style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit">
-                        </div>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--border)">
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Floor Area</div>
-                            <div style="display:flex;align-items:baseline;gap:6px">
-                                <input type="number" id="area-input" value="${area}"
-                                    onclick="event.stopPropagation()"
-                                    onchange="localStorage.setItem('room-area-${room.id}', this.value)"
-                                    style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
-                                <span style="font-size:13px;color:var(--text-muted)">sqft</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Wall Area</div>
-                            <div style="display:flex;align-items:baseline;gap:6px">
-                                <input type="number" id="wall-area-input" value="${wallArea}"
-                                    onclick="event.stopPropagation()"
-                                    style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:18px;font-weight:700;color:var(--accent);background:var(--bg);font-family:inherit">
-                                <span style="font-size:13px;color:var(--text-muted)">sqft</span>
-                            </div>
-                        </div>
-                    </div>
+                    `).join('')}
+                    <label style="flex-shrink:0;width:90px;height:90px;border:2px dashed var(--border);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);gap:2px;transition:border-color 0.15s"
+                        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                        <span style="font-size:18px;line-height:1">+</span>
+                        <span style="font-size:9px">Add</span>
+                        <input type="file" accept="image/*" style="display:none" onchange="uploadRender(this, ${room.id})">
+                    </label>
                 </div>
 
-                <!-- Calculators -->
-                <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px">Calculators</div>
-                    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Paint</div>
-                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                            <label style="font-size:12px;color:var(--text-muted);width:80px">Coats</label>
-                            <input type="number" id="paint-coats" value="2" min="1" max="5"
-                                style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
-                            <label style="font-size:12px;color:var(--text-muted);width:120px">Coverage (sqft/L)</label>
-                            <input type="number" id="paint-coverage" value="120" min="1"
-                                style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
-                        </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Formula: (Wall Area × Coats) ÷ Coverage</div>
-                        <div id="paint-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcPaint()" style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer"
-                            onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-                            onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">Calculate</button>
-                    </div>
-                    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Flooring</div>
-                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                            <label style="font-size:12px;color:var(--text-muted);width:80px">Tile (mm)</label>
-                            <input type="number" id="floor-tile" value="600"
-                                style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
-                            <label style="font-size:12px;color:var(--text-muted);width:80px">Wastage %</label>
-                            <input type="number" id="floor-wastage" value="10"
-                                style="width:55px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)">
-                        </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Formula: Floor Area × (1 + Wastage%) ÷ Tile Area</div>
-                        <div id="floor-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcFlooring()" style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer"
-                            onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-                            onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">Calculate</button>
-                    </div>
-                    <div>
-                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">False Ceiling</div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Formula: Floor Area (tiles) + Perimeter ÷ 0.6 (edge trim in rft)</div>
-                        <div id="ceiling-result" style="font-size:13px;font-weight:600;color:var(--accent)"></div>
-                        <button onclick="calcCeiling()" style="margin-top:8px;padding:6px 14px;border:1px solid var(--accent);border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-family:inherit;cursor:pointer"
-                            onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-                            onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">Calculate</button>
+                <!-- Render canvas -->
+                <div style="flex:1;padding:10px;overflow:hidden">
+                    <div id="render-canvas" style="width:100%;height:100%;border-radius:8px;position:relative;background:#111;cursor:crosshair;overflow:hidden">
+                        ${_renders.length === 0 ? `
+                            <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#666">
+                                <div style="font-size:44px">🏠</div>
+                                <div style="font-size:13px">Upload a render to get started</div>
+                                <label style="padding:8px 18px;background:var(--accent);color:white;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">
+                                    Upload Render
+                                    <input type="file" accept="image/*" style="display:none" onchange="uploadRender(this, ${room.id})">
+                                </label>
+                            </div>
+                        ` : `
+                            <img id="render-img" src="${_renders[0].fileName}"
+                                style="width:100%;height:100%;object-fit:contain;display:block">
+                            <div id="render-pins-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                        `}
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Room Shortlist -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Room Shortlist</div>
-                <div id="room-shortlist-container"></div>
+            <!-- MIDDLE: Calculators -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow-y:auto;display:flex;flex-direction:column">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+                    <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Calculators</span>
+                </div>
+
+                <!-- Column headers -->
+                <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0">
+                    <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Item</span>
+                    <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Calc</span>
+                    <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Final</span>
+                </div>
+
+                <!-- Paint section -->
+<div style="border-bottom:1px solid var(--border)">
+    <div style="padding:12px 16px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                onclick="openCalcModal('paint')">Paint</span>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 16px 10px">
+        <span style="font-size:12px;color:var(--text-secondary)">Paint (L)</span>
+        <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">—</span>
+        <div style="width:70px;text-align:right">
+            <input type="number" id="paint-final" placeholder="—"
+                style="width:58px;padding:3px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg);font-family:inherit">
+        </div>
+    </div>
+</div>
+
+                <!-- Flooring section -->
+<div style="border-bottom:1px solid var(--border)">
+    <div style="padding:12px 16px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                onclick="openCalcModal('flooring')">Flooring</span>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 16px 10px">
+        <span style="font-size:12px;color:var(--text-secondary)">Flooring (L)</span>
+        <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">—</span>
+        <div style="width:70px;text-align:right">
+            <input type="number" id="flooring-final" placeholder="—"
+                style="width:58px;padding:3px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg);font-family:inherit">
+        </div>
+    </div>
+</div>
+                <!-- Ceiling section -->
+<div style="border-bottom:1px solid var(--border)">
+    <div style="padding:12px 16px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                onclick="openCalcModal('ceiling')">Ceiling</span>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 16px 10px">
+        <span style="font-size:12px;color:var(--text-secondary)">Ceiling (L)</span>
+        <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">—</span>
+        <div style="width:70px;text-align:right">
+            <input type="number" id="ceiling-final" placeholder="—"
+                style="width:58px;padding:3px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg);font-family:inherit">
+        </div>
+    </div>
+</div>
+</div>
+
+            <!-- RIGHT: Room Shortlist -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+                    <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Room Shortlist</span>
+                </div>
+                <div id="room-shortlist-container" style="padding:12px 16px;overflow-y:auto;flex:1"></div>
             </div>
         </div>
     `;
 
-    // Load room assignments
-    let assignRes = await authFetch(`${API}/api/room-assignments/room/${room.id}?projectId=${projectId}`);
-    let assignments = await assignRes.json();
+    _roomCalcValues = {
+    paintCoats: 2,
+    paintCoverage: 120,
+    floorTile: 600,
+    floorWastage: 10
+};
+    if (_renders.length > 0) {
+        requestAnimationFrame(function() {
+            let canvas = document.getElementById('render-canvas');
+            if (!canvas) return;
+            let newCanvas = canvas.cloneNode(true);
+canvas.parentNode.replaceChild(newCanvas, canvas);
+let pinsLayer = newCanvas.querySelector('#render-pins-layer');
+if (pinsLayer) pinsLayer.innerHTML = '';
+newCanvas.addEventListener('click', function(e) {
+    if (e.target.closest('button')) return; // ignore button clicks
+    let img = document.getElementById('render-img');
+    if (!img) return;
+    let rect = img.getBoundingClientRect();
+    let x = ((e.clientX - rect.left) / rect.width) * 100;
+    let y = ((e.clientY - rect.top) / rect.height) * 100;
+    x = Math.max(0, Math.min(100, x));
+    y = Math.max(0, Math.min(100, y));
+    openPinModal(x, y);
+});
+            renderRenderPins(currentRenderId);
+        });
+        if (!window._pinLayerListenerAdded) {
+            console.log('adding pin layer listener');
+    window._pinLayerListenerAdded = true;
+    document.addEventListener('click', function(e) {
+        let btn = e.target.closest('button[data-pin-id]');
+        if (btn) {
+            e.stopPropagation();
+            deleteRenderPin(parseInt(btn.dataset.pinId));
+        }
+    });
+}
+    }
 
-    let shortlistContainer = document.getElementById('room-shortlist-container');
+    renderRoomShortlist(_renderAssignments);
+}
+
+let _pendingPinX = null;
+let _pendingPinY = null;
+
+function openPinModal(x, y) {
+    _pendingPinX = x;
+    _pendingPinY = y;
+    
+    let modal = document.getElementById('pin-modal');
+    let checklist = document.getElementById('pin-product-checklist');
+    checklist.innerHTML = '';
+    
+    _renderAssignments.forEach(function(a) {
+        let item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:6px';
+        item.innerHTML = `
+            <input type="radio" name="pin-product" value="${a.id}" 
+                style="width:16px;height:16px;accent-color:var(--accent)">
+            <span style="font-size:13px;color:var(--text-primary)">${a.productName}</span>
+        `;
+        checklist.appendChild(item);
+    });
+    
+    document.getElementById('pin-note-field').value = '';
+    modal.classList.add('open');
+}
+
+document.getElementById('pin-modal-cancel').addEventListener('click', function() {
+    document.getElementById('pin-modal').classList.remove('open');
+});
+
+
+async function placePinOnRender(renderId, assignmentId, x, y, note) {
+    console.log('placing pin:', renderId, assignmentId, x, y);
+    let response = await authFetch(`${API}/api/render-pins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renderId, roomAssignmentId: assignmentId, pinX: x, pinY: y, note: note || '' })
+    });
+    console.log('response status:', response.status);
+    let pin = await response.json();
+    console.log('saved pin:', pin);
+    await renderRenderPins(renderId);
+}
+
+async function switchRender(renderId) {
+    currentRenderId = renderId;
+    
+    // Update thumbnail borders
+    _renders.forEach(r => {
+        let thumb = document.getElementById('thumb-' + r.id);
+        if (thumb) thumb.style.borderColor = r.id === renderId ? 'var(--accent)' : 'var(--border)';
+    });
+    
+    let render = _renders.find(r => r.id === renderId);
+    if (!render) return;
+    
+    // Just update the image src
+    let img = document.getElementById('render-img');
+    if (img) {
+        img.src = render.fileName;
+    } else {
+        // Image element doesn't exist, rebuild canvas content
+        let canvas = document.getElementById('render-canvas');
+        if (canvas) {
+            canvas.innerHTML = `
+                <img id="render-img" src="${render.fileName}"
+                    style="width:100%;height:100%;object-fit:contain;display:block">
+                <div id="render-pins-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+            `;
+        }
+    }
+    
+    await renderRenderPins(renderId);
+}
+
+async function renderRoomShortlist(assignments) {
+    let container = document.getElementById('room-shortlist-container');
+    if (!container) return;
 
     if (assignments.length === 0) {
-        shortlistContainer.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted)">No products assigned to this room yet. Assign from the BOQ.</p>';
-    } else {
-        let table = document.createElement('table');
-        table.className = 'list-table';
-        table.innerHTML = `
-    <thead><tr><th>Product</th><th>Qty</th><th>Remarks</th><th></th></tr></thead>
-    <tbody id="room-shortlist-tbody"></tbody>
-`;
-        shortlistContainer.appendChild(table);
-        let tbody = table.querySelector('#room-shortlist-tbody');
-        assignments.forEach(function(assignment) {
-    let row = document.createElement('tr');
-    row.innerHTML = `
-        <td style="font-weight:500;color:var(--text-primary)">${assignment.productName}</td>
-        <td style="color:var(--text-muted);font-size:13px">${assignment.quantity || '—'}</td>
-        <td><input type="text" placeholder="Remarks..." 
-            style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;background:transparent;outline:none"></td>
-        <td><button onclick="removeRoomAssignment(${assignment.id})"
-            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
-            onmouseover="this.style.color='var(--destructive)'"
-            onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+        container.innerHTML = '<p style="font-size:12px;color:var(--text-muted)">No products assigned. Assign from BOQ.</p>';
+        return;
+    }
+
+    let totalPrice = assignments.reduce((s, a) => s + ((a.price || 0) * (a.quantity || 1)), 0);
+
+    let table = document.createElement('table');
+    table.className = 'list-table';
+    table.style.fontSize = '12px';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="room-shortlist-tbody"></tbody>
+        <tfoot>
+    <tr style="font-weight:700;border-top:2px solid var(--border)">
+        <td colspan="2" style="color:var(--text-primary)">Room Total</td>
+        <td style="color:var(--accent)">₹${totalPrice.toLocaleString('en-IN')}</td>
+        <td></td>
+    </tr>
+</tfoot>
     `;
-    tbody.appendChild(row);
-});
+    container.appendChild(table);
+
+    let tbody = table.querySelector('#room-shortlist-tbody');
+    assignments.forEach(function(assignment) {
+        let itemTotal = (assignment.price || 0) * (assignment.quantity || 1);
+        let row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="font-weight:500;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                onclick="openAssignmentProductDetail(${assignment.boqItemId})">${assignment.productName}</td>
+            <td style="color:var(--text-secondary)">${assignment.quantity || '—'}</td>
+            <td style="font-weight:600;color:var(--accent)">₹${itemTotal.toLocaleString('en-IN')}</td>
+            <td><button onclick="removeRoomAssignment(${assignment.id})"
+                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px"
+                onmouseover="this.style.color='var(--destructive)'"
+                onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function uploadRender(input, roomId) {
+    let file = input.files[0];
+    if (!file) return;
+    
+    let formData = new FormData();
+    formData.append('file', file);
+    formData.append('projectId', projectId);
+    formData.append('displayName', file.name);
+    
+    let response = await authFetch(`${API}/api/room-renders/upload/${roomId}`, {
+        method: 'POST',
+        body: formData
+    });
+    
+    let roomRes = await authFetch(`${API}/api/rooms/single/${roomId}`);
+    let room = await roomRes.json();
+    openRoomDetail(room);
+}
+
+async function deleteRender(id) {
+    if (confirm('Delete this render?')) {
+        await authFetch(`${API}/api/room-renders/${id}`, { method: 'DELETE' });
+        let roomRes = await authFetch(`${API}/api/rooms/single/${currentRoomId}`);
+        let room = await roomRes.json();
+        openRoomDetail(room);
     }
 }
 
 // Calculator functions
+
+let _currentCalcType = null;
+let _calcItems = { exclusion: [], inclusion: [] };
+
+async function openCalcModal(type) {
+    _currentCalcType = type;
+
+    let wallAreaEl = document.getElementById('wall-area-value');
+    let areaEl = document.getElementById('area-input');
+    
+    
+    let titles = { paint: 'Paint Calculator', flooring: 'Flooring Calculator', ceiling: 'False Ceiling Calculator' };
+    document.getElementById('calc-modal-title').textContent = titles[type];
+    
+    // Load base area
+    let baseArea = type === 'paint' 
+        ? parseFloat(document.getElementById('wall-area-value').value) || 0
+        : parseFloat(document.getElementById('area-input').value) || 0;
+    document.getElementById('calc-base-area').textContent = baseArea + ' sqft';
+    
+    // Load existing items from API
+    let res = await authFetch(`${API}/api/room-calculations/${currentRoomId}/${type}`);
+    let items = await res.json();
+    _calcItems.exclusion = items.filter(i => i.itemType === 'exclusion');
+    _calcItems.inclusion = items.filter(i => i.itemType === 'inclusion');
+    
+    // Render specific inputs
+    let specificEl = document.getElementById('calc-specific-inputs');
+    if (type === 'paint') {
+    specificEl.innerHTML = `
+        <div style="display:flex;gap:16px;align-items:center">
+            <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:12px;color:var(--text-muted)">Coats</span>
+                <input type="number" id="modal-paint-coats" value="${_roomCalcValues.paintCoats}" min="1"
+                    style="width:50px;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:center;background:var(--bg);font-family:inherit"
+                    oninput="recalcModal()">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:12px;color:var(--text-muted)">Coverage (sqft/L)</span>
+                <input type="number" id="modal-paint-coverage" value="${_roomCalcValues.paintCoverage}"
+                    style="width:60px;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:center;background:var(--bg);font-family:inherit"
+                    oninput="recalcModal()">
+            </div>
+        </div>
+    `;
+}
+    else if (type === 'flooring') {
+        specificEl.innerHTML = `
+            <div style="display:flex;gap:16px;align-items:center">
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-size:12px;color:var(--text-muted)">Tile size (mm)</span>
+                    <input type="number" id="modal-floor-tile" value="${_roomCalcValues.floorTile}" min="1"
+                        style="width:50px;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:center;background:var(--bg);font-family:inherit"
+                        oninput="recalcModal()">
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-size:12px;color:var(--text-muted)">Wastage %</span>
+                    <input type="number" id="modal-floor-wastage" value="${_roomCalcValues.floorWastage}"
+                        style="width:60px;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:13px;text-align:center;background:var(--bg);font-family:inherit"
+                        oninput="recalcModal()">
+                </div>
+            </div>
+        `;
+    } else {
+        specificEl.innerHTML = '';
+    }
+    
+    renderCalcItems();
+    recalcModal();
+    document.getElementById('calc-modal').classList.add('open');
+}
+
+function renderCalcItems() {
+    ['exclusion', 'inclusion'].forEach(function(itemType) {
+        let container = document.getElementById('calc-' + itemType + 's');
+        container.innerHTML = '';
+        
+        if (_calcItems[itemType].length === 0) {
+            container.innerHTML = `<p style="font-size:12px;color:var(--text-muted);padding:4px 0">None added</p>`;
+            return;
+        }
+        
+        _calcItems[itemType].forEach(function(item) {
+            let row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
+            row.innerHTML = `
+                <input type="text" value="${item.name}" placeholder="Name"
+                    style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12.5px;background:var(--bg)"
+                    onchange="updateCalcItem(${item.id}, 'name', this.value)">
+                <input type="number" value="${item.area}" placeholder="sqft"
+                    style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12.5px;text-align:center;background:var(--bg)"
+                    onchange="updateCalcItem(${item.id}, 'area', this.value)">
+                <span style="font-size:11px;color:var(--text-muted)">sqft</span>
+                <button onclick="removeCalcItem(${item.id}, '${itemType}')"
+                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
+                    onmouseover="this.style.color='var(--destructive)'"
+                    onmouseout="this.style.color='var(--text-muted)'">✕</button>
+            `;
+            container.appendChild(row);
+        });
+    });
+}
+
+async function addCalcItem(itemType) {
+    let res = await authFetch(`${API}/api/room-calculations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            roomId: currentRoomId,
+            calculatorType: _currentCalcType,
+            itemType: itemType,
+            name: '',
+            area: 0
+        })
+    });
+    let item = await res.json();
+    _calcItems[itemType].push(item);
+    renderCalcItems();
+    recalcModal();
+}
+
+async function removeCalcItem(id, itemType) {
+    await authFetch(`${API}/api/room-calculations/${id}`, { method: 'DELETE' });
+    _calcItems[itemType] = _calcItems[itemType].filter(i => i.id !== id);
+    renderCalcItems();
+    recalcModal();
+}
+
+async function updateCalcItem(id, field, value) {
+    let item = [..._calcItems.exclusion, ..._calcItems.inclusion].find(i => i.id === id);
+    if (!item) return;
+    item[field] = field === 'area' ? parseFloat(value) || 0 : value;
+    await authFetch(`${API}/api/room-calculations/${id}`, {
+        method: 'PUT', // need to add this endpoint
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+    });
+    recalcModal();
+}
+
+function recalcModal() {
+    let type = _currentCalcType;
+    let baseArea = type === 'paint'
+        ? parseFloat(document.getElementById('wall-area-value').value) || 0
+        : parseFloat(document.getElementById('area-input').value) || 0;
+    
+    let totalExclusions = _calcItems.exclusion.reduce((s, i) => s + (parseFloat(i.area) || 0), 0);
+    let totalInclusions = _calcItems.inclusion.reduce((s, i) => s + (parseFloat(i.area) || 0), 0);
+    let netArea = Math.max(0, baseArea - totalExclusions + totalInclusions);
+    
+    let exclusionLines = _calcItems.exclusion.map(i => `- ${i.area || 0} sqft (${i.name || 'unnamed'})`).join('<br>');
+    let inclusionLines = _calcItems.inclusion.map(i => `+ ${i.area || 0} sqft (${i.name || 'unnamed'})`).join('<br>');
+    
+    let result = '—';
+    let workingHtml = `${baseArea} sqft (base)`;
+    if (exclusionLines) workingHtml += `<br>${exclusionLines}`;
+    if (inclusionLines) workingHtml += `<br>${inclusionLines}`;
+    workingHtml += `<br><strong>= ${netArea.toFixed(1)} sqft (net)</strong>`;
+    
+    if (type === 'paint') {
+        let coats = parseFloat(document.getElementById('modal-paint-coats')?.value) || _roomCalcValues.paintCoats;
+        let coverage = parseFloat(document.getElementById('modal-paint-coverage')?.value) || _roomCalcValues.paintCoverage;
+        let litres = (netArea * coats) / coverage;
+        result = litres.toFixed(1) + ' L';
+        workingHtml += `<br>${netArea.toFixed(1)} × ${coats} coats ÷ ${coverage} = <strong>${result}</strong>`;
+    } else if (type === 'flooring') {
+        let tileSize = parseFloat(document.getElementById('modal-floor-tile')?.value) || _roomCalcValues.floorTile;
+        let wastage = parseFloat(document.getElementById('modal-floor-wastage')?.value) || _roomCalcValues.floorWastage;
+        let tileSqft = (tileSize / 304.8) * (tileSize / 304.8);
+        let tiles = Math.ceil(netArea * (1 + wastage / 100) / tileSqft);
+        result = tiles + ' tiles';
+        workingHtml += `<br>${netArea.toFixed(1)} sqft × ${(1 + wastage/100).toFixed(2)} ÷ ${tileSqft.toFixed(3)} sqft/tile = <strong>${result}</strong>`;
+    } else if (type === 'ceiling') {
+    let length = _roomCalcValues.length;
+    let breadth = _roomCalcValues.breadth;
+    let perimeter = 2 * (length + breadth);
+    let edgeTrim = Math.ceil(perimeter / (600 * 304.8));
+    result = Math.ceil(netArea) + ' sqft + ' + edgeTrim + ' rft trim';
+        workingHtml += `<br>Perimeter: ${(perimeter/1000).toFixed(2)}m → ${edgeTrim} rft edge trim`;
+        workingHtml += `<br>Result: <strong>${result}</strong>`;
+    }
+    
+    document.getElementById('calc-working').innerHTML = workingHtml;
+    document.getElementById('calc-result-display').textContent = result;
+    
+    // Store result for apply
+    window._calcResult = result;
+    window._calcNetArea = netArea;
+}
+
+document.getElementById('calc-apply-btn').addEventListener('click', function() {
+    let type = _currentCalcType;
+    if (type === 'paint') {
+        let el = document.getElementById('paint-result');
+        if (el) el.textContent = window._calcResult;
+        let coatsEl = document.getElementById('paint-coats');
+        if (coatsEl) coatsEl.value = document.getElementById('modal-paint-coats').value;
+        let covEl = document.getElementById('paint-coverage');
+        if (covEl) covEl.value = document.getElementById('modal-paint-coverage').value;
+    } else if (type === 'flooring') {
+        let el = document.getElementById('floor-result');
+        if (el) el.textContent = window._calcResult;
+        let tileEl = document.getElementById('floor-tile');
+        if (tileEl) tileEl.value = document.getElementById('modal-floor-tile').value;
+        let wastEl = document.getElementById('floor-wastage');
+        if (wastEl) wastEl.value = document.getElementById('modal-floor-wastage').value;
+    } else if (type === 'ceiling') {
+        let el = document.getElementById('ceiling-result');
+        if (el) el.textContent = window._calcResult;
+    }
+    document.getElementById('calc-modal').classList.remove('open');
+});
+
 function calcPaint() {
-    let area = parseFloat(document.getElementById('area-input').value) || 0;
     let wallArea = parseFloat(document.getElementById('wall-area-value').value) || 0;
     let coats = parseFloat(document.getElementById('paint-coats').value) || 2;
     let coverage = parseFloat(document.getElementById('paint-coverage').value) || 120;
     let litres = (wallArea * coats) / coverage;
-    document.getElementById('paint-result').textContent = 
-        litres > 0 ? `${litres.toFixed(1)} litres — approx ${Math.ceil(litres / 4)} × 4L cans` : 'Enter valid dimensions first';
+    let result = litres > 0 ? litres.toFixed(1) : '—';
+    document.getElementById('paint-result').textContent = result;
 }
 
 function calcFlooring() {
@@ -870,8 +1467,17 @@ function calcFlooring() {
     let wastage = parseFloat(document.getElementById('floor-wastage').value) || 10;
     let tileSqft = (tileSize / 304.8) * (tileSize / 304.8);
     let tiles = area > 0 ? Math.ceil((area * (1 + wastage / 100)) / tileSqft) : 0;
-    document.getElementById('floor-result').textContent = 
-        tiles > 0 ? `${tiles} tiles needed (${tileSize}×${tileSize}mm with ${wastage}% wastage)` : 'Enter valid dimensions first';
+    document.getElementById('floor-result').textContent = tiles > 0 ? tiles : '—';
+}
+
+function calcCeiling() {
+    let area = parseFloat(document.getElementById('area-input').value) || 0;
+    let length = parseFloat(document.getElementById('room-length-val').value) || 0;
+    let breadth = parseFloat(document.getElementById('room-breadth-val').value) || 0;
+    let tiles = Math.ceil(area);
+    let perimeterMm = 2 * (length + breadth);
+    let edgeTrim = perimeterMm > 0 ? Math.ceil(perimeterMm / (600 * 304.8)) : 0;
+    document.getElementById('ceiling-result').textContent = area > 0 ? `${tiles} sqft + ${edgeTrim} rft` : '—';
 }
 
 async function updateRoomDimension(roomId, field, value) {
@@ -896,17 +1502,6 @@ async function updateRoomDimension(roomId, field, value) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(room)
     });
-}
-
-function calcCeiling() {
-    let area = parseFloat(document.getElementById('area-input').value) || 0;
-    let length = parseFloat(document.getElementById('room-length-val').value) || 0;
-    let breadth = parseFloat(document.getElementById('room-breadth-val').value) || 0;
-    let tiles = Math.ceil(area);
-    let perimeterMm = 2 * (length + breadth);
-    let edgeTrim = perimeterMm > 0 ? Math.ceil(perimeterMm / (600 * 304.8)) : 0;
-    document.getElementById('ceiling-result').textContent = 
-        area > 0 ? `${tiles} sqft tiles + ${edgeTrim} rft edge trim` : 'Enter valid dimensions first';
 }
 
 function getEffectiveArea(roomId) {
@@ -952,6 +1547,22 @@ document.getElementById('room-confirm').addEventListener('click', async function
 
     document.getElementById('room-modal').classList.remove('open');
     loadLayout();
+});
+
+document.getElementById('pin-modal-cancel').addEventListener('click', function() {
+    document.getElementById('pin-modal').classList.remove('open');
+});
+
+document.getElementById('pin-modal-confirm').addEventListener('click', async function(e) {
+    e.preventDefault();
+    if (this._firing) return;
+    this._firing = true;
+    setTimeout(() => this._firing = false, 1000);
+    let selected = document.querySelector('input[name="pin-product"]:checked');
+    if (!selected) { alert('Select a product'); return; }
+    let note = document.getElementById('pin-note-field').value;
+    document.getElementById('pin-modal').classList.remove('open');
+    await placePinOnRender(currentRenderId, parseInt(selected.value), _pendingPinX, _pendingPinY, note);
 });
 
 loadProjectDetails();

@@ -1,5 +1,4 @@
 const API = 'https://construct-backend-production.up.railway.app';
-
 function getProjectId() {
     return localStorage.getItem('selectedProjectId');
 }
