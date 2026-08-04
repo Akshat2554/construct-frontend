@@ -1211,7 +1211,7 @@ async function confirmImport() {
         
         await authFetch(`${API}/api/boq`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify(item)
         });
         imported++;
