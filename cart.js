@@ -75,17 +75,23 @@ function invalidateCartCache() {
     _cartCache = null;
 }
 
-async function removeFromCart(productId) {
+async function removeFromCart(productId, itemId) {
     let cart = await getCart();
-    let item = cart.find(i => i.productId === productId);
+    let item;
+    
+    if (itemId) {
+        item = cart.find(i => i.id === itemId);
+    } else {
+        item = cart.find(i => i.productId === productId);
+    }
+    
     if (item) {
         await fetch(`${API}/api/boq/${item.id}`, {
             method: 'DELETE',
             headers: authHeaders()
         });
-        // Update cache directly
-        if (_cartCache !== null) {
-            _cartCache = _cartCache.filter(i => i.productId !== productId);
+        if (_cartCache) {
+            _cartCache = _cartCache.filter(i => i.id !== item.id);
         }
     }
     updateCartCountFromCache();

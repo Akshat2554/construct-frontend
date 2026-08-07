@@ -3,9 +3,10 @@
     <head>
         <title>Project details</title>
         <link rel="stylesheet" href="styles.css">
-        <script src="cart.js"></script>
         <script src="auth.js"></script>
         <script src="api.js"></script>
+        <script src="cart.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     </head>
 <body>
 
@@ -139,27 +140,23 @@
 <script>
     let projectId = localStorage.getItem('selectedProjectId');
     let projectName = localStorage.getItem('selectedProjectName');
-    let _roomCalcValues = { paintCoats: 2, paintCoverage: 120, floorTile: 600, floorWastage: 10 };
+    let _renders = [];
+    let _renderAssignments = [];
+    let currentRenderId = null;
+    let _roomCalcValues = { paintCoats: 2, paintCoverage: 120, floorTile: 600, floorWastage: 10, length: 0, breadth: 0 };
 
     function switchView(view) {
-    if (view === 'boq') {
-        localStorage.setItem('boqDefaultTab', 'boq');
-        window.location.href = 'boq-detail.html';
-        return;
-    }
-    if (view === 'shortlist') {
-        localStorage.setItem('boqDefaultTab', 'shortlist');
-        window.location.href = 'boq-detail.html';
-        return;
-    }
-
-    ['overview', 'layout'].forEach(v => {
-        document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
-    });
-    document.querySelectorAll('.boq-nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(view + '-btn').classList.add('active');
+    document.getElementById('view-overview').style.display = view === 'overview' ? 'block' : 'none';
+    document.getElementById('view-layout').style.display = view === 'layout' ? 'block' : 'none';
+    document.getElementById('view-boq').style.display = view === 'boq' ? 'block' : 'none';
+    document.getElementById('view-shortlist').style.display = view === 'shortlist' ? 'block' : 'none';
+    
+    document.getElementById('overview-btn').classList.toggle('active', view === 'overview');
+    document.getElementById('layout-btn').classList.toggle('active', view === 'layout');
+    document.getElementById('boq-btn').classList.toggle('active', view === 'boq');
+    document.getElementById('shortlist-btn').classList.toggle('active', view === 'shortlist');
+    
     if (view === 'layout') loadLayout();
-    if (view === 'overview') loadProjectDetails();
 }
 
 let _projectData = null;
@@ -291,6 +288,11 @@ if (returnToRoom) {
 let currentFloor = 1;
 
 async function loadLayout() {
+    document.querySelector('.sidebar').style.display = '';
+    document.querySelector('.main-content > div:first-child').style.display = '';
+    document.querySelector('.main-content').style.padding = '';
+    document.querySelector('.page-body').style.gridTemplateColumns = '';
+    
     let drawingsRes = await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + projectId);
     let allDrawings = await drawingsRes.json();
     
@@ -1040,12 +1042,6 @@ async function openRoomDetail(room) {
         </div>
     `;
 
-    _roomCalcValues = {
-    paintCoats: 2,
-    paintCoverage: 120,
-    floorTile: 600,
-    floorWastage: 10
-};
     if (_renders.length > 0) {
         requestAnimationFrame(function() {
             let canvas = document.getElementById('render-canvas');

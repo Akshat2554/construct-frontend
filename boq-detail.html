@@ -661,7 +661,7 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
                     </td>
                     <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
                     <td>
-                        <button onclick="(async () => { await removeFromCart(${item.productId}); await loadCategoryDetail('${category}'); await loadSummary(); buildCategoryNav(); })()"
+                        <button onclick="(async () => { await removeFromCart(${item.productId}, ${item.id}); await loadCategoryDetail('${category}'); await loadSummary(); buildCategoryNav(); })()"
                             style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px"
                             onmouseover="this.style.color='var(--destructive)'"
                             onmouseout="this.style.color='var(--text-muted)'">✕</button>
@@ -672,6 +672,7 @@ if (nameCell) {
     nameCell.style.cursor = 'pointer';
     nameCell.style.textDecoration = 'underline';
     nameCell.addEventListener('click', async function(e) {
+        if (!item.productId) return;
         let response = await authFetch(`${API}/api/products/single/${item.productId}`);
         let product = await response.json();
         openProductDetail(product);
@@ -1092,33 +1093,12 @@ async function removeVendor(id) {
     loadShortlist();
 });
 
-async function toggleLongLead(productId, isLongLead) {
-    let cart = await getCart();
-    let item = cart.find(i => i.productId === productId);
-    if (item) {
-        item.isLongLead = isLongLead;
-        if (!isLongLead) item.leadWeeks = null;
-        saveCart(cart);
-        loadCategoryDetail(document.getElementById('view-label').textContent);
-    }
-}
-
-async function updateLeadWeeks(productId, weeks) {
-    let cart = await getCart();
-    let item = cart.find(i => i.productId === productId);
-    if (item) {
-        item.leadWeeks = parseInt(weeks);
-        saveCart(cart);
-    }
-}
-
 let _importCategory = null;
 let _importRows = [];
 let _importHeaders = [];
 
 function openImportModal(category) {
     _importCategory = category;
-    document.getElementById('boq-import-category-label').textContent = category;
     document.getElementById('boq-import-file-input').click();
 }
 
@@ -1191,9 +1171,10 @@ async function confirmImport() {
     
     for (let row of _importRows) {
         let descCol = getVal('boq-map-description');
-        let name = String(row[descCol] || '').trim();
+        let name = String(row[descCol] || '').trim().replace(/[\r\n]+/g, ' ');
         if (!name) continue;
         
+        let sanitize = (val) => String(val || '').trim().replace(/[\r\n\t]+/g, ' ');
         let item = {
             projectId: parseInt(projectId),
             productId: null,
@@ -1209,6 +1190,7 @@ async function confirmImport() {
             roomId: null
         };
         
+        console.log('posting item:', JSON.stringify(item).substring(0, 150));
         await authFetch(`${API}/api/boq`, {
             method: 'POST',
             headers: authHeaders(),
@@ -1223,52 +1205,6 @@ async function confirmImport() {
     await loadSummary();
     alert(imported + ' items imported.');
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-document.getElementById('boq-mapping-cancel').addEventListener('click', function() {
-    document.getElementById('boq-mapping-modal').classList.remove('open');
-});
-
-document.getElementById('boq-mapping-confirm').addEventListener('click', async function() {
-    let projectId = getProjectId();
-    let imported = 0;
-    
-    let getVal = (id) => document.getElementById(id).value;
-    
-    for (let row of _importRows) {
-        let name = String(row[getVal('boq-map-description')] || '').trim();
-        if (!name) continue;
-        
-        let item = {
-            projectId: parseInt(projectId),
-            productId: null,
-            name,
-            productNumber: '',
-            supplierName: '',
-            category: _importCategory,
-            unit: String(row[getVal('boq-map-unit')] || '').trim(),
-            unitPrice: parseFloat(row[getVal('boq-map-supply-rate')]) || 0,
-            quantity: parseInt(row[getVal('boq-map-quantity')]) || 1,
-            installRate: parseFloat(row[getVal('boq-map-install-rate')]) || 0,
-            remarks: String(row[getVal('boq-map-remarks')] || '').trim(),
-            roomId: null
-        };
-        
-        await authFetch(`${API}/api/boq`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-        });
-        imported++;
-    }
-    
-    invalidateCartCache();
-    document.getElementById('boq-mapping-modal').classList.remove('open');
-    await loadCategoryDetail(_importCategory);
-    await loadSummary();
-    alert(imported + ' items imported.');
-});
-});
 
 
         // ===== Excel Export =====
@@ -1311,8 +1247,8 @@ document.getElementById('boq-mapping-confirm').addEventListener('click', async f
         currentRow++;
 
         // Sub-items
-        let subItems = await getSubItems(item.productId, category);
-        subItems.forEach(function(sub, si) {
+        let subItems = item.productId ? await getSubItems(item.productId, category) : [];
+            subItems.forEach(function(sub, si) {
             if (sub.text && sub.text.trim()) {
                 rows.push([letters[si], sub.text, '', '', '', '', '', '', '', '']);
                 currentRow++;
