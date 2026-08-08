@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="auth.js"></script>
+    <script src="toast.js"></script>
     <script src="api.js"></script>
     <script src="cart.js"></script>
 
@@ -440,7 +441,6 @@ function openProductDetail(product) {
         quantity: 1,
         totalPrice: product.price
     });
-    alert(product.name + ' added to BOQ');
     document.getElementById('product-detail-modal').classList.remove('open');
     loadSupplierCatalog();
 };
@@ -556,7 +556,7 @@ row.addEventListener('click', function(e) {
                 }
 
                 overlay.classList.remove('open');
-                alert(imported + ' products imported.');
+                showToast(`${imported} products imported`, 'success');
                 loadSupplierCatalog();
             });
         }
@@ -722,7 +722,6 @@ async function handleAddToCart(productId) {
             quantity: 1,
             totalPrice: product.price
         });
-        alert(product.name + ' added to BOQ');
     }
     
     document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(el => {
@@ -737,26 +736,41 @@ function buildCartControl(productId, qty) {
         return `<button class="add-to-cart-btn" 
             onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
     }
+    
+    let compareBtn = `<button onclick="event.stopPropagation(); addToCompare(${productId})"
+        title="Compare"
+        style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">⇄</button>`;
+    
     if (qty > 0) {
         return `
-            <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden" onclick="event.stopPropagation()">
-                <button onclick="handleDecrease(${productId})"
-                    style="width:28px;height:28px;border:none;background:transparent;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                    onmouseover="this.style.background='var(--bg)'"
-                    onmouseout="this.style.background='transparent'">−</button>
-                <input type="number" value="${qty}" min="1"
-                    style="width:36px;height:28px;border:none;text-align:center;font-family:inherit;font-size:13px;font-weight:600;color:var(--text-primary);background:transparent;outline:none;-moz-appearance:textfield;appearance:textfield"
-                    onchange="handleQtyInput(${productId}, this.value)"
-                    onclick="event.stopPropagation()">
-                <button onclick="handleIncrease(${productId})"
-                    style="width:28px;height:28px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                    onmouseover="this.style.background='var(--bg)'"
-                    onmouseout="this.style.background='transparent'">+</button>
+            <div style="display:flex;align-items:center;gap:4px" onclick="event.stopPropagation()">
+                ${compareBtn}
+                <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+                    <button onclick="handleDecrease(${productId})"
+                        style="width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                        onmouseover="this.style.background='var(--bg)'"
+                        onmouseout="this.style.background='transparent'">−</button>
+                    <input type="number" value="${qty}" min="1"
+                        style="width:32px;height:22px;border:none;text-align:center;font-family:inherit;font-size:12px;font-weight:600;color:var(--text-primary);background:transparent;outline:none;-moz-appearance:textfield;appearance:textfield"
+                        onchange="handleQtyInput(${productId}, this.value)"
+                        onclick="event.stopPropagation()">
+                    <button onclick="handleIncrease(${productId})"
+                        style="width:22px;height:22px;border:none;background:transparent;color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                        onmouseover="this.style.background='var(--bg)'"
+                        onmouseout="this.style.background='transparent'">+</button>
+                </div>
             </div>
         `;
     }
-    return `<button class="add-to-cart-btn" 
-        onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
+    return `
+        <div style="display:flex;align-items:center;gap:4px" onclick="event.stopPropagation()">
+            ${compareBtn}
+            <button class="add-to-cart-btn" 
+                onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>
+        </div>
+    `;
 }
 
 async function handleIncrease(productId) {
@@ -844,6 +858,138 @@ async function uploadProductImage(file) {
     zone.style.borderColor = 'var(--success)';
 }
 
+window._compareList = window._compareList || [];
+
+function addToCompare(productId) {
+    let product = window._renderedProducts.find(p => p.id === productId);
+    if (!product) return;
+    
+    if (window._compareList.find(p => p.id === productId)) {
+        removeFromCompare(productId);
+        return;
+    }
+    
+    if (window._compareList.length >= 4) {
+        alert('You can compare up to 4 products at a time');
+        return;
+    }
+    
+    window._compareList.push(product);
+    updateCompareTray();
+}
+
+function removeFromCompare(productId) {
+    window._compareList = window._compareList.filter(p => p.id !== productId);
+    updateCompareTray();
+}
+
+function updateCompareTray() {
+    let tray = document.getElementById('compare-tray');
+    let items = document.getElementById('compare-tray-items');
+    let btn = document.getElementById('compare-btn');
+    
+    if (window._compareList.length === 0) {
+        tray.style.display = 'none';
+        return;
+    }
+    
+    tray.style.display = 'flex';
+    btn.style.display = window._compareList.length >= 2 ? 'block' : 'none';
+    
+    items.innerHTML = '';
+    window._compareList.forEach(function(product) {
+        let chip = document.createElement('div');
+        chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;white-space:nowrap;flex-shrink:0';
+        chip.innerHTML = `
+            <span style="font-size:12px;color:var(--text-primary);font-weight:500">${product.name.substring(0, 30)}${product.name.length > 30 ? '...' : ''}</span>
+            <button onclick="removeFromCompare(${product.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:0">✕</button>
+        `;
+        items.appendChild(chip);
+    });
+}
+
+function clearCompare() {
+    window._compareList = [];
+    updateCompareTray();
+}
+
+function openCompareView() {
+    let grid = document.getElementById('compare-grid');
+    let products = window._compareList;
+    
+    // All field labels
+    let fields = [
+        { label: 'Image', key: 'imageURL', type: 'image' },
+        { label: 'Name', key: 'name', type: 'text' },
+        { label: 'Brand', key: 'brandName', type: 'text' },
+        { label: 'Code', key: 'productNumber', type: 'text' },
+        { label: 'Dimensions', key: 'dimensions', type: 'text' },
+        { label: 'Unit', key: 'unit', type: 'text' },
+        { label: 'Availability', key: 'availability', type: 'text' },
+        { label: 'Price', key: 'price', type: 'price' },
+    ];
+    
+    grid.style.gridTemplateColumns = `120px repeat(${products.length}, 1fr)`;
+    grid.innerHTML = '';
+    
+    // Header row — product names
+    let headerLabel = document.createElement('div');
+    headerLabel.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:flex-end;padding-bottom:8px;border-bottom:2px solid var(--border)';
+    headerLabel.textContent = '';
+    grid.appendChild(headerLabel);
+    
+    products.forEach(function(product) {
+        let header = document.createElement('div');
+        header.style.cssText = 'padding-bottom:8px;border-bottom:2px solid var(--accent);text-align:center';
+        header.innerHTML = `
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${product.name.substring(0, 40)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${product.brandName || '—'}</div>
+        `;
+        grid.appendChild(header);
+    });
+    
+    // Field rows
+    fields.forEach(function(field) {
+        let label = document.createElement('div');
+        label.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-muted);padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:center';
+        label.textContent = field.label;
+        grid.appendChild(label);
+        
+        products.forEach(function(product) {
+            let cell = document.createElement('div');
+            cell.style.cssText = 'padding:12px 8px;border-bottom:1px solid var(--border);text-align:center';
+            
+            if (field.type === 'image') {
+                cell.innerHTML = product.imageURL 
+                    ? `<img src="${product.imageURL}" style="width:80px;height:80px;object-fit:contain;border-radius:6px">`
+                    : `<div style="width:80px;height:80px;background:var(--bg);border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:24px">📦</div>`;
+            } else if (field.type === 'price') {
+                cell.innerHTML = `<span style="font-size:16px;font-weight:700;color:var(--accent)">₹${(product[field.key] || 0).toLocaleString('en-IN')}</span>`;
+            } else {
+                cell.innerHTML = `<span style="font-size:13px;color:var(--text-primary)">${product[field.key] || '—'}</span>`;
+            }
+            grid.appendChild(cell);
+        });
+    });
+    
+    // Add to BOQ row
+    let addLabel = document.createElement('div');
+    addLabel.style.cssText = 'padding:12px 0;display:flex;align-items:center;font-size:12px;font-weight:600;color:var(--text-muted)';
+    addLabel.textContent = 'Action';
+    grid.appendChild(addLabel);
+    
+    products.forEach(function(product) {
+        let cell = document.createElement('div');
+        cell.style.cssText = 'padding:12px 8px;text-align:center';
+        cell.innerHTML = `<button onclick="handleAddToCart(${product.id}); document.getElementById('compare-modal').classList.remove('open')"
+            class="add-btn" style="font-size:12px;padding:6px 14px">Add to BOQ</button>`;
+        grid.appendChild(cell);
+    });
+    
+    document.getElementById('compare-modal').classList.add('open');
+}
+
+
         async function editProduct(id) {
             let response = await authFetch('https://construct-backend-production.up.railway.app/api/products/single/' + id);
             let prod = await response.json();
@@ -918,5 +1064,26 @@ window._existingImageUrl = prod.imageURL || null;
 
         updateCartCount();
     </script>
+
+    <!-- Compare Tray -->
+<div id="compare-tray" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 24px;z-index:500;display:flex;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
+    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Comparing</span>
+    <div id="compare-tray-items" style="display:flex;gap:8px;flex:1;overflow-x:auto"></div>
+    <button onclick="clearCompare()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">Clear</button>
+    <button id="compare-btn" onclick="openCompareView()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:none">Compare →</button>
+</div>
+
+<!-- Compare View Modal -->
+<div class="modal-overlay" id="compare-modal">
+    <div class="modal" style="width:90vw;max-width:1100px;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <h2 style="margin:0">Compare Products</h2>
+            <button onclick="document.getElementById('compare-modal').classList.remove('open')"
+                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+        </div>
+        <div id="compare-grid" style="display:grid;gap:16px;overflow-x:auto"></div>
+    </div>
+</div>
+
 </body>
 </html>

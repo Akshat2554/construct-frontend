@@ -4,6 +4,7 @@
         <title>Project details</title>
         <link rel="stylesheet" href="styles.css">
         <script src="auth.js"></script>
+        <script src="toast.js"></script>
         <script src="api.js"></script>
         <script src="cart.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -26,6 +27,7 @@
 <button class="boq-nav-btn" id="layout-btn" onclick="switchView('layout')">Layout</button>
 <button class="boq-nav-btn" id="boq-btn" onclick="switchView('boq')">BOQ</button>
 <button class="boq-nav-btn" id="shortlist-btn" onclick="switchView('shortlist')">Vendor Shortlist</button>
+<button class="boq-nav-btn" id="updates-btn" onclick="switchView('updates')">Updates</button>
         </div>
         <div class="main-content">
             <div style="margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)">
@@ -36,6 +38,7 @@
             <div id="view-layout" style="display:none"></div>
             <div id="view-boq" style="display:none"></div>
             <div id="view-shortlist" style="display:none"></div>
+            <div id="view-updates" style="display:none"></div>
         </div>
     </div>
 
@@ -150,11 +153,14 @@
     document.getElementById('view-layout').style.display = view === 'layout' ? 'block' : 'none';
     document.getElementById('view-boq').style.display = view === 'boq' ? 'block' : 'none';
     document.getElementById('view-shortlist').style.display = view === 'shortlist' ? 'block' : 'none';
-    
+    document.getElementById('view-updates').style.display = view === 'updates' ? 'block' : 'none';
+
     document.getElementById('overview-btn').classList.toggle('active', view === 'overview');
     document.getElementById('layout-btn').classList.toggle('active', view === 'layout');
     document.getElementById('boq-btn').classList.toggle('active', view === 'boq');
     document.getElementById('shortlist-btn').classList.toggle('active', view === 'shortlist');
+    document.getElementById('updates-btn').classList.toggle('active', view === 'updates');
+if (view === 'updates') loadUpdates();
     
     if (view === 'layout') loadLayout();
 }
@@ -1305,6 +1311,114 @@ async function openCalcModal(type) {
     renderCalcItems();
     recalcModal();
     document.getElementById('calc-modal').classList.add('open');
+}
+
+let _allLogs = [];
+let _logsShown = 50;
+
+async function loadUpdates() {
+    let container = document.getElementById('view-updates');
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+    
+    let res = await authFetch(`${API}/api/activity/${projectId}`);
+    _allLogs = await res.json();
+    _logsShown = 50;
+    
+    renderUpdates('');
+}
+
+function renderUpdates(searchTerm) {
+    let container = document.getElementById('view-updates');
+    
+    let filtered = searchTerm 
+        ? _allLogs.filter(l => 
+            (l.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (l.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (l.username || '').toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : _allLogs;
+    
+    let visible = filtered.slice(0, _logsShown);
+    
+    // Search bar
+    let html = `
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <input type="text" placeholder="Search updates..." 
+                value="${searchTerm}"
+                oninput="renderUpdates(this.value)"
+                style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">${filtered.length} entries</span>
+        </div>
+    `;
+    
+    if (filtered.length === 0) {
+        html += '<p style="color:var(--text-muted);font-size:13px">No results found.</p>';
+        container.innerHTML = html;
+        return;
+    }
+    
+    // Group by date
+    let groups = {};
+    visible.forEach(function(log) {
+        let date = new Date(log.timestamp);
+        let today = new Date();
+        let yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        let dateKey;
+        if (date.toDateString() === today.toDateString()) {
+            dateKey = 'Today';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            dateKey = 'Yesterday';
+        } else {
+            dateKey = date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+        
+        if (!groups[dateKey]) groups[dateKey] = [];
+        groups[dateKey].push(log);
+    });
+    
+    Object.keys(groups).forEach(function(dateKey) {
+        html += `<div style="margin-bottom:24px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)">${dateKey}</div>`;
+        
+        groups[dateKey].forEach(function(log) {
+            let time = new Date(log.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            html += `
+                <div style="display:grid;grid-template-columns:55px 80px 1fr;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border)">
+                    <span style="font-size:11.5px;color:var(--text-muted)">${time}</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--accent)">${log.username}</span>
+                    <div>
+                        <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${log.action}</div>
+                        ${log.details ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${log.details}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    });
+    
+    // Show more button
+    if (filtered.length > _logsShown) {
+        html += `
+            <div style="text-align:center;padding:16px 0">
+                <button onclick="_logsShown += 50; renderUpdates(document.querySelector('#view-updates input').value)"
+                    style="padding:8px 20px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-primary);font-size:13px;cursor:pointer;font-family:inherit">
+                    Show more (${filtered.length - _logsShown} remaining)
+                </button>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+
+    let input = container.querySelector('input');
+    if (input && searchTerm !== undefined) {
+        input.focus();
+        input.setSelectionRange(searchTerm.length, searchTerm.length);
+    }
 }
 
 function renderCalcItems() {

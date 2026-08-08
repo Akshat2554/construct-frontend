@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="auth.js"></script>
+    <script src="toast.js"></script>
     <script src="api.js"></script>
     <script src="cart.js"></script>
 </head>
@@ -1196,6 +1197,16 @@ async function confirmImport() {
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
+
+        let response = await authFetch(`${API}/api/boq`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(item)
+});
+console.log(`Row ${imported}: status ${response.status} - ${name.substring(0, 30)}`);
+if (!response.ok) {
+    console.log('Failed item:', JSON.stringify(item).substring(0, 200));
+}
         imported++;
     }
     
@@ -1203,7 +1214,7 @@ async function confirmImport() {
     document.getElementById('boq-import-inline').style.display = 'none';
     await loadCategoryDetail(_importCategory);
     await loadSummary();
-    alert(imported + ' items imported.');
+    showToast(`${imported} items imported successfully`, 'success');
 }
 
 

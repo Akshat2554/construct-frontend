@@ -1,4 +1,5 @@
 const API = 'https://construct-backend-production.up.railway.app';
+
 function getProjectId() {
     return localStorage.getItem('selectedProjectId');
 }
@@ -14,6 +15,8 @@ function authHeaders() {
     };
 }
 
+let _cartCache = null;
+
 async function getCart() {
     if (_cartCache !== null) return _cartCache;
     let projectId = getProjectId();
@@ -26,15 +29,43 @@ async function getCart() {
     return _cartCache;
 }
 
+function invalidateCartCache() {
+    _cartCache = null;
+}
+
 function updateCartCountFromCache() {
     let count = _cartCache ? _cartCache.length : 0;
     let badge = document.getElementById('cart-count');
     if (badge) badge.textContent = count;
 }
 
-let _cartCache = null;
-let _cartCacheTime = 0;
+async function updateCartCount() {
+    let cart = await getCart();
+    let count = cart.length;
+    let badge = document.getElementById('cart-count');
+    if (badge) badge.textContent = count;
+}
 
+// ===== Activity Logging =====
+function logActivity(action, details) {
+    let projectId = getProjectId();
+    if (!projectId) return;
+    let username = sessionStorage.getItem('construct-user') || 'unknown';
+    
+    fetch(`${API}/api/activity`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            username,
+            action,
+            details: details || '',
+            timestamp: new Date().toISOString()
+        })
+    }); // fire and forget
+}
+
+// ===== Cart Operations =====
 async function addToCart(product) {
     let projectId = getProjectId();
     if (!projectId) { alert('Please select a project first'); return; }
@@ -59,7 +90,6 @@ async function addToCart(product) {
     });
     let saved = await response.json();
     
-    // Update cache directly instead of invalidating
     if (_cartCache !== null) {
         let existing = _cartCache.find(i => i.productId === saved.productId);
         if (existing) {
@@ -69,10 +99,8 @@ async function addToCart(product) {
         }
     }
     updateCartCountFromCache();
-}
-
-function invalidateCartCache() {
-    _cartCache = null;
+    logActivity('BOQ Item Added', `Added ${product.name} (${product.category || 'Unknown category'})`);
+    showToast(`${product.name} added to BOQ`, 'success');
 }
 
 async function removeFromCart(productId, itemId) {
@@ -93,29 +121,23 @@ async function removeFromCart(productId, itemId) {
         if (_cartCache) {
             _cartCache = _cartCache.filter(i => i.id !== item.id);
         }
+        logActivity('BOQ Item Removed', `Removed ${item.name} from ${item.category || 'BOQ'}`);
     }
     updateCartCountFromCache();
-}
-
-async function updateCartCount() {
-    let cart = await getCart();
-    let count = cart.length;
-    let badge = document.getElementById('cart-count');
-    if (badge) badge.textContent = count;
 }
 
 async function updateQuantity(productId, quantity) {
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
+        let oldQty = item.quantity;
         item.quantity = parseInt(quantity);
-        // Update API in background
         fetch(`${API}/api/boq/${item.id}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
-        // Cache already updated since item is a reference
+        logActivity('Quantity Changed', `${item.name}: ${oldQty} → ${quantity}`);
     }
 }
 
@@ -123,12 +145,14 @@ async function updatePrice(productId, price) {
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
+        let oldPrice = item.unitPrice;
         item.unitPrice = parseFloat(price);
         await fetch(`${API}/api/boq/${item.id}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
+        logActivity('Rate Changed', `${item.name}: ₹${oldPrice} → ₹${price}`);
     }
 }
 
@@ -136,12 +160,14 @@ async function updateInstallRate(productId, installRate) {
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
+        let oldRate = item.installRate;
         item.installRate = parseFloat(installRate);
         await fetch(`${API}/api/boq/${item.id}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
+        logActivity('Install Rate Changed', `${item.name}: ₹${oldRate} → ₹${installRate}`);
     }
 }
 
@@ -162,12 +188,14 @@ async function updateNegotiatedSupply(productId, amount, quantity) {
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
-        item.unitPrice = parseFloat(amount) / parseInt(quantity);
+        let newRate = parseFloat(amount) / parseInt(quantity);
+        item.unitPrice = newRate;
         await fetch(`${API}/api/boq/${item.id}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
+        logActivity('Negotiated Rate Set', `${item.name}: supply rate negotiated to ₹${newRate.toFixed(0)}`);
     }
 }
 
@@ -175,15 +203,18 @@ async function updateNegotiatedInstall(productId, amount, quantity) {
     let cart = await getCart();
     let item = cart.find(i => i.productId === productId);
     if (item) {
-        item.installRate = parseFloat(amount) / parseInt(quantity);
+        let newRate = parseFloat(amount) / parseInt(quantity);
+        item.installRate = newRate;
         await fetch(`${API}/api/boq/${item.id}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify(item)
         });
+        logActivity('Negotiated Install Rate Set', `${item.name}: install rate negotiated to ₹${newRate.toFixed(0)}`);
     }
 }
 
+// ===== Confirmed Categories =====
 async function getConfirmed() {
     let projectId = getProjectId();
     if (!projectId) return [];
@@ -200,7 +231,6 @@ async function toggleConfirmed(category) {
     let confirmed = await getConfirmed();
     
     if (confirmed.includes(category)) {
-        // Find and delete
         let response = await fetch(`${API}/api/confirmed-categories/${projectId}`, {
             headers: authHeaders()
         });
@@ -212,6 +242,7 @@ async function toggleConfirmed(category) {
                 headers: authHeaders()
             });
         }
+        logActivity('Category Unconfirmed', `${category} marked as unconfirmed`);
     } else {
         await fetch(`${API}/api/confirmed-categories`, {
             method: 'POST',
@@ -221,6 +252,7 @@ async function toggleConfirmed(category) {
                 categoryName: category
             })
         });
+        logActivity('Category Confirmed', `${category} confirmed`);
     }
 }
 
@@ -229,6 +261,7 @@ async function isConfirmed(category) {
     return confirmed.includes(category);
 }
 
+// ===== Room Shortlist =====
 async function addToRoomShortlist(productId, name, price, unit, roomId) {
     let projectId = getProjectId();
     if (!projectId) return;
@@ -251,13 +284,15 @@ async function addToRoomShortlist(productId, name, price, unit, roomId) {
         })
     });
     updateCartCountFromCache();
-    alert(name + ' added to BOQ and room shortlist');
+    logActivity('Room Item Added', `${name} added to room shortlist`);
+    showToast(`${name} added to room shortlist`, 'success');
 }
 
+// ===== Sub Items =====
 async function getSubItems(productId, category) {
     let projectId = getProjectId();
     if (!projectId) return [];
-    let response = await fetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${projectId}/${productId}?category=${encodeURIComponent(category)}`, {
+    let response = await fetch(`${API}/api/boq-subitems/${projectId}/${productId}?category=${encodeURIComponent(category)}`, {
         headers: authHeaders()
     });
     if (!response.ok) return [];
@@ -268,7 +303,7 @@ async function addSubItem(productId, encodedCategory) {
     let category = decodeURIComponent(encodedCategory);
     let projectId = getProjectId();
     let items = await getSubItems(productId, category);
-    await fetch('https://construct-backend-production.up.railway.app/api/boq-subitems', {
+    await fetch(`${API}/api/boq-subitems`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -297,27 +332,26 @@ async function removeSubItem(productId, encodedCategory, index) {
     let category = decodeURIComponent(encodedCategory);
     let items = await getSubItems(productId, category);
     if (items[index]) {
-        await fetch(`https://construct-backend-production.up.railway.app/api/boq-subitems/${items[index].id}`, {
+        await fetch(`${API}/api/boq-subitems/${items[index].id}`, {
             method: 'DELETE',
             headers: authHeaders()
         });
     }
 }
 
+// ===== Version History (kept for compatibility) =====
 async function createVersion(label, remarks) {
     let projectId = getProjectId();
     if (!projectId) return;
     
+    // Log as activity instead of snapshot
+    logActivity(label, remarks || '');
+    
+    // Also save to versions endpoint for backward compatibility
     let cart = await getCart();
     let confirmed = await getConfirmed();
     
-    let snapshot = {
-        cart,
-        confirmed,
-        vendorShortlist: []
-    };
-    
-    await fetch('https://construct-backend-production.up.railway.app/api/versions', {
+    await fetch(`${API}/api/versions`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -325,7 +359,7 @@ async function createVersion(label, remarks) {
             timestamp: new Date().toISOString(),
             label: label,
             remarks: remarks || '',
-            snapshotJson: JSON.stringify(snapshot)
+            snapshotJson: JSON.stringify({ cart, confirmed })
         })
     });
 }

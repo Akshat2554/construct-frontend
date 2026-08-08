@@ -4,15 +4,19 @@ function authFetch(url, options = {}) {
     if (token) {
         options.headers['Authorization'] = 'Bearer ' + token;
     }
+    
+    startProgress();
+    
     return fetch(url, options).then(response => {
+        endProgress();
         if (response.status === 401 || response.status === 403) {
-            sessionStorage.clear();
-            window.location.replace('login.html');
+            //sessionStorage.clear();
+            //window.location.replace('login.html');
         }
         return response;
     }).catch(err => {
-        console.error('Network error:', err);
-        alert('Connection error — please check your internet and try again.');
+        endProgress();
+        showToast('Connection error — please check your internet', 'error');
         throw err;
     });
 }

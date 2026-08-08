@@ -1,3 +1,14 @@
+if (!document.getElementById('toast-container')) {
+    let tc = document.createElement('div');
+    tc.id = 'toast-container';
+    document.body.appendChild(tc);
+}
+if (!document.getElementById('progress-bar')) {
+    let pb = document.createElement('div');
+    pb.id = 'progress-bar';
+    document.body.insertBefore(pb, document.body.firstChild);
+}
+
 async function loadProjectName() {
     let projectName = localStorage.getItem('selectedProjectName');
     document.getElementById('topbar-project-name').textContent = projectName || 'No Project';
