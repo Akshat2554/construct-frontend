@@ -188,8 +188,7 @@ async function loadAllProjectData() {
     document.getElementById('project-subtitle').textContent = 
         (project.clientName || '') + 
         (project.location ? ' · ' + project.location : '') + 
-        (project.squareFootage ? ' · ' + project.squareFootage + ' sqft' : '') +
-        (project.budget ? ' · ₹' + Number(project.budget).toLocaleString('en-IN') : '');
+        (project.squareFootage ? ' · ' + project.squareFootage + ' sqft' : '');
 
     // Load rooms and vendors for overview stats
     let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
@@ -822,6 +821,8 @@ let currentRoomId = null;
 
 async function openRoomDetail(room) {
     currentRoomId = room.id;
+    _roomCalcValues.length = room.length || 0;
+    _roomCalcValues.breadth = room.breadth || 0;
     
     let area = room.area || (room.length && room.breadth 
         ? parseFloat(((room.length * room.breadth) / 92903).toFixed(1)) : 0);
@@ -926,7 +927,7 @@ async function openRoomDetail(room) {
         <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
 
         <!-- THREE COLUMN BODY -->
-<div style="display:grid;grid-template-columns:55fr 25fr 20fr;gap:10px;padding:12px;height:calc(100vh - 80px);background:var(--bg)">
+<div style="display:grid;grid-template-columns:1fr 270px 230px;gap:10px;padding:12px;height:calc(100vh - 68px);background:var(--bg)">
 
             <!-- LEFT: Renders -->
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden">
@@ -972,71 +973,7 @@ async function openRoomDetail(room) {
             </div>
 
             <!-- MIDDLE: Calculators -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow-y:auto;display:flex;flex-direction:column">
-                <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
-                    <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Calculators</span>
-                </div>
-
-                <!-- Column headers -->
-                <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0">
-                    <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Item</span>
-                    <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Calc</span>
-                    <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Final</span>
-                </div>
-
-                <!-- Paint section -->
-<div style="border-bottom:1px solid var(--border)">
-    <div style="padding:12px 16px 8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
-                onclick="openCalcModal('paint')">Paint</span>
-        </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 16px 10px">
-        <span style="font-size:12px;color:var(--text-secondary)">Paint (L)</span>
-        <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">—</span>
-        <div style="width:70px;text-align:right">
-            <input type="number" id="paint-final" placeholder="—"
-                style="width:58px;padding:3px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg);font-family:inherit">
-        </div>
-    </div>
-</div>
-
-                <!-- Flooring section -->
-<div style="border-bottom:1px solid var(--border)">
-    <div style="padding:12px 16px 8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
-                onclick="openCalcModal('flooring')">Flooring</span>
-        </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 16px 10px">
-        <span style="font-size:12px;color:var(--text-secondary)">Flooring (L)</span>
-        <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">—</span>
-        <div style="width:70px;text-align:right">
-            <input type="number" id="flooring-final" placeholder="—"
-                style="width:58px;padding:3px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg);font-family:inherit">
-        </div>
-    </div>
-</div>
-                <!-- Ceiling section -->
-<div style="border-bottom:1px solid var(--border)">
-    <div style="padding:12px 16px 8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
-                onclick="openCalcModal('ceiling')">Ceiling</span>
-        </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 16px 10px">
-        <span style="font-size:12px;color:var(--text-secondary)">Ceiling (L)</span>
-        <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">—</span>
-        <div style="width:70px;text-align:right">
-            <input type="number" id="ceiling-final" placeholder="—"
-                style="width:58px;padding:3px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;background:var(--bg);font-family:inherit">
-        </div>
-    </div>
-</div>
-</div>
+<div id="calc-middle-column" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow-y:auto;display:flex;flex-direction:column"></div>
 
             <!-- RIGHT: Room Shortlist -->
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
@@ -1083,6 +1020,7 @@ newCanvas.addEventListener('click', function(e) {
     }
 
     renderRoomShortlist(_renderAssignments);
+    await loadOpenings();
 }
 
 let _pendingPinX = null;
@@ -1158,6 +1096,161 @@ async function switchRender(renderId) {
     }
     
     await renderRenderPins(renderId);
+}
+
+let _roomOpenings = [];
+
+async function loadOpenings() {
+    let res = await authFetch(`${API}/api/room-openings/${currentRoomId}`);
+    _roomOpenings = await res.json();
+    renderCalculators();
+}
+
+function renderCalculators() {
+    let wallArea = parseFloat(document.getElementById('wall-area-value').value) || 0;
+    let floorArea = parseFloat(document.getElementById('area-input').value) || 0;
+    let length = _roomCalcValues.length;
+    let breadth = _roomCalcValues.breadth;
+
+    // Calculate net areas from openings
+    let activeOpenings = _roomOpenings.filter(o => o.active !== false);
+    let totalExclusions = activeOpenings.filter(o => o.itemType === 'exclusion').reduce((s, o) => s + (o.area || 0), 0);
+    let totalInclusions = activeOpenings.filter(o => o.itemType === 'inclusion').reduce((s, o) => s + (o.area || 0), 0);
+
+    let netWallArea = Math.max(0, wallArea - totalExclusions + totalInclusions);
+    let netFloorArea = floorArea;
+
+    // Paint
+    let paintLitres = (_roomCalcValues.paintCoats * netWallArea) / _roomCalcValues.paintCoverage;
+
+    // Flooring
+    let tileSizeMm = _roomCalcValues.floorTile;
+    let wastage = _roomCalcValues.floorWastage;
+    let tileSqft = (tileSizeMm / 304.8) * (tileSizeMm / 304.8);
+    let tiles = tileSqft > 0 ? Math.ceil(netFloorArea * (1 + wastage / 100) / tileSqft) : 0;
+
+    // Ceiling
+    let perimeterMm = 2 * (length + breadth);
+    let edgeTrim = perimeterMm > 0 ? Math.ceil(perimeterMm / (600 * 304.8)) : 0;
+
+    // Group openings
+    let doors = _roomOpenings.filter(o => o.type === 'door');
+    let windows = _roomOpenings.filter(o => o.type === 'window');
+    let custom = _roomOpenings.filter(o => o.type === 'custom');
+
+    let calcContainer = document.getElementById('calc-middle-column');
+    if (!calcContainer) return;
+
+    calcContainer.innerHTML = `
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Calculators</span>
+        </div>
+
+        <!-- Openings section -->
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Openings & Adjustments</div>
+            
+            <!-- Doors -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <button onclick="openOpeningModal('door')"
+                    style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-primary)"
+                    onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    Doors ${doors.length > 0 ? `<span style="background:var(--accent);color:white;border-radius:10px;padding:1px 6px;font-size:10px">${doors.length}</span>` : ''}
+                </button>
+                <span style="font-size:11px;color:var(--text-muted)">${doors.filter(d=>d.active!==false).reduce((s,d)=>s+(d.area||0),0).toFixed(1)} sqft excl.</span>
+            </div>
+
+            <!-- Windows -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <button onclick="openOpeningModal('window')"
+                    style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-primary)"
+                    onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    Windows ${windows.length > 0 ? `<span style="background:var(--accent);color:white;border-radius:10px;padding:1px 6px;font-size:10px">${windows.length}</span>` : ''}
+                </button>
+                <span style="font-size:11px;color:var(--text-muted)">${windows.filter(w=>w.active!==false).reduce((s,w)=>s+(w.area||0),0).toFixed(1)} sqft excl.</span>
+            </div>
+
+            <!-- Custom items -->
+            ${custom.map(item => `
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:5px 8px;background:var(--bg);border-radius:6px">
+                    <input type="checkbox" ${item.active !== false ? 'checked' : ''}
+                        onchange="toggleOpening(${item.id}, this.checked)"
+                        style="accent-color:var(--accent)">
+                    <span style="flex:1;font-size:12px;color:var(--text-primary)">${item.name}</span>
+                    <span style="font-size:11px;color:var(--text-muted)">${(item.area||0).toFixed(1)} sqft</span>
+                    <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:${item.itemType==='exclusion'?'#C0392B18':'#2E4F4218'};color:${item.itemType==='exclusion'?'#C0392B':'#2E4F42'}">${item.itemType}</span>
+                    <button onclick="deleteOpening(${item.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px">✕</button>
+                </div>
+            `).join('')}
+
+            <button onclick="openOpeningModal('custom')"
+                style="width:100%;margin-top:4px;padding:5px;border:1px dashed var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-muted)"
+                onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+                onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
+                + Add Custom Item
+            </button>
+        </div>
+
+        <!-- Results table -->
+        <div style="flex:1">
+            <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
+                <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Item</span>
+                <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Net Area</span>
+                <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Result</span>
+            </div>
+
+            <!-- Paint -->
+            <div style="border-bottom:1px solid var(--border);padding:10px 16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                        onclick="openCalcModal('paint')">Paint</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center">
+                    <span style="font-size:11px;color:var(--text-muted)">Wall (excl. openings)</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text-secondary);width:70px;text-align:right">${netWallArea.toFixed(1)} sqft</span>
+                    <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">${paintLitres > 0 ? paintLitres.toFixed(1) + ' L' : '—'}</span>
+                </div>
+                <div style="margin-top:6px">
+                    <input type="number" id="paint-final" placeholder="Final (L)"
+                        style="width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg);font-family:inherit">
+                </div>
+            </div>
+
+            <!-- Flooring -->
+            <div style="border-bottom:1px solid var(--border);padding:10px 16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                        onclick="openCalcModal('flooring')">Flooring</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center">
+                    <span style="font-size:11px;color:var(--text-muted)">Floor area</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text-secondary);width:70px;text-align:right">${netFloorArea.toFixed(1)} sqft</span>
+                    <span id="floor-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">${tiles > 0 ? tiles + ' tiles' : '—'}</span>
+                </div>
+                <div style="margin-top:6px">
+                    <input type="number" id="floor-final" placeholder="Final (tiles)"
+                        style="width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg);font-family:inherit">
+                </div>
+            </div>
+
+            <!-- Ceiling -->
+            <div style="padding:10px 16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                        onclick="openCalcModal('ceiling')">False Ceiling</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center">
+                    <span style="font-size:11px;color:var(--text-muted)">Ceiling area</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text-secondary);width:70px;text-align:right">${netFloorArea.toFixed(1)} sqft</span>
+                    <span id="ceiling-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">${netFloorArea > 0 ? Math.ceil(netFloorArea) + ' sqft' : '—'}</span>
+                </div>
+                <div style="margin-top:6px">
+                    <input type="number" id="ceiling-final" placeholder="Final (sqft)"
+                        style="width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg);font-family:inherit">
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 async function renderRoomShortlist(assignments) {
@@ -1455,7 +1548,7 @@ function renderCalcItems() {
 async function addCalcItem(itemType) {
     let res = await authFetch(`${API}/api/room-calculations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders() ,
         body: JSON.stringify({
             roomId: currentRoomId,
             calculatorType: _currentCalcType,
@@ -1542,53 +1635,16 @@ function recalcModal() {
 document.getElementById('calc-apply-btn').addEventListener('click', function() {
     let type = _currentCalcType;
     if (type === 'paint') {
-        let el = document.getElementById('paint-result');
-        if (el) el.textContent = window._calcResult;
-        let coatsEl = document.getElementById('paint-coats');
-        if (coatsEl) coatsEl.value = document.getElementById('modal-paint-coats').value;
-        let covEl = document.getElementById('paint-coverage');
-        if (covEl) covEl.value = document.getElementById('modal-paint-coverage').value;
+        _roomCalcValues.paintCoats = parseFloat(document.getElementById('modal-paint-coats')?.value) || 2;
+        _roomCalcValues.paintCoverage = parseFloat(document.getElementById('modal-paint-coverage')?.value) || 120;
     } else if (type === 'flooring') {
-        let el = document.getElementById('floor-result');
-        if (el) el.textContent = window._calcResult;
-        let tileEl = document.getElementById('floor-tile');
-        if (tileEl) tileEl.value = document.getElementById('modal-floor-tile').value;
-        let wastEl = document.getElementById('floor-wastage');
-        if (wastEl) wastEl.value = document.getElementById('modal-floor-wastage').value;
-    } else if (type === 'ceiling') {
-        let el = document.getElementById('ceiling-result');
-        if (el) el.textContent = window._calcResult;
+        _roomCalcValues.floorTile = parseFloat(document.getElementById('modal-floor-tile')?.value) || 600;
+        _roomCalcValues.floorWastage = parseFloat(document.getElementById('modal-floor-wastage')?.value) || 10;
     }
     document.getElementById('calc-modal').classList.remove('open');
+    renderCalculators(); // recalculate with new values
 });
 
-function calcPaint() {
-    let wallArea = parseFloat(document.getElementById('wall-area-value').value) || 0;
-    let coats = parseFloat(document.getElementById('paint-coats').value) || 2;
-    let coverage = parseFloat(document.getElementById('paint-coverage').value) || 120;
-    let litres = (wallArea * coats) / coverage;
-    let result = litres > 0 ? litres.toFixed(1) : '—';
-    document.getElementById('paint-result').textContent = result;
-}
-
-function calcFlooring() {
-    let area = parseFloat(document.getElementById('area-input').value) || 0;
-    let tileSize = parseFloat(document.getElementById('floor-tile').value) || 600;
-    let wastage = parseFloat(document.getElementById('floor-wastage').value) || 10;
-    let tileSqft = (tileSize / 304.8) * (tileSize / 304.8);
-    let tiles = area > 0 ? Math.ceil((area * (1 + wastage / 100)) / tileSqft) : 0;
-    document.getElementById('floor-result').textContent = tiles > 0 ? tiles : '—';
-}
-
-function calcCeiling() {
-    let area = parseFloat(document.getElementById('area-input').value) || 0;
-    let length = parseFloat(document.getElementById('room-length-val').value) || 0;
-    let breadth = parseFloat(document.getElementById('room-breadth-val').value) || 0;
-    let tiles = Math.ceil(area);
-    let perimeterMm = 2 * (length + breadth);
-    let edgeTrim = perimeterMm > 0 ? Math.ceil(perimeterMm / (600 * 304.8)) : 0;
-    document.getElementById('ceiling-result').textContent = area > 0 ? `${tiles} sqft + ${edgeTrim} rft` : '—';
-}
 
 async function updateRoomDimension(roomId, field, value) {
     let response = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + roomId);
@@ -1614,15 +1670,139 @@ async function updateRoomDimension(roomId, field, value) {
     });
 }
 
+let _currentOpeningType = 'door';
+
+async function openOpeningModal(type) {
+    _currentOpeningType = type;
+    
+    let titles = { door: '🚪 Doors', window: '🪟 Windows', custom: '+ Custom Item' };
+    document.getElementById('opening-modal-title').textContent = titles[type];
+    
+    // Show/hide fields based on type
+    let dimFields = document.getElementById('opening-dimension-fields');
+    let areaField = document.getElementById('opening-area-field');
+    let typeField = document.getElementById('opening-type-field');
+    let preview = document.getElementById('opening-calc-preview');
+    
+    if (type === 'custom') {
+        dimFields.style.display = 'none';
+        areaField.style.display = 'block';
+        typeField.style.display = 'block';
+        preview.style.display = 'none';
+    } else {
+        dimFields.style.display = 'grid';
+        areaField.style.display = 'none';
+        typeField.style.display = 'none';
+        preview.style.display = 'block';
+    }
+    
+    // Clear form
+    document.getElementById('opening-name').value = '';
+    document.getElementById('opening-width').value = '';
+    document.getElementById('opening-height').value = '';
+    document.getElementById('opening-area').value = '';
+    preview.textContent = '';
+    
+    // Render existing items
+    let existing = _roomOpenings.filter(o => o.type === type);
+    let list = document.getElementById('opening-items-list');
+    
+    if (existing.length === 0) {
+        list.innerHTML = `<p style="font-size:12px;color:var(--text-muted)">No ${type}s added yet.</p>`;
+    } else {
+        list.innerHTML = existing.map(item => `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg);border-radius:6px;margin-bottom:6px">
+                <input type="checkbox" ${item.active !== false ? 'checked' : ''}
+                    onchange="toggleOpening(${item.id}, this.checked)"
+                    style="accent-color:var(--accent)">
+                <span style="flex:1;font-size:13px;color:var(--text-primary)">${item.name}</span>
+                ${item.width && item.height ? `<span style="font-size:11px;color:var(--text-muted)">${item.width}×${item.height}mm</span>` : ''}
+                <span style="font-size:12px;font-weight:600;color:var(--accent)">${(item.area||0).toFixed(2)} sqft</span>
+                <button onclick="deleteOpening(${item.id})"
+                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
+                    onmouseover="this.style.color='var(--destructive)'"
+                    onmouseout="this.style.color='var(--text-muted)'">✕</button>
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById('opening-modal').classList.add('open');
+}
+
+function updateOpeningArea() {
+    let w = parseFloat(document.getElementById('opening-width').value) || 0;
+    let h = parseFloat(document.getElementById('opening-height').value) || 0;
+    let preview = document.getElementById('opening-calc-preview');
+    if (w > 0 && h > 0) {
+        let area = (w * h) / 92903;
+        preview.textContent = `Area: ${area.toFixed(2)} sqft (will be excluded)`;
+    } else {
+        preview.textContent = '';
+    }
+}
+
+async function saveOpening() {
+    let name = document.getElementById('opening-name').value.trim();
+    if (!name) { showToast('Please enter a name', 'warning'); return; }
+    
+    let body = {
+        roomId: currentRoomId,
+        type: _currentOpeningType,
+        name,
+        active: true
+    };
+    
+    if (_currentOpeningType === 'custom') {
+        body.area = parseFloat(document.getElementById('opening-area').value) || 0;
+        body.itemType = document.querySelector('input[name="opening-item-type"]:checked').value;
+    } else {
+        body.width = parseFloat(document.getElementById('opening-width').value) || 0;
+        body.height = parseFloat(document.getElementById('opening-height').value) || 0;
+        body.itemType = 'exclusion'; // doors and windows always exclude
+    }
+    
+    let res = await authFetch(`${API}/api/room-openings`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+    });
+    let saved = await res.json();
+    _roomOpenings.push(saved);
+    
+    // Re-open modal to show updated list
+    await openOpeningModal(_currentOpeningType);
+    renderCalculators();
+    showToast(`${name} added`, 'success');
+}
+
+async function toggleOpening(id, active) {
+    let opening = _roomOpenings.find(o => o.id === id);
+    if (!opening) return;
+    opening.active = active;
+    await authFetch(`${API}/api/room-openings/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(opening)
+    });
+    renderCalculators();
+}
+
+async function deleteOpening(id) {
+    await authFetch(`${API}/api/room-openings/${id}`, { method: 'DELETE', headers: authHeaders() });
+    _roomOpenings = _roomOpenings.filter(o => o.id !== id);
+    await openOpeningModal(_currentOpeningType);
+    renderCalculators();
+}
+
 function getEffectiveArea(roomId) {
     let saved = localStorage.getItem('room-area-' + roomId);
     return saved !== null ? parseFloat(saved) : 0;
 }
 
-async function deleteRoom(id) {
-    if (confirm('Delete this room? This cannot be undone.')) {
-        await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + id, { method: 'DELETE' });
-        createVersion(name + ' deleted');
+async function deleteRoom(id, name) {
+    if (confirm(`Delete ${name || 'this room'}? This cannot be undone.`)) {
+        await authFetch(`${API}/api/rooms/${id}`, { method: 'DELETE' });
+        logActivity('Room Deleted', `Room "${name}" deleted`);
         loadLayout();
     }
 }
@@ -1633,7 +1813,7 @@ document.getElementById('room-cancel').addEventListener('click', function() {
 
 document.getElementById('room-confirm').addEventListener('click', async function() {
     let name = document.getElementById('room-name').value.trim();
-    if (!name) { alert('Please enter a room name'); return; }
+    if (!name) { showToast('Please enter a room name', 'warning'); return; }
 
     let room = {
         projectId: parseInt(projectId),
@@ -1678,5 +1858,67 @@ document.getElementById('pin-modal-confirm').addEventListener('click', async fun
 loadProjectDetails();
 updateCartCount();
 </script>
+
+<div class="modal-overlay" id="opening-modal">
+    <div class="modal" style="width:440px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h2 id="opening-modal-title" style="margin:0">Add Door</h2>
+            <button onclick="document.getElementById('opening-modal').classList.remove('open')"
+                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+        </div>
+
+        <!-- Existing items list -->
+        <div id="opening-items-list" style="margin-bottom:16px;max-height:200px;overflow-y:auto"></div>
+
+        <!-- Add new item form -->
+        <div id="opening-add-form" style="border-top:1px solid var(--border);padding-top:16px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px">Add New</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <input type="text" id="opening-name" placeholder="Name (e.g. Main Door, Bay Window)"
+                    style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)">
+                
+                <div id="opening-dimension-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">Width (mm)</div>
+                        <input type="number" id="opening-width" placeholder="e.g. 900"
+                            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            oninput="updateOpeningArea()">
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">Height (mm)</div>
+                        <input type="number" id="opening-height" placeholder="e.g. 2100"
+                            style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            oninput="updateOpeningArea()">
+                    </div>
+                </div>
+
+                <div id="opening-area-field" style="display:none">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">Area (sqft)</div>
+                    <input type="number" id="opening-area" placeholder="e.g. 12.5"
+                        style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)">
+                </div>
+
+                <div id="opening-calc-preview" style="display:none;font-size:12px;color:var(--accent);font-weight:600;padding:4px 0"></div>
+
+                <div id="opening-type-field" style="display:none">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Type</div>
+                    <div style="display:flex;gap:8px">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                            <input type="radio" name="opening-item-type" value="exclusion" checked style="accent-color:var(--accent)">
+                            <span style="font-size:13px">Exclusion (subtract)</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                            <input type="radio" name="opening-item-type" value="inclusion" style="accent-color:var(--accent)">
+                            <span style="font-size:13px">Inclusion (add)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="saveOpening()"
+                    class="add-btn" style="margin-top:4px">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
