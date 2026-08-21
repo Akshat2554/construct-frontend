@@ -6,16 +6,19 @@ function authFetch(url, options = {}) {
     }
     
     startProgress();
+    showLoading();
     
     return fetch(url, options).then(response => {
         endProgress();
+        hideLoading();
         if (response.status === 401 || response.status === 403) {
-            //sessionStorage.clear();
-            //window.location.replace('login.html');
+            sessionStorage.clear();
+            window.location.replace('login.html');
         }
         return response;
     }).catch(err => {
         endProgress();
+        hideLoading();
         showToast('Connection error — please check your internet', 'error');
         throw err;
     });

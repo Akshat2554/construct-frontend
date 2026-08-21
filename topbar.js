@@ -50,10 +50,34 @@ logoutBtn.className = 'nav-btn';
 logoutBtn.textContent = 'Sign Out';
 logoutBtn.style.marginLeft = '8px';
 logoutBtn.addEventListener('click', function() {
-    localStorage.removeItem('construct-auth');
-    localStorage.removeItem('construct-user');
+    sessionStorage.removeItem('construct-token');
+    sessionStorage.removeItem('construct-auth');
+    sessionStorage.removeItem('construct-user');
+    localStorage.removeItem('selectedProjectId');
+    localStorage.removeItem('selectedProjectName');
     window.location.replace('login.html');
 });
+
+// Make Projects button smart
+let projectsLink = document.querySelector('a.nav-btn[href="index.html"]');
+if (projectsLink) {
+    projectsLink.addEventListener('click', function(e) {
+        let projectId = localStorage.getItem('selectedProjectId');
+        if (projectId && window.location.pathname !== '/project-detail.html') {
+            e.preventDefault();
+            window.location.href = 'project-detail.html';
+        }
+    });
+}
+
 document.querySelector('.global-topbar').appendChild(logoutBtn);
 
 loadProjectName();
+
+let logo = document.querySelector('.logo');
+if (logo) {
+    logo.style.cursor = 'pointer';
+    logo.addEventListener('click', function() {
+        window.location.href = 'index.html';
+    });
+}
