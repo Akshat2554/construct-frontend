@@ -267,7 +267,7 @@ async function loadLayout() {
         (project.clientName || '') + 
         (project.location ? ' · ' + project.location : '') +
         (project.squareFootage ? ' · ' + project.squareFootage + ' sqft' : '');
-        
+
     document.querySelector('.sidebar').style.display = '';
     document.querySelector('.main-content > div:first-child').style.display = '';
     document.querySelector('.main-content').style.padding = '';
@@ -375,17 +375,26 @@ let totalCeilingArea = totalFloorArea;
 let totalsBar = document.createElement('div');
 totalsBar.style.cssText = 'display:flex;gap:24px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--border)';
 totalsBar.innerHTML = `
-    <div>
+    <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Paint Area</span>
-        <span style="font-size:14px;font-weight:700;color:var(--text-primary);margin-left:8px">${totalPaintArea.toFixed(0)} sqft</span>
+        <input type="number" id="total-paint-area" value="${project.totalPaintArea || totalPaintArea.toFixed(0)}"
+            style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
+            onchange="saveProjectTotal('totalPaintArea', this.value)">
+        <span style="font-size:11px;color:var(--text-muted)">sqft</span>
     </div>
-    <div>
+    <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Floor Area</span>
-        <span style="font-size:14px;font-weight:700;color:var(--text-primary);margin-left:8px">${totalFloorArea.toFixed(0)} sqft</span>
+        <input type="number" id="total-floor-area" value="${project.totalFloorArea || totalFloorArea.toFixed(0)}"
+            style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
+            onchange="saveProjectTotal('totalFloorArea', this.value)">
+        <span style="font-size:11px;color:var(--text-muted)">sqft</span>
     </div>
-    <div>
+    <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Ceiling Area</span>
-        <span style="font-size:14px;font-weight:700;color:var(--text-primary);margin-left:8px">${totalCeilingArea.toFixed(0)} sqft</span>
+        <input type="number" id="total-ceiling-area" value="${project.totalCeilingArea || totalCeilingArea.toFixed(0)}"
+            style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
+            onchange="saveProjectTotal('totalCeilingArea', this.value)">
+        <span style="font-size:11px;color:var(--text-muted)">sqft</span>
     </div>
 `;
 layout.insertBefore(totalsBar, layout.firstChild);
@@ -517,6 +526,17 @@ async function deleteDrawing(id) {
         createVersion('Drawing deleted on Floor ' + currentFloor);
         loadLayout();
     }
+}
+
+async function saveProjectTotal(field, value) {
+    let res = await authFetch(`${API}/api/projects/${projectId}`);
+    let project = await res.json();
+    project[field] = parseFloat(value) || 0;
+    await authFetch(`${API}/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(project)
+    });
 }
 
 async function deleteFloor(floorNum) {
