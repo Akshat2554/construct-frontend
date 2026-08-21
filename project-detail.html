@@ -23,10 +23,8 @@
     <div class="page-body">
         <div class="sidebar">
             <a href="index.html" class="nav-btn">← Projects</a>
-            <button class="boq-nav-btn active" id="overview-btn" onclick="switchView('overview')">Overview</button>
-<button class="boq-nav-btn" id="layout-btn" onclick="switchView('layout')">Layout</button>
-<button class="boq-nav-btn" id="boq-btn" onclick="switchView('boq')">BOQ</button>
-<button class="boq-nav-btn" id="shortlist-btn" onclick="switchView('shortlist')">Vendor Shortlist</button>
+            <button class="boq-nav-btn active" id="layout-btn" onclick="switchView('layout')">Overview</button>
+            <button class="boq-nav-btn" id="shortlist-btn" onclick="switchView('shortlist')">Vendor Shortlist</button>
 <button class="boq-nav-btn" id="updates-btn" onclick="switchView('updates')">Updates</button>
         </div>
         <div class="main-content">
@@ -34,9 +32,7 @@
                 <h1 id="project-title" style="font-family:'Syne',sans-serif;margin-bottom:4px"></h1>
                 <span id="project-subtitle" style="font-size:13px;color:var(--text-muted)"></span>
             </div>
-            <div id="view-overview"></div>
-            <div id="view-layout" style="display:none"></div>
-            <div id="view-boq" style="display:none"></div>
+            <div id="view-layout"></div>
             <div id="view-shortlist" style="display:none"></div>
             <div id="view-updates" style="display:none"></div>
         </div>
@@ -140,6 +136,24 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="vendor-modal">
+        <div class="modal">
+            <h2>Add Vendor to Shortlist</h2>
+            <input type="text" id="vendor-name" placeholder="Supplier name">
+            <input type="text" id="vendor-category" placeholder="Category (e.g. Furniture, Flooring)">
+            <select id="vendor-status">
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            <input type="text" id="vendor-notes" placeholder="Notes (optional)">
+            <div class="modal-buttons">
+                <button id="vendor-cancel">Cancel</button>
+                <button id="vendor-confirm" class="add-btn">Add</button>
+            </div>
+        </div>
+    </div>
+
 <script>
     let projectId = localStorage.getItem('selectedProjectId');
     let projectName = localStorage.getItem('selectedProjectName');
@@ -149,20 +163,17 @@
     let _roomCalcValues = { paintCoats: 2, paintCoverage: 120, floorTile: 600, floorWastage: 10, length: 0, breadth: 0 };
 
     function switchView(view) {
-    document.getElementById('view-overview').style.display = view === 'overview' ? 'block' : 'none';
     document.getElementById('view-layout').style.display = view === 'layout' ? 'block' : 'none';
-    document.getElementById('view-boq').style.display = view === 'boq' ? 'block' : 'none';
     document.getElementById('view-shortlist').style.display = view === 'shortlist' ? 'block' : 'none';
     document.getElementById('view-updates').style.display = view === 'updates' ? 'block' : 'none';
 
-    document.getElementById('overview-btn').classList.toggle('active', view === 'overview');
     document.getElementById('layout-btn').classList.toggle('active', view === 'layout');
-    document.getElementById('boq-btn').classList.toggle('active', view === 'boq');
     document.getElementById('shortlist-btn').classList.toggle('active', view === 'shortlist');
     document.getElementById('updates-btn').classList.toggle('active', view === 'updates');
-if (view === 'updates') loadUpdates();
-    
+
+    if (view === 'updates') loadUpdates();
     if (view === 'layout') loadLayout();
+    if (view === 'shortlist') loadVendorShortlist();
 }
 
 let _projectData = null;
@@ -181,100 +192,56 @@ async function loadAllProjectData() {
     return _projectData;
 }
 
-    async function loadProjectDetails() {
-    let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects/' + projectId);
-    let project = await response.json();
-    document.getElementById('project-title').textContent = project.name;
-    document.getElementById('project-subtitle').textContent = 
-        (project.clientName || '') + 
-        (project.location ? ' · ' + project.location : '') + 
-        (project.squareFootage ? ' · ' + project.squareFootage + ' sqft' : '');
-
-    // Load rooms and vendors for overview stats
-    let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
-    let rooms = await roomsRes.json();
-
-    let cart = await getCart();
-    let boqValue = cart.reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.quantity || 1)), 0);
-    let confirmed = await getConfirmed();
-    let groups = {};
-    cart.forEach(item => { let k = item.category || 'Other'; if (!groups[k]) groups[k] = true; });
-    let totalCats = Object.keys(groups).length;
-    let progress = totalCats > 0 ? Math.round((confirmed.length / totalCats) * 100) : 0;
-
-    let shortlistRes = await authFetch(`https://construct-backend-production.up.railway.app/api/vendor-shortlist/${projectId}`);
-let shortlist = await shortlistRes.json();
-    document.getElementById('view-overview').innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px">
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Total Budget</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">₹${project.budget ? (project.budget/10000000).toFixed(2) + ' Cr' : '—'}</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Value So Far</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">₹${(boqValue/10000000).toFixed(2)} Cr</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Rooms</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${rooms.length}</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Shortlisted Vendors</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${shortlist.length}</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Completion</div>
-                <div style="font-size:22px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif">${progress}%</div>
-                <div style="height:4px;background:var(--border);border-radius:99px;margin-top:8px;overflow:hidden">
-                    <div style="height:100%;width:${progress}%;background:var(--accent);border-radius:99px"></div>
-                </div>
-            </div>
+async function loadVendorShortlist() {
+    let container = document.getElementById('view-shortlist');
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+    
+    let response = await authFetch(`${API}/api/vendor-shortlist/${projectId}`);
+    let shortlist = await response.json();
+    
+    let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
+    
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <span style="font-size:13px;color:var(--text-muted)">Vendors shortlisted for this project</span>
+            <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:12.5px">+ Add Vendor</button>
         </div>
     `;
-    let versionsRes = await authFetch('https://construct-backend-production.up.railway.app/api/versions/' + projectId);
-let versions = await versionsRes.json();
+    
+    if (shortlist.length === 0) {
+        html += '<p style="color:var(--text-muted);font-size:13px">No vendors shortlisted yet.</p>';
+    } else {
+        html += `<table class="list-table">
+            <thead><tr><th>Supplier</th><th>Category</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+            <tbody>
+                ${shortlist.map(vendor => `
+                    <tr>
+                        <td style="font-weight:500">${vendor.supplierName}</td>
+                        <td style="color:var(--text-muted)">${vendor.category || '—'}</td>
+                        <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
+                        <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
+                        <td><button onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>`;
+    }
+    
+    container.innerHTML = html;
+}
 
-    let versionsHtml = versions.length === 0 
-    ? '<p style="font-size:13px;color:var(--text-muted)">No activity yet.</p>'
-    : `<table class="list-table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Update</th>
-                <th>Remarks</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            ${versions.map(v => {
-                let date = new Date(v.timestamp);
-                let formatted = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + 
-                    ' · ' + date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                return `<tr>
-                    <td style="color:var(--text-muted);white-space:nowrap;font-size:12px">${formatted}</td>
-                    <td style="font-weight:500">${v.label}</td>
-                    <td style="color:var(--text-muted)">${v.remarks || '—'}</td>
-                    <td><button onclick="viewVersion('${v.id}')" 
-                        style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12.5px;font-family:inherit">
-                        View
-                    </button></td>
-                </tr>`;
-            }).join('')}
-        </tbody>
-    </table>`;
+function openVendorModal() {
+    document.getElementById('vendor-name').value = '';
+    document.getElementById('vendor-category').value = '';
+    document.getElementById('vendor-status').value = 'Pending';
+    document.getElementById('vendor-notes').value = '';
+    document.getElementById('vendor-modal').classList.add('open');
+}
 
-    document.getElementById('view-overview').innerHTML += `
-    <div style="margin-top:28px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Version History</div>
-            <button onclick="addManualActivity()" 
-                style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;font-family:inherit;cursor:pointer">
-                + Add Activity
-            </button>
-        </div>
-        ${versionsHtml}
-    </div>
-`;
+async function removeVendor(id) {
+    await authFetch(`${API}/api/vendor-shortlist/${id}`, { method: 'DELETE' });
+    showToast('Vendor removed', 'info');
+    loadVendorShortlist();
 }
 
 // Auto-open room if returning from catalog
@@ -293,6 +260,14 @@ if (returnToRoom) {
 let currentFloor = 1;
 
 async function loadLayout() {
+    let projectRes = await authFetch(`${API}/api/projects/${projectId}`);
+    let project = await projectRes.json();
+    document.getElementById('project-title').textContent = project.name;
+    document.getElementById('project-subtitle').textContent = 
+        (project.clientName || '') + 
+        (project.location ? ' · ' + project.location : '') +
+        (project.squareFootage ? ' · ' + project.squareFootage + ' sqft' : '');
+        
     document.querySelector('.sidebar').style.display = '';
     document.querySelector('.main-content > div:first-child').style.display = '';
     document.querySelector('.main-content').style.padding = '';
@@ -383,6 +358,38 @@ async function loadLayout() {
 
     renderRoomList(rooms);
 
+    // Calculate totals from all rooms on this floor
+    let totalPaintArea = allRooms.reduce((s, r) => {
+    if (!r.length || !r.breadth || !r.height) return s;
+    return s + (2 * (r.length + r.breadth) * r.height / 92903);
+}, 0);
+
+let totalFloorArea = allRooms.reduce((s, r) => {
+    if (!r.length || !r.breadth) return s;
+    return s + (r.length * r.breadth / 92903);
+}, 0);
+
+let totalCeilingArea = totalFloorArea;
+
+// Add totals bar to layout header
+let totalsBar = document.createElement('div');
+totalsBar.style.cssText = 'display:flex;gap:24px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--border)';
+totalsBar.innerHTML = `
+    <div>
+        <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Paint Area</span>
+        <span style="font-size:14px;font-weight:700;color:var(--text-primary);margin-left:8px">${totalPaintArea.toFixed(0)} sqft</span>
+    </div>
+    <div>
+        <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Floor Area</span>
+        <span style="font-size:14px;font-weight:700;color:var(--text-primary);margin-left:8px">${totalFloorArea.toFixed(0)} sqft</span>
+    </div>
+    <div>
+        <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Ceiling Area</span>
+        <span style="font-size:14px;font-weight:700;color:var(--text-primary);margin-left:8px">${totalCeilingArea.toFixed(0)} sqft</span>
+    </div>
+`;
+layout.insertBefore(totalsBar, layout.firstChild);
+
     if (drawings.length > 0 && drawings[0].fileName && !drawings[0].fileName.toLowerCase().endsWith('.pdf')) {
     requestAnimationFrame(function() {
         let img = document.getElementById('drawing-img');
@@ -424,23 +431,17 @@ async function loadLayout() {
         }
     });
     let proxyUrl = 'https://construct-backend-production.up.railway.app/api/files/proxy?url=' + encodeURIComponent(drawings[0].fileName);
-console.log('authFetching proxy:', proxyUrl);
 authFetch(proxyUrl)
     .then(r => {
-        console.log('response status:', r.status);
         return r.blob();
     })
     .then(blob => {
-        console.log('blob size:', blob.size);
         let blobUrl = URL.createObjectURL(blob);
         // Re-query the element in case DOM changed
         let img = document.getElementById('drawing-img');
-        console.log('img after authFetch:', img);
         if (img) {
             img.src = blobUrl;
-            console.log('src set successfully');
         } else {
-            console.log('img element gone - DOM was re-rendered');
         }
     })
     .catch(e => console.log('authFetch error:', e));
@@ -550,94 +551,11 @@ async function deleteFloor(floorNum) {
 async function addManualActivity() {
     let label = prompt('What happened?');
     if (!label) return;
-    let remarks = prompt('Any remarks? (optional)');
-    await createVersion(label, remarks || '');
-    loadProjectDetails();
+    logActivity(label, '');
+    showToast('Activity logged', 'success');
 }
 
-function viewVersion(versionId) {
-    let versions = JSON.parse(localStorage.getItem('versions-' + projectId)) || [];
-    let version = versions.find(v => v.id == versionId);
-    if (!version) return;
 
-    let date = new Date(version.timestamp).toLocaleString('en-IN');
-    let snapshot = JSON.parse(v.snapshotJson);
-    let cart = snapshot.cart || [];
-    let confirmed = snapshot.confirmed || [];
-    let vendors = snapshot.vendorShortlist || [];
-
-    let grandTotal = cart.reduce((s, i) => s + ((i.unitPrice || 0) * (i.quantity || 1)), 0);
-
-    document.getElementById('view-overview').innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-            <button onclick="loadProjectDetails()" 
-                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:inherit">
-                ← Back to Overview
-            </button>
-            <span style="color:var(--border)">|</span>
-            <span style="font-size:14px;font-weight:600;color:var(--text-primary)">${version.label}</span>
-            <span style="font-size:12px;color:var(--text-muted)">${date}</span>
-            <span style="font-size:11px;background:var(--surface-raised);color:var(--text-muted);padding:2px 8px;border-radius:4px;margin-left:4px">Read only</span>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Items</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${cart.length}</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">BOQ Value</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">₹${(grandTotal/10000000).toFixed(2)} Cr</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Confirmed Categories</div>
-                <div style="font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${confirmed.length}</div>
-            </div>
-        </div>
-
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">BOQ at this point</div>
-        <table class="list-table" style="margin-bottom:24px">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Category</th>
-                    <th>Qty</th>
-                    <th>Unit Price</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${cart.length === 0 
-                    ? '<tr><td colspan="5" style="color:var(--text-muted)">No items in BOQ at this point</td></tr>'
-                    : cart.map(item => `
-                        <tr>
-                            <td style="font-weight:500">${item.name}</td>
-                            <td style="color:var(--text-muted)">${item.category || '—'}</td>
-                            <td>${item.quantity}</td>
-                            <td>₹${(item.unitPrice || 0).toLocaleString('en-IN')}</td>
-                            <td style="color:var(--accent);font-weight:600">₹${((item.unitPrice || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</td>
-                        </tr>
-                    `).join('')}
-            </tbody>
-        </table>
-
-        ${vendors.length > 0 ? `
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Vendor Shortlist at this point</div>
-            <table class="list-table">
-                <thead><tr><th>Supplier</th><th>Status</th><th>Notes</th></tr></thead>
-                <tbody>
-                    ${vendors.map(v => `
-                        <tr>
-                            <td style="font-weight:500">${v.name}</td>
-                            <td>${v.status}</td>
-                            <td style="color:var(--text-muted)">${v.notes || '—'}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        ` : ''}
-    `;
-}
 
 function renderRoomList(rooms) {
     let container = document.getElementById('room-list');
@@ -671,8 +589,7 @@ let wallArea = room.wallArea || 0;
                 <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:4px;font-weight:500">${room.roomType || '—'}</span>
             </div>
             ${room.length ? `<div style="font-size:11.5px;color:var(--text-muted)">${room.length} × ${room.breadth} × ${room.height} mm</div>` : ''}
-            ${area ? `<div>
-    ` : ''}
+            ${area ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">${area} sqft floor</div>` : ''}
         `;
         card.addEventListener('mouseover', function() { this.style.borderColor = 'var(--accent)'; });
         card.addEventListener('mouseout', function() { this.style.borderColor = 'var(--border)'; });
@@ -689,7 +606,6 @@ async function renderRenderPins(renderId) {
     let pinsRes = await authFetch(`${API}/api/render-pins/${renderId}`);
     if (!pinsRes.ok) return;
     let pins = await pinsRes.json();
-    console.log('render pins:', pins);
     
     pins.forEach(function(pin) {
         let assignment = _renderAssignments.find(a => a.id === pin.roomAssignmentId);
@@ -727,9 +643,7 @@ async function renderRenderPins(renderId) {
 }
 
 async function deleteRenderPin(pinId) {
-    console.log('deleteRenderPin called, pinId:', pinId, 'currentRenderId:', currentRenderId);
     let response = await authFetch(`${API}/api/render-pins/${pinId}`, { method: 'DELETE' });
-    console.log('delete status:', response.status);
     if (response.ok) {
         await renderRenderPins(currentRenderId);
     }
@@ -737,15 +651,13 @@ async function deleteRenderPin(pinId) {
 
 function renderPins(rooms) {
     let layer = document.getElementById('pins-layer');
-    console.log('renderPins called, layer:', layer);
     if (!layer) return;
     layer.innerHTML = '';
     
     let img = document.getElementById('drawing-img');
+    if (!img) return;
 let rect = img.getBoundingClientRect();
-console.log('container rect:', rect.width, rect.height);
 let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(img);
-console.log('rendered area:', offsetX, offsetY, renderedW, renderedH);
     
     rooms.forEach(function(room, index) {
         if (room.pinX === null || room.pinY === null) return;
@@ -899,16 +811,15 @@ async function openRoomDetail(room) {
             <div style="display:flex;align-items:center;gap:20px">
                 <div style="display:flex;flex-direction:column;gap:1px">
                     <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Wall</span>
-                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${wallArea} <span style="font-size:10px;color:var(--text-muted);font-weight:400">sqft</span></span>
+<span id="header-wall-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${wallArea}</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:1px">
                     <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Floor</span>
-                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${area} <span style="font-size:10px;color:var(--text-muted);font-weight:400">sqft</span></span>
+<span id="header-floor-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${area}</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:1px">
                     <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Ceiling</span>
-                    <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${ceilingArea} <span style="font-size:10px;color:var(--text-muted);font-weight:400">sqft</span></span>
-                </div>
+<span id="header-ceiling-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${ceilingArea}</span>                </div>
             </div>
 
             <!-- Divider -->
@@ -927,16 +838,16 @@ async function openRoomDetail(room) {
         <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
 
         <!-- THREE COLUMN BODY -->
-<div style="display:grid;grid-template-columns:1fr 270px 230px;gap:10px;padding:12px;height:calc(100vh - 68px);background:var(--bg)">
+<div style="display:grid;grid-template-columns:1fr 300px 250px;gap:10px;padding:12px;height:calc(100vh - 68px);background:var(--bg)">
 
             <!-- LEFT: Renders -->
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden">
                 
                 <!-- Thumbnail strip -->
-<div style="display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;min-height:140px;align-items:center">
+<div style="display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;min-height:100px;align-items:center">
                             ${_renders.map((r, i) => `
                         <div onclick="switchRender(${r.id})" id="thumb-${r.id}"
-                            style="position:relative;flex-shrink:0;width:160px;height:110px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ${i === 0 ? 'var(--accent)' : 'var(--border)'}">
+                            style="position:relative;flex-shrink:0;width:120px;height:80px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ${i === 0 ? 'var(--accent)' : 'var(--border)'}">
                             <img src="${r.fileName}" style="width:100%;height:100%;object-fit:cover">
                             <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);padding:2px 5px;font-size:9px;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.displayName || 'View ' + (i+1)}</div>
                             <button onclick="event.stopPropagation();deleteRender(${r.id})"
@@ -1007,7 +918,6 @@ newCanvas.addEventListener('click', function(e) {
             renderRenderPins(currentRenderId);
         });
         if (!window._pinLayerListenerAdded) {
-            console.log('adding pin layer listener');
     window._pinLayerListenerAdded = true;
     document.addEventListener('click', function(e) {
         let btn = e.target.closest('button[data-pin-id]');
@@ -1055,15 +965,12 @@ document.getElementById('pin-modal-cancel').addEventListener('click', function()
 
 
 async function placePinOnRender(renderId, assignmentId, x, y, note) {
-    console.log('placing pin:', renderId, assignmentId, x, y);
     let response = await authFetch(`${API}/api/render-pins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ renderId, roomAssignmentId: assignmentId, pinX: x, pinY: y, note: note || '' })
     });
-    console.log('response status:', response.status);
     let pin = await response.json();
-    console.log('saved pin:', pin);
     await renderRenderPins(renderId);
 }
 
@@ -1106,7 +1013,7 @@ async function loadOpenings() {
     renderCalculators();
 }
 
-function renderCalculators() {
+async function renderCalculators() {
     let wallArea = parseFloat(document.getElementById('wall-area-value').value) || 0;
     let floorArea = parseFloat(document.getElementById('area-input').value) || 0;
     let length = _roomCalcValues.length;
@@ -1137,6 +1044,8 @@ function renderCalculators() {
     let doors = _roomOpenings.filter(o => o.type === 'door');
     let windows = _roomOpenings.filter(o => o.type === 'window');
     let custom = _roomOpenings.filter(o => o.type === 'custom');
+
+    // After calculating paintLitres, tiles, ceiling
 
     let calcContainer = document.getElementById('calc-middle-column');
     if (!calcContainer) return;
@@ -1212,6 +1121,7 @@ function renderCalculators() {
                 </div>
                 <div style="margin-top:6px">
                     <input type="number" id="paint-final" placeholder="Final (L)"
+                        onchange="saveRoomFinal('finalPaint', this.value)"
                         style="width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg);font-family:inherit">
                 </div>
             </div>
@@ -1229,6 +1139,7 @@ function renderCalculators() {
                 </div>
                 <div style="margin-top:6px">
                     <input type="number" id="floor-final" placeholder="Final (tiles)"
+                        onchange="saveRoomFinal('finalFloor', this.value)"
                         style="width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg);font-family:inherit">
                 </div>
             </div>
@@ -1246,6 +1157,7 @@ function renderCalculators() {
                 </div>
                 <div style="margin-top:6px">
                     <input type="number" id="ceiling-final" placeholder="Final (sqft)"
+                        onchange="saveRoomFinal('finalCeiling', this.value)"
                         style="width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg);font-family:inherit">
                 </div>
             </div>
@@ -1642,12 +1554,12 @@ document.getElementById('calc-apply-btn').addEventListener('click', function() {
         _roomCalcValues.floorWastage = parseFloat(document.getElementById('modal-floor-wastage')?.value) || 10;
     }
     document.getElementById('calc-modal').classList.remove('open');
-    renderCalculators(); // recalculate with new values
+    renderCalculators();
 });
 
 
 async function updateRoomDimension(roomId, field, value) {
-    let response = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/single/' + roomId);
+    let response = await authFetch(`${API}/api/rooms/single/${roomId}`);
     let room = await response.json();
     room[field] = parseFloat(value);
     
@@ -1657,15 +1569,40 @@ async function updateRoomDimension(roomId, field, value) {
         room.area = newArea;
         room.wallArea = newWallArea;
         
+        // Update hidden inputs
         let areaInput = document.getElementById('area-input');
         if (areaInput) areaInput.value = newArea;
         let wallInput = document.getElementById('wall-area-value');
         if (wallInput) wallInput.value = newWallArea;
+        
+        // Update header display stats
+        document.getElementById('header-wall-area') && (document.getElementById('header-wall-area').textContent = newWallArea);
+document.getElementById('header-floor-area') && (document.getElementById('header-floor-area').textContent = newArea);
+document.getElementById('header-ceiling-area') && (document.getElementById('header-ceiling-area').textContent = newArea);
+renderCalculators();
+        
+        // Update calc values
+        _roomCalcValues.length = room.length || 0;
+        _roomCalcValues.breadth = room.breadth || 0;
+        
+        // Re-render calculators
+        renderCalculators();
     }
     
-    await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + roomId, {
+    await authFetch(`${API}/api/rooms/${roomId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
+        body: JSON.stringify(room)
+    });
+}
+
+async function saveRoomFinal(field, value) {
+    let response = await authFetch(`${API}/api/rooms/single/${currentRoomId}`);
+    let room = await response.json();
+    room[field] = parseFloat(value) || null;
+    await authFetch(`${API}/api/rooms/${currentRoomId}`, {
+        method: 'PUT',
+        headers: authHeaders(),
         body: JSON.stringify(room)
     });
 }
@@ -1675,7 +1612,7 @@ let _currentOpeningType = 'door';
 async function openOpeningModal(type) {
     _currentOpeningType = type;
     
-    let titles = { door: '🚪 Doors', window: '🪟 Windows', custom: '+ Custom Item' };
+    let titles = { door: 'Doors', window: 'Windows', custom: '+ Custom Item' };
     document.getElementById('opening-modal-title').textContent = titles[type];
     
     // Show/hide fields based on type
@@ -1775,6 +1712,53 @@ async function saveOpening() {
     showToast(`${name} added`, 'success');
 }
 
+async function loadVendorShortlist() {
+    let container = document.getElementById('view-shortlist');
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+    
+    let response = await authFetch(`${API}/api/vendor-shortlist/${projectId}`);
+    let shortlist = await response.json();
+    
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <span style="font-size:13px;color:var(--text-muted)">Vendors shortlisted for this project</span>
+            <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:12.5px">+ Add Vendor</button>
+        </div>
+    `;
+    
+    if (shortlist.length === 0) {
+        html += '<p style="color:var(--text-muted);font-size:13px">No vendors shortlisted yet.</p>';
+    } else {
+        let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
+        html += '<table class="list-table"><thead><tr><th>Supplier</th><th>Category</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>';
+        shortlist.forEach(function(vendor) {
+            html += `<tr>
+                <td style="font-weight:500">${vendor.supplierName}${vendor.category ? ` <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;margin-left:6px">${vendor.category}</span>` : ''}</td>
+                <td style="color:var(--text-muted)">${vendor.category || '—'}</td>
+                <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
+                <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
+                <td><button onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+    
+    container.innerHTML = html;
+}
+
+async function removeVendor(id) {
+    await authFetch(`${API}/api/vendor-shortlist/${id}`, { method: 'DELETE' });
+    loadVendorShortlist();
+}
+
+function openVendorModal() {
+    document.getElementById('vendor-name').value = '';
+    document.getElementById('vendor-category').value = '';
+    document.getElementById('vendor-status').value = 'Pending';
+    document.getElementById('vendor-notes').value = '';
+    document.getElementById('vendor-modal').classList.add('open');
+}
+
 async function toggleOpening(id, active) {
     let opening = _roomOpenings.find(o => o.id === id);
     if (!opening) return;
@@ -1855,7 +1839,32 @@ document.getElementById('pin-modal-confirm').addEventListener('click', async fun
     await placePinOnRender(currentRenderId, parseInt(selected.value), _pendingPinX, _pendingPinY, note);
 });
 
-loadProjectDetails();
+document.getElementById('vendor-cancel').addEventListener('click', function() {
+    document.getElementById('vendor-modal').classList.remove('open');
+});
+
+document.getElementById('vendor-confirm').addEventListener('click', async function() {
+    let name = document.getElementById('vendor-name').value.trim();
+    if (!name) { showToast('Please enter a supplier name', 'warning'); return; }
+    
+    await authFetch(`${API}/api/vendor-shortlist`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            supplierName: name,
+            category: document.getElementById('vendor-category').value,
+            status: document.getElementById('vendor-status').value,
+            notes: document.getElementById('vendor-notes').value.trim()
+        })
+    });
+    
+    document.getElementById('vendor-modal').classList.remove('open');
+    loadVendorShortlist();
+    showToast('Vendor added to shortlist', 'success');
+});
+
+switchView('layout');
 updateCartCount();
 </script>
 
@@ -1920,5 +1929,6 @@ updateCartCount();
         </div>
     </div>
 </div>
+
 </body>
 </html>
