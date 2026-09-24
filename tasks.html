@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tasks</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="auth.js"></script>
+        <script src="toast.js"></script>
+        <script src="api.js"></script>
+        <script src="cart.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    </head>
+<body>
+
+    <div class="global-topbar">
+        <div class="logo">Construct</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
+            <a href="catalog.html" class="nav-btn">Catalog</a>
+            <a href="index.html" class="nav-btn">Projects</a>
+            <a href="boq-detail.html" class="nav-btn cart-btn"> BOQ <span id="cart-count">0</span></a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="sidebar">
+            <button class="boq-nav-btn active" id="todo-tab-btn" onclick="switchTab('todo')">To Do</button>
+            <button class="boq-nav-btn" id="assigned-tab-btn" onclick="switchTab('assigned')">Assigned</button>
+        </div>
+        <div class="main-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div>
+                    <h1 style="font-family:'Syne',sans-serif;margin-bottom:4px" id="tasks-title">To Do</h1>
+                    <span style="font-size:13px;color:var(--text-muted)" id="tasks-subtitle">Your personal tasks and anything assigned to you</span>
+                </div>
+                <button class="add-btn" onclick="openTaskModal()">+ New Task</button>
+            </div>
+            <div id="view-todo"></div>
+            <div id="view-assigned" style="display:none"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="task-modal">
+        <div class="modal" style="width:420px">
+            <h2>New Task</h2>
+            <input type="text" id="task-title" placeholder="Task title">
+            <textarea id="task-description" placeholder="Description (optional)" rows="3" style="resize:vertical"></textarea>
+            <select id="task-assignee">
+                <option value="">Assign to myself</option>
+            </select>
+            <input type="date" id="task-due-date">
+            <div class="modal-buttons">
+                <button id="task-modal-cancel">Cancel</button>
+                <button id="task-modal-confirm" class="add-btn">Create Task</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let currentTab = 'todo';
+    let _allUsers = [];
+    let currentUsername = sessionStorage.getItem('construct-user') || '';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('view-todo').style.display = tab === 'todo' ? 'block' : 'none';
+        document.getElementById('view-assigned').style.display = tab === 'assigned' ? 'block' : 'none';
+        document.getElementById('todo-tab-btn').classList.toggle('active', tab === 'todo');
+        document.getElementById('assigned-tab-btn').classList.toggle('active', tab === 'assigned');
+
+        document.getElementById('tasks-title').textContent = tab === 'todo' ? 'To Do' : 'Assigned';
+        document.getElementById('tasks-subtitle').textContent = tab === 'todo'
+            ? 'Your personal tasks and anything assigned to you'
+            : 'Tasks you have assigned to others, and whether they are done';
+
+        if (tab === 'todo') loadTodoTab();
+        if (tab === 'assigned') loadAssignedTab();
+    }
+
+    function taskCard(task, options) {
+        options = options || {};
+        let isDone = task.status === 'COMPLETED';
+        let assignedByOther = task.assignedBy && task.assignedBy !== task.assignedTo;
+        let card = document.createElement('div');
+        card.style.cssText = `
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:8px;
+            padding:14px 16px;
+            margin-bottom:10px;
+            display:flex;
+            align-items:flex-start;
+            gap:12px;
+        `;
+
+        let checkboxHtml = options.showCheckbox !== false ? `
+            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask(${task.id})"
+                style="width:18px;height:18px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+        ` : `
+            <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;flex-shrink:0;margin-top:1px;
+                background:${isDone ? 'var(--accent-glow)' : '#8A6A2E18'};
+                color:${isDone ? 'var(--accent)' : '#8A6A2E'}">${isDone ? 'Completed' : 'Pending'}</span>
+        `;
+
+        card.innerHTML = `
+            ${checkboxHtml}
+            <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary);${isDone ? 'text-decoration:line-through;color:var(--text-muted)' : ''}">${task.title}</div>
+                ${task.description ? `<div style="font-size:12.5px;color:var(--text-secondary);margin-top:4px">${task.description}</div>` : ''}
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap">
+                    ${options.showAssignedBy && assignedByOther ? `<span>Assigned by ${task.assignedBy}</span>` : ''}
+                    ${options.showAssignedTo ? `<span>Assigned to ${task.assignedTo}</span>` : ''}
+                    ${task.dueDate ? `<span>Due ${task.dueDate}</span>` : ''}
+                </div>
+            </div>
+            <button onclick="deleteTask(${task.id})"
+                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;flex-shrink:0"
+                onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        `;
+        return card;
+    }
+
+    async function loadTodoTab() {
+        let container = document.getElementById('view-todo');
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+
+        let response = await authFetch(`${API}/api/tasks/mine?username=${encodeURIComponent(currentUsername)}`);
+        let tasks = await response.json();
+
+        container.innerHTML = '';
+        if (tasks.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Nothing on your plate right now.</p>';
+            return;
+        }
+
+        // Unfinished first, then completed
+        tasks.sort((a, b) => (a.status === 'COMPLETED' ? 1 : 0) - (b.status === 'COMPLETED' ? 1 : 0));
+
+        tasks.forEach(task => {
+            container.appendChild(taskCard(task, { showAssignedBy: true }));
+        });
+    }
+
+    async function loadAssignedTab() {
+        let container = document.getElementById('view-assigned');
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+
+        let response = await authFetch(`${API}/api/tasks/assigned-by-me?username=${encodeURIComponent(currentUsername)}`);
+        let tasks = await response.json();
+
+        container.innerHTML = '';
+        if (tasks.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">You haven\'t assigned any tasks yet.</p>';
+            return;
+        }
+
+        tasks.sort((a, b) => (a.status === 'COMPLETED' ? 1 : 0) - (b.status === 'COMPLETED' ? 1 : 0));
+
+        tasks.forEach(task => {
+            container.appendChild(taskCard(task, { showAssignedTo: true, showCheckbox: false }));
+        });
+    }
+
+    async function toggleTask(id) {
+        await authFetch(`${API}/api/tasks/${id}/toggle`, { method: 'POST', headers: authHeaders() });
+        if (currentTab === 'todo') loadTodoTab(); else loadAssignedTab();
+    }
+
+    async function deleteTask(id) {
+        await authFetch(`${API}/api/tasks/${id}`, { method: 'DELETE', headers: authHeaders() });
+        showToast('Task deleted', 'info');
+        if (currentTab === 'todo') loadTodoTab(); else loadAssignedTab();
+    }
+
+    async function loadUsersForAssignee() {
+        let select = document.getElementById('task-assignee');
+        if (!isAdmin()) {
+            select.style.display = 'none';
+            return;
+        }
+        select.style.display = '';
+        if (_allUsers.length === 0) {
+            let response = await authFetch(`${API}/api/users`);
+            _allUsers = await response.json();
+        }
+        select.innerHTML = '<option value="">Assign to myself</option>' +
+            _allUsers
+                .filter(u => u.username !== currentUsername)
+                .map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`)
+                .join('');
+    }
+
+    function openTaskModal() {
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-description').value = '';
+        document.getElementById('task-due-date').value = '';
+        loadUsersForAssignee();
+        document.getElementById('task-modal').classList.add('open');
+    }
+
+    document.getElementById('task-modal-cancel').addEventListener('click', function() {
+        document.getElementById('task-modal').classList.remove('open');
+    });
+
+    document.getElementById('task-modal-confirm').addEventListener('click', async function() {
+        let title = document.getElementById('task-title').value.trim();
+        if (!title) {
+            showToast('Give the task a title', 'error');
+            return;
+        }
+        let assignee = document.getElementById('task-assignee').value;
+        let body = {
+            title,
+            description: document.getElementById('task-description').value.trim(),
+            dueDate: document.getElementById('task-due-date').value,
+            assignedBy: currentUsername,
+            assignedTo: assignee || currentUsername
+        };
+        await authFetch(`${API}/api/tasks`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(body)
+        });
+        document.getElementById('task-modal').classList.remove('open');
+        showToast('Task created', 'success');
+        switchTab(assignee && assignee !== currentUsername ? 'assigned' : 'todo');
+    });
+
+    switchTab('todo');
+</script>
+</body>
+</html>

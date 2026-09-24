@@ -67,6 +67,20 @@ document.getElementById('project-modal-close').addEventListener('click', functio
     document.getElementById('project-modal').classList.remove('open');
 });
 
+// Tasks nav link, injected on every page so the feature is reachable everywhere.
+if (!document.querySelector('a.nav-btn[href="tasks.html"]')) {
+    let tasksLink = document.createElement('a');
+    tasksLink.href = 'tasks.html';
+    tasksLink.className = 'nav-btn';
+    tasksLink.textContent = 'Tasks';
+    let topbarActions = document.querySelector('.global-topbar > div:last-child');
+    if (topbarActions) {
+        topbarActions.insertBefore(tasksLink, topbarActions.firstChild);
+    } else {
+        document.querySelector('.global-topbar').appendChild(tasksLink);
+    }
+}
+
 let logoutBtn = document.createElement('button');
 logoutBtn.className = 'nav-btn';
 logoutBtn.textContent = 'Sign Out';
