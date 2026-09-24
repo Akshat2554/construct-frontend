@@ -32,8 +32,10 @@ if (!document.getElementById('progress-bar')) {
 }
 
 async function loadProjectName() {
+    let el = document.getElementById('topbar-project-name');
+    if (!el) return;
     let projectName = localStorage.getItem('selectedProjectName');
-    document.getElementById('topbar-project-name').textContent = projectName || 'No Project';
+    el.textContent = projectName || 'No Project';
 }
 
 async function openProjectModal() {
@@ -62,10 +64,18 @@ async function openProjectModal() {
     document.getElementById('project-modal').classList.add('open');
 }
 
-document.getElementById('project-selector-btn').addEventListener('click', openProjectModal);
-document.getElementById('project-modal-close').addEventListener('click', function() {
-    document.getElementById('project-modal').classList.remove('open');
-});
+// Not every page has the project switcher (e.g. tasks.html) - guard so topbar.js
+// doesn't throw and skip the rest of its setup (Tasks link, Sign Out button, etc.)
+let projectSelectorBtn = document.getElementById('project-selector-btn');
+if (projectSelectorBtn) {
+    projectSelectorBtn.addEventListener('click', openProjectModal);
+}
+let projectModalClose = document.getElementById('project-modal-close');
+if (projectModalClose) {
+    projectModalClose.addEventListener('click', function() {
+        document.getElementById('project-modal').classList.remove('open');
+    });
+}
 
 // Tasks nav link, injected on every page so the feature is reachable everywhere.
 if (!document.querySelector('a.nav-btn[href="tasks.html"]')) {

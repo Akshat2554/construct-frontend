@@ -54,6 +54,7 @@
         </div>
     </div>
 
+    <script src="topbar.js"></script>
 <script>
     let currentTab = 'todo';
     let _allUsers = [];
@@ -177,15 +178,20 @@
             return;
         }
         select.style.display = '';
-        if (_allUsers.length === 0) {
-            let response = await authFetch(`${API}/api/users`);
-            _allUsers = await response.json();
+        try {
+            if (_allUsers.length === 0) {
+                let response = await authFetch(`${API}/api/users`);
+                if (!response.ok) throw new Error('Failed to load users (' + response.status + ')');
+                _allUsers = await response.json();
+            }
+            select.innerHTML = '<option value="">Assign to myself</option>' +
+                _allUsers
+                    .filter(u => u.username !== currentUsername)
+                    .map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`)
+                    .join('');
+        } catch (e) {
+            showToast('Could not load the user list — you can still create a task for yourself', 'error');
         }
-        select.innerHTML = '<option value="">Assign to myself</option>' +
-            _allUsers
-                .filter(u => u.username !== currentUsername)
-                .map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`)
-                .join('');
     }
 
     function openTaskModal() {
