@@ -1,3 +1,25 @@
+// --- Role helpers (ADMIN / FINANCE / VISUALIZER) ---
+function getRole() {
+    return sessionStorage.getItem('construct-role') || 'ADMIN';
+}
+function isAdmin() {
+    return getRole() === 'ADMIN';
+}
+function isFinance() {
+    return getRole() === 'FINANCE';
+}
+function isVisualizer() {
+    return getRole() === 'VISUALIZER';
+}
+// FINANCE can see all costs but needs ADMIN approval to change BOQ rate/qty.
+function canSeeCosts() {
+    return isAdmin() || isFinance();
+}
+// Only ADMIN can edit BOQ figures directly; FINANCE goes through the approval workflow.
+function canEditBOQDirectly() {
+    return isAdmin();
+}
+
 if (!document.getElementById('toast-container')) {
     let tc = document.createElement('div');
     tc.id = 'toast-container';

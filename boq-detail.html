@@ -11,6 +11,9 @@
     <script src="toast.js"></script>
     <script src="api.js"></script>
     <script src="cart.js"></script>
+    <style>
+        body.visualizer-mode .cost-col { display: none !important; }
+    </style>
 </head>
 <body>
 
@@ -41,8 +44,13 @@
             <!-- Category list under BOQ -->
             <div id="category-nav" style="display:none;padding-left:12px;display:flex;flex-direction:column;gap:2px"></div>
 
+            <!-- Pending Approvals (ADMIN only) -->
+            <button class="boq-nav-btn" id="btn-approvals" onclick="showApprovals()" style="display:none">
+                Pending Approvals <span id="pending-count" style="margin-left:auto;font-size:11px;background:#8A6A2E;color:white;border-radius:10px;padding:1px 7px;display:none">0</span>
+            </button>
+
             <!-- Generate button at bottom -->
-            <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
+            <div id="export-btn-wrap" style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
                 <button class="add-btn" onclick="generateExcel()" style="width:100%;font-size:13px">Export Excel</button>
             </div>
         </div>
@@ -62,6 +70,8 @@
     <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin-bottom:12px">
         <span style="font-size:13px">Description *</span>
         <select id="boq-map-description" style="padding:5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px;background:var(--bg)"></select>
+        <span style="font-size:13px">Subcategory</span>
+        <select id="boq-map-subcategory" style="padding:5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px;background:var(--bg)"></select>
         <span style="font-size:13px">Unit</span>
         <select id="boq-map-unit" style="padding:5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px;background:var(--bg)"></select>
         <span style="font-size:13px">Quantity</span>
@@ -72,6 +82,11 @@
         <select id="boq-map-install-rate" style="padding:5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px;background:var(--bg)"></select>
         <span style="font-size:13px">Remarks</span>
         <select id="boq-map-remarks" style="padding:5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px;background:var(--bg)"></select>
+    </div>
+    <div style="margin-bottom:12px">
+        <label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px">Or put ALL imported rows under one section (used when the sheet has no subcategory column, e.g. importing a whole supplier list as "Electrical")</label>
+        <input type="text" id="boq-import-subcategory-override" placeholder="e.g. Electrical"
+            style="width:100%;padding:5px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px;background:var(--bg)">
     </div>
     <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('boq-import-inline').style.display='none'" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;cursor:pointer">Cancel</button>
@@ -87,7 +102,7 @@
                         <tr>
                             <th>S.No</th>
                             <th>Category</th>
-                            <th>Total (₹)</th>
+                            <th class="cost-col">Total (₹)</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
@@ -106,17 +121,17 @@
                             <th rowspan="2" style="background:var(--bg)">  </th>
                             <th rowspan="2" style="background:var(--bg)">Unit</th>
                             <th rowspan="2" style="background:var(--bg)">Qty</th>
-                            <th colspan="2" style="text-align:center;background:var(--bg)">Rate (₹)</th>
-                            <th colspan="3" style="text-align:center;background:var(--bg)">Amount (₹)</th>
-                            <th rowspan="2" style="background:var(--bg);min-width:120px">Total</th>
+                            <th colspan="2" class="cost-col" style="text-align:center;background:var(--bg)">Rate (₹)</th>
+                            <th colspan="2" class="cost-col" style="text-align:center;background:var(--bg)">Amount (₹)</th>
+                            <th rowspan="2" style="background:var(--bg)">Remarks</th>
+                            <th rowspan="2" class="cost-col" style="background:var(--bg);min-width:120px">Total</th>
                             <th rowspan="2" style="background:var(--bg);min-width:40px"></th>
                         </tr>
                         <tr>
-                            <th style="background:var(--bg)">Supply</th>
-                            <th style="background:var(--bg)">Installation</th>
-                            <th style="background:var(--bg)">Supply</th>
-                            <th style="background:var(--bg)">Installation</th>
-                            <th style="background:var(--bg)">Remarks</th>
+                            <th class="cost-col" style="background:var(--bg)">Supply</th>
+                            <th class="cost-col" style="background:var(--bg)">Installation</th>
+                            <th class="cost-col" style="background:var(--bg)">Supply</th>
+                            <th class="cost-col" style="background:var(--bg)">Installation</th>
                         </tr>
                     </thead>
                 <tbody id="category-tbody"></tbody>
@@ -134,6 +149,23 @@
                 <div id="shortlist-container"></div>
             </div>
             <div id="view-vendors-used" style="display:none"></div>
+
+            <!-- Pending Approvals View (ADMIN only) -->
+            <div id="view-approvals" style="display:none">
+                <table class="list-table" id="approvals-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Item</th>
+                            <th>Requested by</th>
+                            <th>Current</th>
+                            <th>Requested</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvals-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -308,9 +340,72 @@
     document.getElementById('view-category').style.display = 'none';
     document.getElementById('view-shortlist').style.display = 'none';
     document.getElementById('view-vendors-used').style.display = 'none';
+    document.getElementById('view-approvals').style.display = 'none';
     document.getElementById('confirm-btn-category').style.display = 'none';
     document.getElementById('boq-import-btn').style.display = 'none';
 }
+
+        async function showApprovals() {
+            hideAll();
+            document.getElementById('view-approvals').style.display = 'block';
+            document.getElementById('view-label').textContent = 'Pending Approvals';
+            setActive('btn-approvals');
+            await loadApprovals();
+        }
+
+        async function loadApprovals() {
+            let res = await authFetch(`${API}/api/boq/${projectId}/pending`);
+            let pending = await res.json();
+            let tbody = document.getElementById('approvals-tbody');
+            tbody.innerHTML = '';
+            if (pending.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);padding:20px">No changes waiting for approval.</td></tr>';
+            }
+            pending.forEach(function(item) {
+                let currentParts = [];
+                if (item.pendingUnitPrice !== null && item.pendingUnitPrice !== undefined) currentParts.push('Supply ₹' + formatNum(item.unitPrice));
+                if (item.pendingQuantity !== null && item.pendingQuantity !== undefined) currentParts.push('Qty ' + (item.quantity || 1));
+                if (item.pendingInstallRate !== null && item.pendingInstallRate !== undefined) currentParts.push('Install ₹' + formatNum(item.installRate));
+                let requestedParts = [];
+                if (item.pendingUnitPrice !== null && item.pendingUnitPrice !== undefined) requestedParts.push('Supply ₹' + formatNum(item.pendingUnitPrice));
+                if (item.pendingQuantity !== null && item.pendingQuantity !== undefined) requestedParts.push('Qty ' + item.pendingQuantity);
+                if (item.pendingInstallRate !== null && item.pendingInstallRate !== undefined) requestedParts.push('Install ₹' + formatNum(item.pendingInstallRate));
+
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.category || '—'}</td>
+                    <td style="font-weight:500;color:var(--text-primary)">${item.name}</td>
+                    <td>${item.requestedBy || '—'}</td>
+                    <td>${currentParts.join(', ') || '—'}</td>
+                    <td style="color:#8A6A2E;font-weight:600">${requestedParts.join(', ') || '—'}</td>
+                    <td style="display:flex;gap:6px">
+                        <button onclick="(async()=>{await approveBOQChange(${item.id}); await loadApprovals(); await refreshPendingCount();})()" style="padding:5px 12px;border:none;border-radius:6px;background:var(--success);color:white;font-size:12px;cursor:pointer">Approve</button>
+                        <button onclick="(async()=>{await rejectBOQChange(${item.id}); await loadApprovals(); await refreshPendingCount();})()" style="padding:5px 12px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:12px;cursor:pointer">Reject</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function refreshPendingCount() {
+            if (!isAdmin()) return;
+            let res = await authFetch(`${API}/api/boq/${projectId}/pending`);
+            let pending = await res.json();
+            let badge = document.getElementById('pending-count');
+            if (pending.length > 0) {
+                badge.textContent = pending.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function applyRoleUI() {
+            document.body.classList.toggle('visualizer-mode', isVisualizer());
+            document.getElementById('btn-approvals').style.display = isAdmin() ? 'flex' : 'none';
+            document.getElementById('export-btn-wrap').style.display = isVisualizer() ? 'none' : 'block';
+            if (isAdmin()) refreshPendingCount();
+        }
 
         function showSummary() {
             hideAll();
@@ -322,8 +417,8 @@
         async function showCategory(category) {
             hideAll();
             document.getElementById('view-category').style.display = 'block';
-            document.getElementById('confirm-btn-category').style.display = 'block';
-            document.getElementById('boq-import-btn').style.display = 'block';
+            document.getElementById('confirm-btn-category').style.display = isVisualizer() ? 'none' : 'block';
+            document.getElementById('boq-import-btn').style.display = isVisualizer() ? 'none' : 'block';
 document.getElementById('boq-import-btn').onclick = function() {
     openImportModal(category);
 }
@@ -465,7 +560,7 @@ async function getGroups() {
     row.innerHTML = `
         <td>${sno++}</td>
         <td style="font-weight:500;color:var(--text-primary)">${category}</td>
-        <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
+        <td class="cost-col" style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
         <td>
             <input type="text" value="${categoryNotes[encodeURIComponent(category)] || ''}" 
                 placeholder="—"
@@ -496,7 +591,7 @@ async function getGroups() {
             tfoot.innerHTML = `
     <tr style="font-weight:700;border-top:2px solid var(--border)">
         <td colspan="2" style="color:var(--text-primary)">Grand Total</td>
-        <td style="color:var(--accent);font-weight:700">₹${formatNum(grandTotal)}</td>
+        <td class="cost-col" style="color:var(--accent);font-weight:700">₹${formatNum(grandTotal)}</td>
         <td></td>
     </tr>
 `;
@@ -515,31 +610,47 @@ async function getGroups() {
             tbody.innerHTML = '';
             tfoot.innerHTML = '';
 
-            let supTotal = 0, instTotal = 0, grandTotal = 0;
+            document.body.classList.toggle('visualizer-mode', isVisualizer());
 
-            for (let [index, item] of items.entries()) {
-                let effectiveSupply = item.negotiatedSupplyRate !== null ? item.negotiatedSupplyRate : (item.unitPrice || 0);
-let effectiveInstall = item.negotiatedInstallRate !== null ? item.negotiatedInstallRate : (item.installRate || 0);
-let supAmt = (item.unitPrice || 0) * (item.quantity || 1);
-let instAmt = (item.installRate || 0) * (item.quantity || 1);
+            let supTotal = 0, instTotal = 0, grandTotal = 0;
+            let letters = 'abcdefghijklmnopqrstuvwxyz';
+
+            // Group items by subcategory ("" = no subheading, shown first)
+            let subcatOrder = [];
+            let subcatGroups = {};
+            items.forEach(function(item) {
+                let key = (item.subcategory || '').trim();
+                if (!subcatGroups[key]) { subcatGroups[key] = []; subcatOrder.push(key); }
+                subcatGroups[key].push(item);
+            });
+            subcatOrder.sort((a, b) => (a === '' ? -1 : b === '' ? 1 : 0));
+
+            function buildItemRow(item, sno) {
+                let supAmt = (item.unitPrice || 0) * (item.quantity || 1);
+                let instAmt = (item.installRate || 0) * (item.quantity || 1);
                 let total = supAmt + instAmt;
                 supTotal += supAmt;
                 instTotal += instAmt;
                 grandTotal += total;
 
+                let pending = item.approvalStatus === 'PENDING';
+                let financeMode = isFinance();
+                let readOnly = isVisualizer();
+
                 let row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td style="font-weight:500;color:var(--text-primary);min-width:160px">${item.name}</td>
-                    <td style="padding:6px">
+                if (pending) row.style.background = 'rgba(230,180,60,0.08)';
+
+                let assignCell = readOnly ? '<td></td>' : `
+    <td style="padding:6px">
     <button onclick="openAssignModal(${item.id}, '${item.name.replace(/'/g, "\\'")}')"
         style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-secondary);font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap"
         onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
         Assign
     </button>
-</td>
-                    <td>${item.unit || '—'}</td>
+</td>`;
+
+                let qtyCell = readOnly ? `<td>${item.quantity || 1}</td>` : `
                     <td>
     <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden">
         <button onclick="(async()=>{
@@ -585,103 +696,205 @@ let instAmt = (item.installRate || 0) * (item.quantity || 1);
             onmouseover="this.style.background='var(--bg)'"
             onmouseout="this.style.background='transparent'">+</button>
     </div>
-</td>
-                    <td>
+</td>`;
+
+                // Cost cells: hidden entirely for VISUALIZER; direct-edit for ADMIN;
+                // staged as a pending request (needs approval) for FINANCE.
+                let rateSupplyCell, rateInstallCell, amtSupplyCell, amtInstallCell, totalCell;
+                if (readOnly) {
+                    rateSupplyCell = '<td class="cost-col"></td>';
+                    rateInstallCell = '<td class="cost-col"></td>';
+                    amtSupplyCell = '<td class="cost-col"></td>';
+                    amtInstallCell = '<td class="cost-col"></td>';
+                    totalCell = '<td class="cost-col"></td>';
+                } else if (financeMode) {
+                    let pendingNote = (val) => val !== null && val !== undefined
+                        ? `<div style="font-size:10px;color:#8A6A2E;margin-top:2px">pending: ${val}</div>` : '';
+                    rateSupplyCell = `<td class="cost-col">
+                        <input type="number" value="${item.unitPrice || 0}"
+                            style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="(async()=>{await requestBOQChange(${item.id}, {unitPrice: parseFloat(this.value)}); await loadCategoryDetail('${category}');})()">
+                        ${pendingNote(item.pendingUnitPrice)}
+                    </td>`;
+                    rateInstallCell = `<td class="cost-col">
+                        <input type="number" value="${item.installRate || 0}"
+                            style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
+                            onchange="(async()=>{await requestBOQChange(${item.id}, {installRate: parseFloat(this.value)}); await loadCategoryDetail('${category}');})()">
+                        ${pendingNote(item.pendingInstallRate)}
+                    </td>`;
+                    amtSupplyCell = `<td class="cost-col">₹${formatNum(supAmt)}</td>`;
+                    amtInstallCell = `<td class="cost-col">₹${formatNum(instAmt)}</td>`;
+                    totalCell = `<td class="cost-col" style="font-weight:600;color:var(--accent)">₹${formatNum(total)}${pending ? '<div style="font-size:10px;color:#8A6A2E">awaiting approval</div>' : ''}</td>`;
+                } else {
+                    rateSupplyCell = `<td class="cost-col">
                         <input type="number" value="${item.unitPrice || 0}"
                             style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
                             onchange="(async()=>{await updatePrice(${item.productId}, this.value); await loadCategoryDetail('${category}'); await loadSummary();})()">
-                    </td>
-                    <td>
+                    </td>`;
+                    rateInstallCell = `<td class="cost-col">
                         <input type="number" value="${item.installRate || 0}"
                             style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
                             onchange="(async()=>{await updateInstallRate(${item.productId}, this.value); await loadCategoryDetail('${category}'); await loadSummary();})()">
-                    </td>
-                    <td>
+                    </td>`;
+                    amtSupplyCell = `<td class="cost-col">
     <input type="number" value="${supAmt.toFixed(2)}"
         style="width:90px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
         onchange="(async()=>{await updatePrice(${item.productId}, this.value / ${item.quantity || 1}); await loadCategoryDetail('${category}'); await loadSummary();})()">
-</td>
-<td>
+</td>`;
+                    amtInstallCell = `<td class="cost-col">
     <input type="number" value="${instAmt.toFixed(2)}"
         style="width:90px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
         onchange="(async()=>{await updateInstallRate(${item.productId}, this.value / ${item.quantity || 1}); await loadCategoryDetail('${category}'); await loadSummary();})()">
-</td>
+</td>`;
+                    totalCell = `<td class="cost-col" style="font-weight:600;color:var(--accent)">₹${formatNum(total)}${pending ? `
+                        <div style="display:flex;gap:4px;margin-top:4px">
+                            <button onclick="(async()=>{await approveBOQChange(${item.id}); await loadCategoryDetail('${category}'); await loadSummary();})()" style="font-size:10px;padding:2px 6px;border:none;border-radius:4px;background:var(--success);color:white;cursor:pointer">Approve</button>
+                            <button onclick="(async()=>{await rejectBOQChange(${item.id}); await loadCategoryDetail('${category}');})()" style="font-size:10px;padding:2px 6px;border:none;border-radius:4px;background:var(--destructive);color:white;cursor:pointer">Reject</button>
+                        </div>` : ''}</td>`;
+                }
+
+                let subcatCell = readOnly
+                    ? ''
+                    : `<input type="text" value="${(item.subcategory || '').replace(/"/g, '&quot;')}" placeholder="Section (e.g. Electrical)"
+                        style="display:block;margin-top:4px;width:150px;padding:2px 4px;border:1px solid transparent;border-radius:3px;font-family:inherit;font-size:10.5px;color:var(--text-muted);background:transparent"
+                        onfocus="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+                        onblur="this.style.borderColor='transparent';this.style.background='transparent'"
+                        onchange="(async()=>{await updateBOQItemField(${item.id}, 'subcategory', this.value); await buildCategoryNav(); await loadCategoryDetail('${category}');})()">`;
+
+                let remarksCell = readOnly ? `<td>${item.remarks || '—'}</td>` : `
                     <td>
                         <input type="text" value="${item.remarks || ''}" placeholder="—"
                             style="width:100px;padding:4px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;background:var(--bg)"
                             onchange="(async()=>{await updateRemarks(${item.productId}, this.value);})()">
-                    </td>
-                    <td style="font-weight:600;color:var(--accent)">₹${formatNum(total)}</td>
+                    </td>`;
+
+                let deleteCell = readOnly ? '<td></td>' : `
                     <td>
                         <button onclick="(async () => { await removeFromCart(${item.productId}, ${item.id}); await loadCategoryDetail('${category}'); await loadSummary(); buildCategoryNav(); })()"
                             style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px"
                             onmouseover="this.style.color='var(--destructive)'"
                             onmouseout="this.style.color='var(--text-muted)'">✕</button>
-                    </td>
+                    </td>`;
+
+                row.innerHTML = `
+                    <td>${sno}</td>
+                    <td style="font-weight:500;color:var(--text-primary);min-width:160px">${item.name}${subcatCell}</td>
+                    ${assignCell}
+                    <td>${item.unit || '—'}</td>
+                    ${qtyCell}
+                    ${rateSupplyCell}
+                    ${rateInstallCell}
+                    ${amtSupplyCell}
+                    ${amtInstallCell}
+                    ${remarksCell}
+                    ${totalCell}
+                    ${deleteCell}
                 `;
                 let nameCell = row.querySelector('td:nth-child(2)');
-if (nameCell) {
-    nameCell.style.cursor = 'pointer';
-    nameCell.style.textDecoration = 'underline';
-    nameCell.addEventListener('click', async function(e) {
-        if (!item.productId) return;
-        let response = await authFetch(`${API}/api/products/single/${item.productId}`);
-        let product = await response.json();
-        openProductDetail(product);
-    });
-}
+                if (nameCell) {
+                    nameCell.style.cursor = 'pointer';
+                    nameCell.style.textDecoration = 'underline';
+                    nameCell.addEventListener('click', async function(e) {
+                        if (e.target.tagName === 'INPUT') return;
+                        if (!item.productId) return;
+                        let response = await authFetch(`${API}/api/products/single/${item.productId}`);
+                        let product = await response.json();
+                        openProductDetail(product);
+                    });
+                }
                 tbody.appendChild(row);
-                
-                // Add sub-items rows
-let subItems = allSubItems.filter(s => 
-        s.productId === item.productId && 
-        s.category === category
-    );
-let letters = 'abcdefghijklmnopqrstuvwxyz';
 
-subItems.forEach(function(sub, si) {
-    let subRow = document.createElement('tr');
-    subRow.innerHTML = `
-        <td style="color:var(--text-muted);font-size:11px;padding-left:20px">${letters[si]}</td>
-        <td colspan="10">
-            <input type="text" value="${sub.text || ''}" placeholder="Sub-item description..."
-                style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;color:var(--text-secondary);background:transparent;outline:none"
-                onchange="(async()=>{await updateSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}, this.value);})()">
-        </td>
-        <td>
-            <button onclick="(async()=>{await removeSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}); await loadCategoryDetail('${category}');})()"
-                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
-                onmouseover="this.style.color='var(--destructive)'"
-                onmouseout="this.style.color='var(--text-muted)'">✕</button>
-        </td>
-    `;
-    tbody.appendChild(subRow);
-});
+                // Sub-items
+                let subItems = allSubItems.filter(s =>
+                    s.productId === item.productId &&
+                    s.category === category
+                );
+                subItems.forEach(function(sub, si) {
+                    let subRow = document.createElement('tr');
+                    subRow.innerHTML = readOnly ? `
+                        <td style="color:var(--text-muted);font-size:11px;padding-left:20px">${letters[si]}</td>
+                        <td colspan="10">${sub.text || ''}</td>
+                        <td></td>
+                    ` : `
+                        <td style="color:var(--text-muted);font-size:11px;padding-left:20px">${letters[si]}</td>
+                        <td colspan="10">
+                            <input type="text" value="${sub.text || ''}" placeholder="Sub-item description..."
+                                style="width:100%;padding:3px 6px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:12.5px;color:var(--text-secondary);background:transparent;outline:none"
+                                onchange="(async()=>{await updateSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}, this.value);})()">
+                        </td>
+                        <td>
+                            <button onclick="(async()=>{await removeSubItem(${item.productId}, '${encodeURIComponent(category)}', ${si}); await loadCategoryDetail('${category}');})()"
+                                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
+                                onmouseover="this.style.color='var(--destructive)'"
+                                onmouseout="this.style.color='var(--text-muted)'">✕</button>
+                        </td>
+                    `;
+                    tbody.appendChild(subRow);
+                });
 
-// Add sub-item button row
-let addSubRow = document.createElement('tr');
-addSubRow.innerHTML = `
-    <td colspan="12" style="padding:2px 8px">
-        <button onclick="(async()=>{await addSubItem(${item.productId}, '${encodeURIComponent(category)}'); await loadCategoryDetail('${category}');})()"
-            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11.5px;font-family:inherit;padding:2px 4px"
-            onmouseover="this.style.color='var(--accent)'"
-            onmouseout="this.style.color='var(--text-muted)'">+ add note</button>
-    </td>
-`;
-tbody.appendChild(addSubRow);
-
+                if (!readOnly) {
+                    let addSubRow = document.createElement('tr');
+                    addSubRow.innerHTML = `
+                        <td colspan="12" style="padding:2px 8px">
+                            <button onclick="(async()=>{await addSubItem(${item.productId}, '${encodeURIComponent(category)}'); await loadCategoryDetail('${category}');})()"
+                                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11.5px;font-family:inherit;padding:2px 4px"
+                                onmouseover="this.style.color='var(--accent)'"
+                                onmouseout="this.style.color='var(--text-muted)'">+ add note</button>
+                        </td>
+                    `;
+                    tbody.appendChild(addSubRow);
+                }
             }
+
+            let sno = 1;
+            subcatOrder.forEach(function(subcatKey) {
+                if (subcatKey !== '') {
+                    let headingRow = document.createElement('tr');
+                    headingRow.innerHTML = `<td colspan="12" style="background:var(--bg);font-weight:700;font-size:12.5px;color:var(--text-primary);padding:10px 8px;border-top:2px solid var(--border)">${subcatKey}</td>`;
+                    tbody.appendChild(headingRow);
+                }
+                subcatGroups[subcatKey].forEach(function(item) {
+                    buildItemRow(item, sno++);
+                });
+            });
 
             tfoot.innerHTML = `
                 <tr style="font-weight:700;border-top:2px solid var(--border)">
-                    <td colspan="7" style="color:var(--text-primary)">Category Total</td>
-                    <td>₹${formatNum(supTotal)}</td>
-                    <td>₹${formatNum(instTotal)}</td>
-                    <td style="color:var(--accent)">₹${formatNum(grandTotal)}</td>
-                    <td colspan="2"></td>
+                    <td colspan="5" style="color:var(--text-primary)">Category Total</td>
+                    <td class="cost-col">₹${formatNum(supTotal)}</td>
+                    <td class="cost-col">₹${formatNum(instTotal)}</td>
+                    <td class="cost-col"></td>
+                    <td class="cost-col"></td>
+                    <td></td>
+                    <td class="cost-col" style="color:var(--accent)">₹${formatNum(grandTotal)}</td>
+                    <td></td>
                 </tr>
             `;
-            
+
+        }
+
+        // ===== Approval workflow (FINANCE change requests) =====
+        async function requestBOQChange(itemId, fields) {
+            fields.requestedBy = sessionStorage.getItem('construct-user') || '';
+            await authFetch(`${API}/api/boq/${itemId}/request-change`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify(fields)
+            });
+            invalidateCartCache();
+            showToast('Change sent to admin for approval', 'success');
+        }
+
+        async function approveBOQChange(itemId) {
+            await authFetch(`${API}/api/boq/${itemId}/approve`, { method: 'POST', headers: authHeaders() });
+            invalidateCartCache();
+            showToast('Change approved', 'success');
+        }
+
+        async function rejectBOQChange(itemId) {
+            await authFetch(`${API}/api/boq/${itemId}/reject`, { method: 'POST', headers: authHeaders() });
+            invalidateCartCache();
+            showToast('Change rejected', 'success');
         }
 
         // ===== Vendor Shortlist =====
@@ -1085,7 +1298,7 @@ function showBOQMappingModal(headers, rows) {
     if (!inline) return;
     inline.style.display = 'block';
     
-    let selects = ['boq-map-description', 'boq-map-unit', 'boq-map-quantity', 'boq-map-supply-rate', 'boq-map-install-rate', 'boq-map-remarks'];
+    let selects = ['boq-map-description', 'boq-map-subcategory', 'boq-map-unit', 'boq-map-quantity', 'boq-map-supply-rate', 'boq-map-install-rate', 'boq-map-remarks'];
     selects.forEach(function(selectId) {
         let select = document.getElementById(selectId);
         if (!select) return;
@@ -1098,6 +1311,7 @@ function showBOQMappingModal(headers, rows) {
     // Auto-detect
     let autoMatch = {
         'boq-map-description': ['description', 'desc', 'item', 'name', 'specification'],
+        'boq-map-subcategory': ['subcategory', 'sub category', 'sub-category', 'section', 'heading', 'sub head'],
         'boq-map-unit': ['unit', 'uom'],
         'boq-map-quantity': ['quantity', 'qty'],
         'boq-map-supply-rate': ['rate', 'supply rate', 'unit rate', 'order rate', 'price'],
@@ -1143,6 +1357,7 @@ async function confirmImport() {
         productNumber: '',
         supplierName: '',
         category: _importCategory,
+        subcategory: sanitize(row[getVal('boq-map-subcategory')]) || sanitize(document.getElementById('boq-import-subcategory-override')?.value),
         unit: sanitize(row[getVal('boq-map-unit')]),
         unitPrice: parseFloat(row[getVal('boq-map-supply-rate')]) || 0,
         quantity: parseInt(row[getVal('boq-map-quantity')]) || 1,
@@ -1168,6 +1383,48 @@ async function confirmImport() {
 
 
         // ===== Excel Export =====
+        // Styling here is a clean, professional placeholder — swap the color/
+        // spacing constants below once the client's exact template (colors,
+        // column gaps, letterhead) is provided, and this whole function stays
+        // the same shape.
+        const XL_BRAND = '1F2A44';       // letterhead background (dark navy)
+        const XL_BRAND_TEXT = 'FFFFFF';
+        const XL_HEADER_BG = '2E4F42';   // column-header row background
+        const XL_HEADER_TEXT = 'FFFFFF';
+        const XL_SUBHEAD_BG = 'F1EFE8';  // subcategory heading row background
+        const XL_TOTAL_BG = 'E7EAF0';    // total row background
+        const XL_BORDER = 'C9CDD6';
+
+        const xlBorder = { top: { style: 'thin', color: { rgb: XL_BORDER } }, bottom: { style: 'thin', color: { rgb: XL_BORDER } }, left: { style: 'thin', color: { rgb: XL_BORDER } }, right: { style: 'thin', color: { rgb: XL_BORDER } } };
+        const xlMoneyFmt = '#,##0.00';
+
+        function xlSetCell(ws, r, c, value, style, z) {
+            let ref = XLSX.utils.encode_cell({ r, c });
+            let cell = typeof value === 'object' && value !== null ? { ...value } : { v: value };
+            if (typeof value === 'object' && value !== null && 'f' in value) {
+                cell = { f: value.f };
+            } else if (typeof value === 'number') {
+                cell.t = 'n';
+            }
+            if (style) cell.s = style;
+            if (z) cell.z = z;
+            ws[ref] = cell;
+            return ref;
+        }
+
+        function xlLetterhead(ws, title, subtitle, numCols) {
+            let lastColLetter = XLSX.utils.encode_col(numCols - 1);
+            xlSetCell(ws, 0, 0, title, { font: { bold: true, sz: 14, color: { rgb: XL_BRAND_TEXT } }, fill: { fgColor: { rgb: XL_BRAND } }, alignment: { horizontal: 'center', vertical: 'center' } });
+            xlSetCell(ws, 1, 0, subtitle, { font: { bold: true, sz: 11, color: { rgb: XL_BRAND } }, fill: { fgColor: { rgb: XL_SUBHEAD_BG } }, alignment: { horizontal: 'center' } });
+            xlSetCell(ws, 2, 0, 'Generated ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), { font: { italic: true, sz: 9, color: { rgb: '6B7280' } }, alignment: { horizontal: 'center' } });
+            ws['!merges'] = ws['!merges'] || [];
+            ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: numCols - 1 } });
+            ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: numCols - 1 } });
+            ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: numCols - 1 } });
+            ws['!rows'] = ws['!rows'] || [];
+            ws['!rows'][0] = { hpt: 26 };
+        }
+
         async function generateExcel() {
     let cart = await getCart();
     if (cart.length === 0) {
@@ -1178,58 +1435,92 @@ async function confirmImport() {
     let groups = await getGroups();
     let wb = XLSX.utils.book_new();
     let categoryTotals = {};
+    const HEADER_ROWS = 4; // 3 letterhead rows + 1 blank spacer before the column header row
 
     // ===== Category Sheets =====
     for (let category of Object.keys(groups)) {
     let items = groups[category];
     let sheetName = category.substring(0, 31);
     let letters = 'abcdefghijklmnopqrstuvwxyz';
+    let headerLabels = ['S.No', 'Description', 'Unit', 'Qty', 'Rate - Supply (₹)', 'Rate - Install (₹)', 'Amount - Supply (₹)', 'Amount - Install (₹)', 'Total (₹)', 'Remarks'];
+    let numCols = headerLabels.length;
 
-    let rows = [];
-    rows.push(['S.No', 'Description', 'Unit', 'Qty', 'Rate - Supply (₹)', 'Rate - Install (₹)', 'Amount - Supply (₹)', 'Amount - Install (₹)', 'Total (₹)', 'Remarks']);
+    let ws = {};
+    xlLetterhead(ws, (projectName || 'Project') + ' — Bill of Quantities', category, numCols);
 
-    let dataStartRow = 2;
+    let headerRowIdx = HEADER_ROWS; // 0-indexed row for column headers
+    headerLabels.forEach((label, c) => {
+        xlSetCell(ws, headerRowIdx, c, label, { font: { bold: true, sz: 10, color: { rgb: XL_HEADER_TEXT } }, fill: { fgColor: { rgb: XL_HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: xlBorder });
+    });
+
+    let dataStartRow = headerRowIdx + 2; // 1-indexed spreadsheet row of the first data row (for formulas)
     let currentRow = dataStartRow;
+    let rIdx = headerRowIdx + 1; // 0-indexed row cursor
 
-    for (let [index, item] of items.entries()) {
-        rows.push([
-            index + 1,
-            item.name,
-            item.unit || '',
-            item.quantity || 1,
-            item.unitPrice || 0,
-            item.installRate || 0,
-            { f: `D${currentRow}*E${currentRow}` },
-            { f: `D${currentRow}*F${currentRow}` },
-            { f: `G${currentRow}+H${currentRow}` },
-            item.remarks || ''
-        ]);
-        currentRow++;
+    // Group by subcategory, same logic as the on-screen BOQ view
+    let subcatOrder = [];
+    let subcatGroups = {};
+    items.forEach(function(item) {
+        let key = (item.subcategory || '').trim();
+        if (!subcatGroups[key]) { subcatGroups[key] = []; subcatOrder.push(key); }
+        subcatGroups[key].push(item);
+    });
+    subcatOrder.sort((a, b) => (a === '' ? -1 : b === '' ? 1 : 0));
 
-        // Sub-items
-        let subItems = item.productId ? await getSubItems(item.productId, category) : [];
-            subItems.forEach(function(sub, si) {
-            if (sub.text && sub.text.trim()) {
-                rows.push([letters[si], sub.text, '', '', '', '', '', '', '', '']);
-                currentRow++;
+    let sno = 1;
+    for (let subcatKey of subcatOrder) {
+        if (subcatKey !== '') {
+            xlSetCell(ws, rIdx, 0, subcatKey, { font: { bold: true, sz: 10.5 }, fill: { fgColor: { rgb: XL_SUBHEAD_BG } }, border: xlBorder });
+            ws['!merges'].push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: numCols - 1 } });
+            for (let c = 1; c < numCols; c++) xlSetCell(ws, rIdx, c, '', { fill: { fgColor: { rgb: XL_SUBHEAD_BG } }, border: xlBorder });
+            rIdx++;
+            currentRow++;
+        }
+
+        for (let item of subcatGroups[subcatKey]) {
+            let dataCellStyle = { border: xlBorder, font: { sz: 10 } };
+            let moneyCellStyle = { border: xlBorder, font: { sz: 10 }, alignment: { horizontal: 'right' } };
+            xlSetCell(ws, rIdx, 0, sno++, dataCellStyle);
+            xlSetCell(ws, rIdx, 1, item.name, dataCellStyle);
+            xlSetCell(ws, rIdx, 2, item.unit || '', dataCellStyle);
+            xlSetCell(ws, rIdx, 3, item.quantity || 1, dataCellStyle);
+            xlSetCell(ws, rIdx, 4, item.unitPrice || 0, moneyCellStyle, xlMoneyFmt);
+            xlSetCell(ws, rIdx, 5, item.installRate || 0, moneyCellStyle, xlMoneyFmt);
+            xlSetCell(ws, rIdx, 6, { f: `D${currentRow}*E${currentRow}` }, moneyCellStyle, xlMoneyFmt);
+            xlSetCell(ws, rIdx, 7, { f: `D${currentRow}*F${currentRow}` }, moneyCellStyle, xlMoneyFmt);
+            xlSetCell(ws, rIdx, 8, { f: `G${currentRow}+H${currentRow}` }, { ...moneyCellStyle, font: { sz: 10, bold: true } }, xlMoneyFmt);
+            xlSetCell(ws, rIdx, 9, item.remarks || '', dataCellStyle);
+            rIdx++;
+            currentRow++;
+
+            let subItems = item.productId ? await getSubItems(item.productId, category) : [];
+            for (let [si, sub] of subItems.entries()) {
+                if (sub.text && sub.text.trim()) {
+                    xlSetCell(ws, rIdx, 0, letters[si], { font: { sz: 9, color: { rgb: '6B7280' } } });
+                    xlSetCell(ws, rIdx, 1, sub.text, { font: { sz: 9, italic: true, color: { rgb: '6B7280' } } });
+                    rIdx++;
+                    currentRow++;
+                }
             }
-        });
+        }
     }
 
     let totalRow = currentRow;
-    rows.push([
-        '', 'TOTAL', '', '',
-        { f: `SUM(E${dataStartRow}:E${totalRow - 1})` },
-        { f: `SUM(F${dataStartRow}:F${totalRow - 1})` },
-        { f: `SUM(G${dataStartRow}:G${totalRow - 1})` },
-        { f: `SUM(H${dataStartRow}:H${totalRow - 1})` },
-        { f: `SUM(I${dataStartRow}:I${totalRow - 1})` },
-        ''
-    ]);
+    let totalStyle = { font: { bold: true, sz: 10.5 }, fill: { fgColor: { rgb: XL_TOTAL_BG } }, border: xlBorder };
+    xlSetCell(ws, rIdx, 0, '', totalStyle);
+    xlSetCell(ws, rIdx, 1, 'TOTAL', totalStyle);
+    xlSetCell(ws, rIdx, 2, '', totalStyle);
+    xlSetCell(ws, rIdx, 3, '', totalStyle);
+    xlSetCell(ws, rIdx, 4, { f: `SUM(E${dataStartRow}:E${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+    xlSetCell(ws, rIdx, 5, { f: `SUM(F${dataStartRow}:F${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+    xlSetCell(ws, rIdx, 6, { f: `SUM(G${dataStartRow}:G${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+    xlSetCell(ws, rIdx, 7, { f: `SUM(H${dataStartRow}:H${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+    xlSetCell(ws, rIdx, 8, { f: `SUM(I${dataStartRow}:I${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+    xlSetCell(ws, rIdx, 9, '', totalStyle);
 
     categoryTotals[sheetName] = totalRow;
 
-    let ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rIdx, c: numCols - 1 } });
     ws['!cols'] = [
         { wch: 8 }, { wch: 40 }, { wch: 8 }, { wch: 8 },
         { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 },
@@ -1239,38 +1530,45 @@ async function confirmImport() {
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
 }
         // ===== Summary Sheet =====
-    let summaryRows = [];
-    summaryRows.push(['S.No', 'Category', 'Grand Total (₹)', 'Remarks']);
-
-    let sno = 1;
-    let firstDataRow = 2;
-
     let notesRes = await fetch(`${API}/api/boq-notes/${projectId}`, { headers: authHeaders() });
 let notesArray = await notesRes.json();
 let categoryNotes = {};
 notesArray.forEach(n => { categoryNotes[encodeURIComponent(n.category)] = n.notes; });
 
+    let summaryHeaderLabels = ['S.No', 'Category', 'Grand Total (₹)', 'Remarks'];
+    let summaryNumCols = summaryHeaderLabels.length;
+    let summaryWs = {};
+    xlLetterhead(summaryWs, (projectName || 'Project') + ' — Bill of Quantities', 'Summary', summaryNumCols);
+
+    let sHeaderRowIdx = HEADER_ROWS;
+    summaryHeaderLabels.forEach((label, c) => {
+        xlSetCell(summaryWs, sHeaderRowIdx, c, label, { font: { bold: true, sz: 10, color: { rgb: XL_HEADER_TEXT } }, fill: { fgColor: { rgb: XL_HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center' }, border: xlBorder });
+    });
+
+    let sRIdx = sHeaderRowIdx + 1;
+    let firstDataRow = sHeaderRowIdx + 2;
+    let sno = 1;
+
     for (let category of Object.keys(groups)) {
-    let sheetName = category.substring(0, 31);
-    let totalRow = categoryTotals[sheetName];
-    let remarks = categoryNotes[encodeURIComponent(category)] || '';
-    summaryRows.push([
-        sno,
-        category,
-        { f: `'${sheetName}'!I${totalRow}` },
-        remarks
-    ]);
-    sno++;
-}
+        let sheetName = category.substring(0, 31);
+        let totalRow = categoryTotals[sheetName];
+        let remarks = categoryNotes[encodeURIComponent(category)] || '';
+        let cellStyle = { border: xlBorder, font: { sz: 10 } };
+        xlSetCell(summaryWs, sRIdx, 0, sno++, cellStyle);
+        xlSetCell(summaryWs, sRIdx, 1, category, cellStyle);
+        xlSetCell(summaryWs, sRIdx, 2, { f: `'${sheetName}'!I${totalRow}` }, { ...cellStyle, font: { sz: 10, bold: true }, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+        xlSetCell(summaryWs, sRIdx, 3, remarks, cellStyle);
+        sRIdx++;
+    }
 
-    let lastDataRow = 1 + Object.keys(groups).length;
-    summaryRows.push([
-        '', 'GRAND TOTAL',
-        { f: `SUM(C${firstDataRow}:C${lastDataRow})` },
-        ''
-    ]);
+    let lastDataRow = firstDataRow + Object.keys(groups).length - 1;
+    let totalStyle = { font: { bold: true, sz: 11 }, fill: { fgColor: { rgb: XL_TOTAL_BG } }, border: xlBorder };
+    xlSetCell(summaryWs, sRIdx, 0, '', totalStyle);
+    xlSetCell(summaryWs, sRIdx, 1, 'GRAND TOTAL', totalStyle);
+    xlSetCell(summaryWs, sRIdx, 2, { f: `SUM(C${firstDataRow}:C${lastDataRow})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
+    xlSetCell(summaryWs, sRIdx, 3, '', totalStyle);
 
-    let summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+    summaryWs['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: sRIdx, c: summaryNumCols - 1 } });
     summaryWs['!cols'] = [
         { wch: 8 },
         { wch: 40 },
@@ -1287,6 +1585,7 @@ notesArray.forEach(n => { categoryNotes[encodeURIComponent(n.category)] = n.note
 
         // ===== Init =====
         async function init() {
+            applyRoleUI();
             await loadSummary();
             updateCartCountFromCache();
         }

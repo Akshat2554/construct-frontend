@@ -46,6 +46,7 @@
             let data = await response.json();
             sessionStorage.setItem('construct-token', data.token);
             sessionStorage.setItem('construct-user', data.username);
+            sessionStorage.setItem('construct-role', data.role || 'ADMIN');
             sessionStorage.setItem('construct-auth', 'true');
             window.location.replace('index.html');
         } else {

@@ -80,6 +80,7 @@ async function addToCart(product) {
             productNumber: product.productNumber || '',
             supplierName: product.supplierName || '',
             category: product.category || '',
+            subcategory: product.subcategory || '',
             unit: product.unit || '',
             unitPrice: product.unitPrice || 0,
             quantity: 1,
@@ -168,6 +169,21 @@ async function updateInstallRate(productId, installRate) {
             body: JSON.stringify(item)
         });
         logActivity('Install Rate Changed', `${item.name}: ₹${oldRate} → ₹${installRate}`);
+    }
+}
+
+// Uses the BOQ item's own unique id (not productId, which is null for
+// free-text imported rows and would collide across multiple items).
+async function updateBOQItemField(itemId, field, value) {
+    let cart = await getCart();
+    let item = cart.find(i => i.id === itemId);
+    if (item) {
+        item[field] = value;
+        await fetch(`${API}/api/boq/${item.id}`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify(item)
+        });
     }
 }
 
