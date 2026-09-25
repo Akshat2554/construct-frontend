@@ -103,9 +103,11 @@
         document.getElementById('dash-projects-title').textContent = isAdmin() ? 'Active Projects' : 'Your Projects';
     }
 
-    function statCard(label, value, accent) {
+    function statCard(label, value, accent, href) {
+        let clickable = href ? `cursor:pointer;transition:border-color .15s` : '';
         return `
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;width:220px;box-sizing:border-box">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;width:220px;box-sizing:border-box;${clickable}"
+                ${href ? `onclick="window.location.href='${href}'" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'"` : ''}>
                 <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">${label}</div>
                 <div style="font-size:24px;font-weight:700;color:${accent || 'var(--text-primary)'};font-family:'Syne',sans-serif">${value}</div>
             </div>
@@ -131,14 +133,16 @@
 
         // GET /api/projects already scopes to "all projects" for ADMIN and
         // "assigned projects only" for everyone else - nothing extra needed here.
-        let [projectsRes, tasksRes, activityRes] = await Promise.all([
+        let [projectsRes, tasksRes, activityRes, usersRes] = await Promise.all([
             authFetch(`${API}/api/projects`),
             authFetch(`${API}/api/tasks/mine?username=${encodeURIComponent(currentUsername)}`),
-            authFetch(`${API}/api/activity/recent`)
+            authFetch(`${API}/api/activity/recent`),
+            isAdmin() ? authFetch(`${API}/api/users`) : Promise.resolve(null)
         ]);
         let projects = projectsRes.ok ? await projectsRes.json() : [];
         let myTasks = tasksRes.ok ? await tasksRes.json() : [];
         let recentActivity = activityRes.ok ? await activityRes.json() : [];
+        let teamCount = usersRes && usersRes.ok ? (await usersRes.json()).length : null;
 
         let activeProjects = projects.filter(p => p.status === 'Active');
 
@@ -154,6 +158,9 @@
             cards += statCard('Pending Approvals', pendingApprovals, pendingApprovals > 0 ? '#e05252' : 'var(--text-primary)');
         }
         cards += statCard('Pending Tasks', pendingTasksCount, pendingTasksCount > 0 ? '#f0a050' : 'var(--text-primary)');
+        if (isAdmin() && teamCount !== null) {
+            cards += statCard('Team', teamCount, 'var(--text-primary)', 'users.html');
+        }
         document.getElementById('stat-cards').innerHTML = cards;
 
         renderProjects(activeProjects.length > 0 ? activeProjects : projects.slice(0, 8));
@@ -320,7 +327,7 @@
         let container = document.getElementById('dash-tasks');
         let open = tasks.filter(t => t.status !== 'COMPLETED');
         if (open.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">Nothing on your plate. </p>';
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">Nothing on your plate. 🎉</p>';
             return;
         }
         container.innerHTML = open.map(task => `

@@ -256,8 +256,14 @@
                 showToast('Account deleted', 'info');
                 loadUsers();
             } else {
-                let body = await response.json().catch(() => ({}));
-                showToast(body.error || 'Could not delete that account', 'error');
+                // Read as text first: if this 403 came from Spring Security itself
+                // (e.g. the token wasn't accepted) rather than our own controller code,
+                // the body won't be JSON at all, and response.json() would silently
+                // swallow that detail behind a generic fallback message.
+                let raw = await response.text().catch(() => '');
+                let message = raw;
+                try { message = JSON.parse(raw).error || raw; } catch (e) { /* not JSON - show raw text */ }
+                showToast(`Delete failed (${response.status}): ${message || 'no details returned'}`, 'error');
             }
         }
 
