@@ -11,32 +11,39 @@
     </head>
 <body>
 
-    <div class="global-topbar">
-        <div class="logo">Construct</div>
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn"> BOQ <span id="cart-count">0</span></a>
-        </div>
-    </div>
-
     <div class="page-body">
-        <div class="sidebar">
-            <button class="boq-nav-btn active" id="todo-tab-btn" onclick="switchTab('todo')">To Do</button>
-            <button class="boq-nav-btn" id="assigned-tab-btn" onclick="switchTab('assigned')">Assigned</button>
-        </div>
-        <div class="main-content">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div class="main-content" style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
                 <div>
                     <h1 style="font-family:'Syne',sans-serif;margin-bottom:4px" id="tasks-title">To Do</h1>
                     <span style="font-size:13px;color:var(--text-muted)" id="tasks-subtitle">Your personal tasks and anything assigned to you</span>
                 </div>
                 <button class="add-btn" onclick="openTaskModal()">+ New Task</button>
             </div>
+            <div id="tasks-tab-toggle" style="display:flex;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px;gap:4px;margin-bottom:20px">
+                <button class="tasks-toggle-btn active" id="todo-tab-btn" onclick="switchTab('todo')" style="flex:1">To Do</button>
+                <button class="tasks-toggle-btn" id="assigned-tab-btn" onclick="switchTab('assigned')" style="flex:1">Assigned</button>
+            </div>
             <div id="view-todo"></div>
             <div id="view-assigned" style="display:none"></div>
         </div>
     </div>
+    <style>
+        .tasks-toggle-btn {
+            padding: 9px 0;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .tasks-toggle-btn:hover { color: var(--text-primary); }
+        .tasks-toggle-btn.active { background: var(--accent); color: white; }
+    </style>
 
     <div class="modal-overlay" id="task-modal">
         <div class="modal" style="width:420px">
@@ -187,7 +194,7 @@
             select.innerHTML = '<option value="">Assign to myself</option>' +
                 _allUsers
                     .filter(u => u.username !== currentUsername)
-                    .map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`)
+                    .map(u => `<option value="${u.username}">${u.username}</option>`)
                     .join('');
         } catch (e) {
             showToast('Could not load the user list — you can still create a task for yourself', 'error');

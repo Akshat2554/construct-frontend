@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dashboard</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="auth.js"></script>
+        <script src="toast.js"></script>
+        <script src="api.js"></script>
+        <script src="cart.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+        <style>
+            .dash-main {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                padding: 22px 28px;
+                box-sizing: border-box;
+                overflow: hidden;
+            }
+            .dash-panel {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                overflow: hidden;
+            }
+            .dash-panel-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 14px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+            }
+            .dash-panel-title { font-size: 14px; font-weight: 700; color: var(--text-primary); font-family: 'Syne', sans-serif; }
+            .dash-panel-body { padding: 12px 18px; overflow-y: auto; flex: 1; min-height: 0; }
+        </style>
+    </head>
+<body>
+
+    <div class="dash-main">
+        <div style="margin-bottom:18px;flex-shrink:0">
+            <h1 id="dash-greeting" style="font-family:'Syne',sans-serif;margin:0 0 4px;font-size:22px"></h1>
+            <span style="font-size:13px;color:var(--text-muted)" id="dash-date"></span>
+        </div>
+
+        <!-- Stat cards -->
+        <div id="stat-cards" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:18px;flex-shrink:0"></div>
+
+        <!-- Active projects (extended) + Approvals / Recent Activity + Your Tasks split -->
+        <div style="display:grid;grid-template-columns:1.7fr 1fr;gap:16px;flex:1;min-height:0">
+
+            <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+                <div class="dash-panel" style="flex:1.4;min-height:0">
+                    <div class="dash-panel-header">
+                        <span class="dash-panel-title" id="dash-projects-title">Active Projects</span>
+                        <a href="index.html" class="nav-btn" style="font-size:12px;padding:5px 12px">View all</a>
+                    </div>
+                    <div id="dash-projects" class="dash-panel-body"></div>
+                </div>
+
+                <div class="dash-panel" id="dash-approvals-panel" style="flex:1;min-height:0;display:none">
+                    <div class="dash-panel-header">
+                        <span class="dash-panel-title">Approvals</span>
+                        <a href="approvals.html" class="nav-btn" style="font-size:12px;padding:5px 12px">Open</a>
+                    </div>
+                    <div id="dash-approvals" class="dash-panel-body"></div>
+                </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+                <div class="dash-panel" style="flex:1;min-height:0">
+                    <div class="dash-panel-header">
+                        <span class="dash-panel-title">Recent Activity</span>
+                    </div>
+                    <div id="dash-activity" class="dash-panel-body"></div>
+                </div>
+
+                <div class="dash-panel" style="flex:1;min-height:0">
+                    <div class="dash-panel-header">
+                        <span class="dash-panel-title">Your Tasks</span>
+                        <a href="tasks.html" class="nav-btn" style="font-size:12px;padding:5px 12px">Open</a>
+                    </div>
+                    <div id="dash-tasks" class="dash-panel-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+<script>
+    const statusColors = { 'Active': '#4ecb71', 'On Hold': '#f0a050', 'Completed': '#8892a4' };
+
+    let currentUsername = sessionStorage.getItem('construct-user') || '';
+
+    function greet() {
+        let hour = new Date().getHours();
+        let word = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+        document.getElementById('dash-greeting').textContent = `${word}, ${currentUsername || 'there'}`;
+        document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+        // Non-admins only ever see their own assigned projects (the API already scopes
+        // this), so the panel title shouldn't claim to show "Active Projects" site-wide.
+        document.getElementById('dash-projects-title').textContent = isAdmin() ? 'Active Projects' : 'Your Projects';
+    }
+
+    function statCard(label, value, accent) {
+        return `
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;width:220px;box-sizing:border-box">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">${label}</div>
+                <div style="font-size:24px;font-weight:700;color:${accent || 'var(--text-primary)'};font-family:'Syne',sans-serif">${value}</div>
+            </div>
+        `;
+    }
+
+    function timeAgo(iso) {
+        if (!iso) return '';
+        let diffMs = Date.now() - new Date(iso).getTime();
+        if (isNaN(diffMs)) return '';
+        let mins = Math.floor(diffMs / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + ' min ago';
+        let hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + ' hr ago';
+        let days = Math.floor(hrs / 24);
+        if (days < 7) return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+        return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    }
+
+    async function loadDashboard() {
+        greet();
+
+        // GET /api/projects already scopes to "all projects" for ADMIN and
+        // "assigned projects only" for everyone else - nothing extra needed here.
+        let [projectsRes, tasksRes, activityRes] = await Promise.all([
+            authFetch(`${API}/api/projects`),
+            authFetch(`${API}/api/tasks/mine?username=${encodeURIComponent(currentUsername)}`),
+            authFetch(`${API}/api/activity/recent`)
+        ]);
+        let projects = projectsRes.ok ? await projectsRes.json() : [];
+        let myTasks = tasksRes.ok ? await tasksRes.json() : [];
+        let recentActivity = activityRes.ok ? await activityRes.json() : [];
+
+        let activeProjects = projects.filter(p => p.status === 'Active');
+
+        let boqLists = await Promise.all(
+            activeProjects.map(p => authFetch(`${API}/api/boq/${p.id}`).then(r => r.ok ? r.json() : []))
+        );
+        let allBoqItems = boqLists.flat();
+        let pendingApprovals = allBoqItems.filter(i => i.approvalStatus === 'PENDING').length;
+        let pendingTasksCount = myTasks.filter(t => t.status !== 'COMPLETED').length;
+
+        let cards = statCard('Active Projects', activeProjects.length);
+        if (!isVisualizer()) {
+            cards += statCard('Pending Approvals', pendingApprovals, pendingApprovals > 0 ? '#e05252' : 'var(--text-primary)');
+        }
+        cards += statCard('Pending Tasks', pendingTasksCount, pendingTasksCount > 0 ? '#f0a050' : 'var(--text-primary)');
+        document.getElementById('stat-cards').innerHTML = cards;
+
+        renderProjects(activeProjects.length > 0 ? activeProjects : projects.slice(0, 8));
+        renderActivity(recentActivity, projects);
+        renderTasks(myTasks);
+
+        // Approvals preview — ADMIN only (same rule as the old BOQ page tab),
+        // never shown to VISUALIZER since it deals in prices.
+        if (isAdmin()) {
+            document.getElementById('dash-approvals-panel').style.display = 'flex';
+            await loadApprovalsPreview(projects);
+        }
+    }
+
+    function renderProjects(projects) {
+        let container = document.getElementById('dash-projects');
+        if (projects.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">No projects yet.</p>';
+            return;
+        }
+        container.innerHTML = projects.map(project => `
+            <div onclick="selectProject(${project.id}, '${(project.name || '').replace(/'/g, "\\'")}')"
+                style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer">
+                <div>
+                    <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${project.name || 'Untitled'}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                        ${project.clientName ? project.clientName + ' · ' : ''}${project.location || 'No location set'}
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    ${project.budget && !isVisualizer() ? `<span style="font-size:13px;font-weight:600;color:var(--text-primary)">₹${Number(project.budget).toLocaleString('en-IN')}</span>` : ''}
+                    <span style="font-size:11px;font-weight:600;color:${statusColors[project.status] || 'var(--text-muted)'};background:${statusColors[project.status] || 'var(--text-muted)'}18;padding:3px 8px;border-radius:4px">${project.status || '—'}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function selectProject(id, name) {
+        localStorage.setItem('selectedProjectId', id);
+        localStorage.setItem('selectedProjectName', name);
+        window.location.href = 'project-detail.html';
+    }
+
+    // These action types always carry pricing (₹ figures) - VISUALIZER never
+    // sees costs anywhere else in the app, so they're filtered out of the feed
+    // here too rather than leaking them through the activity log text.
+    const FINANCE_ACTIONS = new Set(['Rate Changed', 'Install Rate Changed', 'Negotiated Rate Set', 'Negotiated Install Rate Set', 'Change Requested', 'Change Approved', 'Change Rejected']);
+
+    function renderActivity(logs, projects) {
+        let container = document.getElementById('dash-activity');
+        if (isVisualizer()) logs = logs.filter(l => !FINANCE_ACTIONS.has(l.action));
+        if (logs.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">Nothing logged yet.</p>';
+            return;
+        }
+        let projectName = id => (projects.find(p => p.id === id) || {}).name || '';
+        container.innerHTML = logs.map(log => `
+            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+                <div style="font-size:12.5px;color:var(--text-primary)">
+                    <strong>${log.username || 'Someone'}</strong> ${log.action || 'made a change'}
+                    ${log.details ? ` — ${log.details}` : ''}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">
+                    ${projectName(log.projectId) ? projectName(log.projectId) + ' · ' : ''}${timeAgo(log.timestamp)}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function formatNum(n) {
+        return (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Builds one "Item (Qty 1→2, Supply ₹100.00→₹120.00); Item2 (...)" string per
+    // group, so approving/rejecting from here logs a real before→after entry
+    // instead of a bare "Change Approved" with no detail.
+    function describeGroupChanges(group) {
+        return group.items.map(function(item) {
+            let parts = [];
+            if (item.pendingQuantity !== null && item.pendingQuantity !== undefined) parts.push(`Qty ${item.quantity || 1}→${item.pendingQuantity}`);
+            if (item.pendingUnitPrice !== null && item.pendingUnitPrice !== undefined) parts.push(`Supply ₹${formatNum(item.unitPrice)}→₹${formatNum(item.pendingUnitPrice)}`);
+            if (item.pendingInstallRate !== null && item.pendingInstallRate !== undefined) parts.push(`Install ₹${formatNum(item.installRate)}→₹${formatNum(item.pendingInstallRate)}`);
+            return `${item.name}${parts.length ? ' (' + parts.join(', ') + ')' : ''}`;
+        }).join('; ');
+    }
+
+    // Indexed lookup for the approve/reject buttons below - avoids ever having to
+    // embed a category/item name (which can contain quotes) inside an HTML
+    // attribute, which previously would have broken the button's onclick.
+    let _approvalGroups = [];
+
+    // Preview of pending BOQ change requests across every project the admin can see.
+    // Groups items into one card per "Send for Approval" batch, same grouping
+    // logic the old BOQ-page Approvals tab used before it moved here.
+    async function loadApprovalsPreview(projects) {
+        let container = document.getElementById('dash-approvals');
+        let pendingLists = await Promise.all(
+            projects.map(p => authFetch(`${API}/api/boq/${p.id}/pending`).then(r => r.ok ? r.json() : []).then(items => items.map(i => ({ ...i, _projectId: p.id, _projectName: p.name }))))
+        );
+        let pending = pendingLists.flat();
+
+        if (pending.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">No changes waiting for approval.</p>';
+            return;
+        }
+
+        let groups = {};
+        let groupOrder = [];
+        pending.forEach(function(item) {
+            let key = item.batchId || ('legacy:' + item._projectId + ':' + item.category + ':' + item.requestedBy);
+            if (!groups[key]) {
+                groups[key] = { batchId: item.batchId || null, category: item.category, requestedBy: item.requestedBy, requestedAt: item.requestedAt, projectName: item._projectName, items: [] };
+                groupOrder.push(key);
+            }
+            groups[key].items.push(item);
+        });
+
+        _approvalGroups = groupOrder.map(key => groups[key]);
+
+        container.innerHTML = _approvalGroups.map(function(group, idx) {
+            let when = group.requestedAt ? new Date(group.requestedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            return `
+                <div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px">
+                    <div style="min-width:0">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${group.category || '—'} <span style="font-weight:500;color:var(--text-muted)">· ${group.projectName || ''}</span></div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Requested by ${group.requestedBy || '—'}${when ? ' · ' + when : ''} · ${group.items.length} item${group.items.length > 1 ? 's' : ''}</div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-shrink:0">
+                        <button onclick="approveGroupPreview(${idx})" style="padding:5px 12px;border:none;border-radius:6px;background:var(--success);color:white;font-size:11.5px;font-weight:600;cursor:pointer">Approve</button>
+                        <button onclick="rejectGroupPreview(${idx})" style="padding:5px 12px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:11.5px;font-weight:600;cursor:pointer">Reject</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function approveGroupPreview(idx) {
+        let group = _approvalGroups[idx];
+        if (!group) return;
+        if (group.batchId) {
+            await authFetch(`${API}/api/boq/batch/${group.batchId}/approve`, { method: 'POST', headers: authHeaders() });
+        } else {
+            await Promise.all(group.items.map(i => authFetch(`${API}/api/boq/${i.id}/approve`, { method: 'POST', headers: authHeaders() })));
+        }
+        logActivity('Change Approved', `${group.category}: ${describeGroupChanges(group)}`, group.items[0]._projectId);
+        showToast('Approved', 'success');
+        loadDashboard();
+    }
+
+    async function rejectGroupPreview(idx) {
+        let group = _approvalGroups[idx];
+        if (!group) return;
+        if (group.batchId) {
+            await authFetch(`${API}/api/boq/batch/${group.batchId}/reject`, { method: 'POST', headers: authHeaders() });
+        } else {
+            await Promise.all(group.items.map(i => authFetch(`${API}/api/boq/${i.id}/reject`, { method: 'POST', headers: authHeaders() })));
+        }
+        logActivity('Change Rejected', `${group.category}: ${describeGroupChanges(group)}`, group.items[0]._projectId);
+        showToast('Rejected', 'info');
+        loadDashboard();
+    }
+
+    function renderTasks(tasks) {
+        let container = document.getElementById('dash-tasks');
+        let open = tasks.filter(t => t.status !== 'COMPLETED');
+        if (open.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">Nothing on your plate. </p>';
+            return;
+        }
+        container.innerHTML = open.map(task => `
+            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+                <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${task.title}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">
+                    ${task.assignedBy && task.assignedBy !== currentUsername ? 'Assigned by ' + task.assignedBy : 'Personal task'}
+                    ${task.dueDate ? ' · Due ' + task.dueDate : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>

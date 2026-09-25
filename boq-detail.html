@@ -17,16 +17,6 @@
 </head>
 <body>
 
-    <div class="global-topbar">
-        <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn"> BOQ <span id="cart-count">0</span></a>
-        </div>
-    </div>
-
     <div class="page-body">
         <div class="sidebar" style="justify-content:flex-start;gap:2px">
             <a href="index.html" class="back-btn" style="margin-bottom:12px">← Projects</a>
@@ -43,11 +33,6 @@
 
             <!-- Category list under BOQ -->
             <div id="category-nav" style="display:none;padding-left:12px;display:flex;flex-direction:column;gap:2px"></div>
-
-            <!-- Pending Approvals (ADMIN only) -->
-            <button class="boq-nav-btn" id="btn-approvals" onclick="showApprovals()" style="display:none">
-                Pending Approvals <span id="pending-count" style="margin-left:auto;font-size:11px;background:#8A6A2E;color:white;border-radius:10px;padding:1px 7px;display:none">0</span>
-            </button>
 
             <!-- Generate button at bottom -->
             <div id="export-btn-wrap" style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
@@ -150,11 +135,6 @@
                 <div id="shortlist-container"></div>
             </div>
             <div id="view-vendors-used" style="display:none"></div>
-
-            <!-- Pending Approvals View (ADMIN only) -->
-            <div id="view-approvals" style="display:none">
-                <div id="approvals-container"></div>
-            </div>
         </div>
     </div>
 
@@ -332,124 +312,15 @@
     document.getElementById('view-category').style.display = 'none';
     document.getElementById('view-shortlist').style.display = 'none';
     document.getElementById('view-vendors-used').style.display = 'none';
-    document.getElementById('view-approvals').style.display = 'none';
     document.getElementById('confirm-btn-category').style.display = 'none';
     document.getElementById('send-approval-btn').style.display = 'none';
     document.getElementById('boq-import-btn').style.display = 'none';
 }
 
-        async function showApprovals() {
-            hideAll();
-            document.getElementById('view-approvals').style.display = 'block';
-            document.getElementById('view-label').textContent = 'Pending Approvals';
-            setActive('btn-approvals');
-            await loadApprovals();
-        }
-
-        function fieldChangeParts(item) {
-            let current = [], requested = [];
-            if (item.pendingUnitPrice !== null && item.pendingUnitPrice !== undefined) {
-                current.push('Supply ₹' + formatNum(item.unitPrice));
-                requested.push('Supply ₹' + formatNum(item.pendingUnitPrice));
-            }
-            if (item.pendingQuantity !== null && item.pendingQuantity !== undefined) {
-                current.push('Qty ' + (item.quantity || 1));
-                requested.push('Qty ' + item.pendingQuantity);
-            }
-            if (item.pendingInstallRate !== null && item.pendingInstallRate !== undefined) {
-                current.push('Install ₹' + formatNum(item.installRate));
-                requested.push('Install ₹' + formatNum(item.pendingInstallRate));
-            }
-            return { current, requested };
-        }
-
-        // Groups pending items into one card per "Send for Approval" batch.
-        // Older items with no batchId (from before this existed) fall back to
-        // one group per category+requestedBy so nothing gets lost.
-        async function loadApprovals() {
-            let res = await authFetch(`${API}/api/boq/${projectId}/pending`);
-            let pending = await res.json();
-            let container = document.getElementById('approvals-container');
-            container.innerHTML = '';
-
-            if (pending.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted);padding:20px 0">No changes waiting for approval.</p>';
-                return;
-            }
-
-            let groups = {};
-            let groupOrder = [];
-            pending.forEach(function(item) {
-                let key = item.batchId || ('legacy:' + item.category + ':' + item.requestedBy);
-                if (!groups[key]) { groups[key] = { batchId: item.batchId || null, category: item.category, requestedBy: item.requestedBy, requestedAt: item.requestedAt, items: [] }; groupOrder.push(key); }
-                groups[key].items.push(item);
-            });
-
-            groupOrder.forEach(function(key) {
-                let group = groups[key];
-                let card = document.createElement('div');
-                card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden';
-
-                let when = group.requestedAt ? new Date(group.requestedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-
-                let rowsHtml = group.items.map(function(item) {
-                    let { current, requested } = fieldChangeParts(item);
-                    return `
-                        <tr>
-                            <td style="font-weight:500;color:var(--text-primary)">${item.name}</td>
-                            <td>${current.join(', ') || '—'}</td>
-                            <td style="color:#8A6A2E;font-weight:600">${requested.join(', ') || '—'}</td>
-                        </tr>
-                    `;
-                }).join('');
-
-                let approveAction = group.batchId
-                    ? `(async()=>{await approveBatch('${group.batchId}'); await loadApprovals(); await refreshPendingCount(); await loadSummary();})()`
-                    : `(async()=>{for (let it of ${JSON.stringify(group.items.map(i => i.id))}) await approveBOQChange(it); await loadApprovals(); await refreshPendingCount(); await loadSummary();})()`;
-                let rejectAction = group.batchId
-                    ? `(async()=>{await rejectBatch('${group.batchId}'); await loadApprovals(); await refreshPendingCount();})()`
-                    : `(async()=>{for (let it of ${JSON.stringify(group.items.map(i => i.id))}) await rejectBOQChange(it); await loadApprovals(); await refreshPendingCount();})()`;
-
-                card.innerHTML = `
-                    <div style="padding:14px 16px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
-                        <div>
-                            <div style="font-weight:600;color:var(--text-primary);font-size:14px">${group.category || '—'}</div>
-                            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Requested by ${group.requestedBy || '—'}${when ? ' · ' + when : ''} · ${group.items.length} item${group.items.length > 1 ? 's' : ''}</div>
-                        </div>
-                        <div style="display:flex;gap:8px">
-                            <button onclick="${approveAction}" style="padding:6px 16px;border:none;border-radius:6px;background:var(--success);color:white;font-size:12.5px;font-weight:600;cursor:pointer">Approve All</button>
-                            <button onclick="${rejectAction}" style="padding:6px 16px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:12.5px;font-weight:600;cursor:pointer">Reject All</button>
-                        </div>
-                    </div>
-                    <table class="list-table" style="margin:0">
-                        <thead><tr><th>Item</th><th>Current</th><th>Requested</th></tr></thead>
-                        <tbody>${rowsHtml}</tbody>
-                    </table>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        async function refreshPendingCount() {
-            if (!isAdmin()) return;
-            let res = await authFetch(`${API}/api/boq/${projectId}/pending`);
-            let pending = await res.json();
-            let batchKeys = new Set(pending.map(i => i.batchId || ('legacy:' + i.category + ':' + i.requestedBy)));
-            let badge = document.getElementById('pending-count');
-            if (batchKeys.size > 0) {
-                badge.textContent = batchKeys.size;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
         function applyRoleUI() {
             document.body.classList.toggle('visualizer-mode', isVisualizer());
-            document.getElementById('btn-approvals').style.display = isAdmin() ? 'flex' : 'none';
             // Export gives a full costed BOQ file — ADMIN only, per the access-control spec.
             document.getElementById('export-btn-wrap').style.display = isAdmin() ? 'block' : 'none';
-            if (isAdmin()) refreshPendingCount();
         }
 
         function showSummary() {
@@ -825,8 +696,8 @@ async function getGroups() {
 </td>`;
                     totalCell = `<td class="cost-col" style="font-weight:600;color:var(--accent)">₹${formatNum(total)}${pending ? `
                         <div style="display:flex;gap:4px;margin-top:4px">
-                            <button onclick="(async()=>{await approveBOQChange(${item.id}); await loadCategoryDetail('${category}'); await loadSummary();})()" style="font-size:10px;padding:2px 6px;border:none;border-radius:4px;background:var(--success);color:white;cursor:pointer">Approve</button>
-                            <button onclick="(async()=>{await rejectBOQChange(${item.id}); await loadCategoryDetail('${category}');})()" style="font-size:10px;padding:2px 6px;border:none;border-radius:4px;background:var(--destructive);color:white;cursor:pointer">Reject</button>
+                            <button onclick="(async()=>{await approveBOQChange(${item.id}, ${JSON.stringify(item.name)}, ${JSON.stringify(describePendingChange(item))}); await loadCategoryDetail('${category}'); await loadSummary();})()" style="font-size:10px;padding:2px 6px;border:none;border-radius:4px;background:var(--success);color:white;cursor:pointer">Approve</button>
+                            <button onclick="(async()=>{await rejectBOQChange(${item.id}, ${JSON.stringify(item.name)}, ${JSON.stringify(describePendingChange(item))}); await loadCategoryDetail('${category}');})()" style="font-size:10px;padding:2px 6px;border:none;border-radius:4px;background:var(--destructive);color:white;cursor:pointer">Reject</button>
                         </div>` : ''}</td>`;
                 }
 
@@ -987,32 +858,41 @@ async function getGroups() {
             }
 
             invalidateCartCache();
+            let itemSummary = staged.map(s => s.item.name).join(', ');
+            logActivity('Change Requested', `${category}: ${staged.length} item${staged.length > 1 ? 's' : ''} (${itemSummary})`);
             showToast(`Sent ${staged.length} change${staged.length > 1 ? 's' : ''} in ${category} for approval`, 'success');
             await loadCategoryDetail(category);
         }
 
-        async function approveBOQChange(itemId) {
+        // Builds a "before → after" description from a BOQItem's pending fields,
+        // used to log a meaningful entry (not just "Change Approved") once it's
+        // actioned - after approval/rejection the pending fields are gone.
+        function describePendingChange(item) {
+            let parts = [];
+            if (item.pendingQuantity !== null && item.pendingQuantity !== undefined) {
+                parts.push(`Qty ${item.quantity || 1} → ${item.pendingQuantity}`);
+            }
+            if (item.pendingUnitPrice !== null && item.pendingUnitPrice !== undefined) {
+                parts.push(`Supply ₹${formatNum(item.unitPrice)} → ₹${formatNum(item.pendingUnitPrice)}`);
+            }
+            if (item.pendingInstallRate !== null && item.pendingInstallRate !== undefined) {
+                parts.push(`Install ₹${formatNum(item.installRate)} → ₹${formatNum(item.pendingInstallRate)}`);
+            }
+            return parts.join(', ');
+        }
+
+        async function approveBOQChange(itemId, itemName, changeDescription) {
             await authFetch(`${API}/api/boq/${itemId}/approve`, { method: 'POST', headers: authHeaders() });
             invalidateCartCache();
+            logActivity('Change Approved', `${itemName}${changeDescription ? ': ' + changeDescription : ''}`);
             showToast('Change approved', 'success');
         }
 
-        async function rejectBOQChange(itemId) {
+        async function rejectBOQChange(itemId, itemName, changeDescription) {
             await authFetch(`${API}/api/boq/${itemId}/reject`, { method: 'POST', headers: authHeaders() });
             invalidateCartCache();
+            logActivity('Change Rejected', `${itemName}${changeDescription ? ': ' + changeDescription : ''}`);
             showToast('Change rejected', 'success');
-        }
-
-        async function approveBatch(batchId) {
-            await authFetch(`${API}/api/boq/batch/${batchId}/approve`, { method: 'POST', headers: authHeaders() });
-            invalidateCartCache();
-            showToast('Batch approved', 'success');
-        }
-
-        async function rejectBatch(batchId) {
-            await authFetch(`${API}/api/boq/batch/${batchId}/reject`, { method: 'POST', headers: authHeaders() });
-            invalidateCartCache();
-            showToast('Batch rejected', 'success');
         }
 
         // ===== Vendor Shortlist =====

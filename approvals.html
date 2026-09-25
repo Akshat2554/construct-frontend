@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approvals — Construct</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="auth.js"></script>
+    <script src="toast.js"></script>
+    <script src="api.js"></script>
+    <script src="cart.js"></script>
+</head>
+<body>
+
+    <div class="page-body">
+        <div class="main-content" style="flex:1">
+            <div style="margin-bottom:20px">
+                <h1 style="margin-bottom:4px">Approvals</h1>
+                <span style="font-size:13px;color:var(--text-muted)">BOQ changes waiting on your sign-off, across every project</span>
+            </div>
+            <div id="approvals-container"></div>
+            <div id="approvals-empty" style="display:none;color:var(--text-muted);font-size:13px;padding:20px 0">No changes waiting for approval.</div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+    <script>
+        // Admin-only, same as the old BOQ-page Approvals tab this replaced.
+        if (!isAdmin()) {
+            window.location.replace('dashboard.html');
+        }
+
+        function formatNum(n) {
+            return (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function fieldChangeParts(item) {
+            let current = [], requested = [];
+            if (item.pendingUnitPrice !== null && item.pendingUnitPrice !== undefined) {
+                current.push('Supply ₹' + formatNum(item.unitPrice));
+                requested.push('Supply ₹' + formatNum(item.pendingUnitPrice));
+            }
+            if (item.pendingQuantity !== null && item.pendingQuantity !== undefined) {
+                current.push('Qty ' + (item.quantity || 1));
+                requested.push('Qty ' + item.pendingQuantity);
+            }
+            if (item.pendingInstallRate !== null && item.pendingInstallRate !== undefined) {
+                current.push('Install ₹' + formatNum(item.installRate));
+                requested.push('Install ₹' + formatNum(item.pendingInstallRate));
+            }
+            return { current, requested };
+        }
+
+        // Indexed lookup for the buttons below - avoids ever having to embed a
+        // category/item name (which can contain quotes) inside an HTML attribute.
+        let _approvalGroups = [];
+
+        function describeGroupChanges(group) {
+            return group.items.map(function(item) {
+                let { current, requested } = fieldChangeParts(item);
+                let parts = current.map((c, i) => `${c}→${requested[i]}`);
+                return `${item.name}${parts.length ? ' (' + parts.join(', ') + ')' : ''}`;
+            }).join('; ');
+        }
+
+        // Groups pending items into one card per "Send for Approval" batch, across
+        // every project this admin can see. Older items with no batchId fall back to
+        // one group per project+category+requestedBy so nothing gets lost.
+        async function loadApprovals() {
+            let container = document.getElementById('approvals-container');
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+
+            let projectsRes = await authFetch(`${API}/api/projects`);
+            let projects = projectsRes.ok ? await projectsRes.json() : [];
+
+            let pendingLists = await Promise.all(
+                projects.map(p => authFetch(`${API}/api/boq/${p.id}/pending`)
+                    .then(r => r.ok ? r.json() : [])
+                    .then(items => items.map(i => ({ ...i, _projectId: p.id, _projectName: p.name }))))
+            );
+            let pending = pendingLists.flat();
+
+            container.innerHTML = '';
+            document.getElementById('approvals-empty').style.display = pending.length === 0 ? 'block' : 'none';
+            if (pending.length === 0) return;
+
+            let groups = {};
+            let groupOrder = [];
+            pending.forEach(function(item) {
+                let key = item.batchId || ('legacy:' + item._projectId + ':' + item.category + ':' + item.requestedBy);
+                if (!groups[key]) {
+                    groups[key] = { batchId: item.batchId || null, category: item.category, requestedBy: item.requestedBy, requestedAt: item.requestedAt, projectName: item._projectName, items: [] };
+                    groupOrder.push(key);
+                }
+                groups[key].items.push(item);
+            });
+
+            _approvalGroups = groupOrder.map(key => groups[key]);
+
+            _approvalGroups.forEach(function(group, idx) {
+                let card = document.createElement('div');
+                card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden';
+
+                let when = group.requestedAt ? new Date(group.requestedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
+                let rowsHtml = group.items.map(function(item) {
+                    let { current, requested } = fieldChangeParts(item);
+                    return `
+                        <tr>
+                            <td style="font-weight:500;color:var(--text-primary)">${item.name}</td>
+                            <td>${current.join(', ') || '—'}</td>
+                            <td style="color:#8A6A2E;font-weight:600">${requested.join(', ') || '—'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                let approveAction = `approveGroup(${idx})`;
+                let rejectAction = `rejectGroup(${idx})`;
+
+                card.innerHTML = `
+                    <div style="padding:14px 16px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:12px">
+                        <div>
+                            <div style="font-weight:600;color:var(--text-primary);font-size:14px">${group.category || '—'} <span style="font-weight:500;color:var(--text-muted)">· ${group.projectName || ''}</span></div>
+                            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Requested by ${group.requestedBy || '—'}${when ? ' · ' + when : ''} · ${group.items.length} item${group.items.length > 1 ? 's' : ''}</div>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-shrink:0">
+                            <button onclick="${approveAction}" style="padding:6px 16px;border:none;border-radius:6px;background:var(--success);color:white;font-size:12.5px;font-weight:600;cursor:pointer">Approve All</button>
+                            <button onclick="${rejectAction}" style="padding:6px 16px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:12.5px;font-weight:600;cursor:pointer">Reject All</button>
+                        </div>
+                    </div>
+                    <table class="list-table" style="margin:0">
+                        <thead><tr><th>Item</th><th>Current</th><th>Requested</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function approveGroup(idx) {
+            let group = _approvalGroups[idx];
+            if (!group) return;
+            if (group.batchId) {
+                await authFetch(`${API}/api/boq/batch/${group.batchId}/approve`, { method: 'POST', headers: authHeaders() });
+            } else {
+                await Promise.all(group.items.map(i => authFetch(`${API}/api/boq/${i.id}/approve`, { method: 'POST', headers: authHeaders() })));
+            }
+            logActivity('Change Approved', `${group.category}: ${describeGroupChanges(group)}`, group.items[0]._projectId);
+            showToast('Approved', 'success');
+            await loadApprovals();
+        }
+
+        async function rejectGroup(idx) {
+            let group = _approvalGroups[idx];
+            if (!group) return;
+            if (group.batchId) {
+                await authFetch(`${API}/api/boq/batch/${group.batchId}/reject`, { method: 'POST', headers: authHeaders() });
+            } else {
+                await Promise.all(group.items.map(i => authFetch(`${API}/api/boq/${i.id}/reject`, { method: 'POST', headers: authHeaders() })));
+            }
+            logActivity('Change Rejected', `${group.category}: ${describeGroupChanges(group)}`, group.items[0]._projectId);
+            showToast('Rejected', 'info');
+            await loadApprovals();
+        }
+
+        loadApprovals();
+        updateCartCount();
+    </script>
+</body>
+</html>

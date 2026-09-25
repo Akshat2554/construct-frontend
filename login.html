@@ -28,7 +28,7 @@
     <script>
         // Check if already logged in
         if (localStorage.getItem('construct-auth') === 'true') {
-            window.location.href = 'index.html';
+            window.location.href = 'dashboard.html';
         }
 
         async function login() {
@@ -48,7 +48,7 @@
             sessionStorage.setItem('construct-user', data.username);
             sessionStorage.setItem('construct-role', data.role || 'ADMIN');
             sessionStorage.setItem('construct-auth', 'true');
-            window.location.replace('index.html');
+            window.location.replace('dashboard.html');
         } else {
             document.getElementById('error-msg').style.display = 'block';
         }

@@ -47,11 +47,14 @@ async function updateCartCount() {
 }
 
 // ===== Activity Logging =====
-function logActivity(action, details) {
-    let projectId = getProjectId();
+// projectIdOverride lets pages that aren't scoped to one "current" project
+// (the Dashboard, the cross-project Approvals page) log against the right
+// project instead of whatever happens to be in localStorage.
+function logActivity(action, details, projectIdOverride) {
+    let projectId = projectIdOverride || getProjectId();
     if (!projectId) return;
     let username = sessionStorage.getItem('construct-user') || 'unknown';
-    
+
     fetch(`${API}/api/activity`, {
         method: 'POST',
         headers: authHeaders(),

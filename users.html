@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users — Construct</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="auth.js"></script>
+    <script src="toast.js"></script>
+    <script src="api.js"></script>
+    <script src="cart.js"></script>
+</head>
+<body>
+
+    <div class="page-body">
+        <div class="main-content" style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                <div>
+                    <h1 style="margin-bottom:4px">Users</h1>
+                    <span style="font-size:13px;color:var(--text-muted)">Create accounts and manage who can see what</span>
+                </div>
+                <button class="add-btn" id="add-btn">+ New Account</button>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                <table class="list-table" style="margin:0;width:100%">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Projects</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody"></tbody>
+                </table>
+            </div>
+            <div id="users-empty" style="display:none;color:var(--text-muted);font-size:13px;padding:20px 0">No accounts yet.</div>
+        </div>
+    </div>
+
+    <!-- New Account Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" style="width:400px">
+            <h2>New Account</h2>
+            <input type="text" id="user-username" placeholder="Username" autocomplete="off">
+            <input type="password" id="user-password" placeholder="Password" autocomplete="new-password">
+            <select id="user-role">
+                <option value="ADMIN">Admin</option>
+                <option value="FINANCE">Finance</option>
+                <option value="VISUALIZER" selected>Visualizer</option>
+            </select>
+            <div class="modal-buttons">
+                <button id="cancel-btn">Cancel</button>
+                <button id="confirm-btn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal-overlay" id="password-modal">
+        <div class="modal" style="width:360px">
+            <h2>Reset Password</h2>
+            <p style="font-size:12.5px;color:var(--text-muted);margin-top:-6px" id="password-modal-sub"></p>
+            <input type="password" id="new-password" placeholder="New password" autocomplete="new-password">
+            <div class="modal-buttons">
+                <button id="password-cancel-btn">Cancel</button>
+                <button id="password-confirm-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Access Modal -->
+    <div class="modal-overlay" id="access-modal">
+        <div class="modal" style="width:420px">
+            <h2>Manage Access</h2>
+            <p style="font-size:12.5px;color:var(--text-muted);margin-top:-6px" id="access-modal-sub">Which projects this account can see and work on.</p>
+            <div id="access-project-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+            <div class="modal-buttons">
+                <button id="access-modal-close">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="project-modal">
+        <div class="modal">
+            <h2>Select Project</h2>
+            <div id="project-list-modal"></div>
+            <div class="modal-buttons">
+                <button id="project-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="topbar.js"></script>
+    <script>
+        // This page is admin-only — anyone else who lands here is bounced to the dashboard.
+        if (!isAdmin()) {
+            window.location.replace('dashboard.html');
+        }
+
+        let currentUsername = sessionStorage.getItem('construct-user') || '';
+        let _allProjects = [];
+        let roleLabels = { ADMIN: 'Admin', FINANCE: 'Finance', VISUALIZER: 'Visualizer', UNASSIGNED: 'Unassigned' };
+        let roleColors = { ADMIN: '#4ecb71', FINANCE: '#5b8def', VISUALIZER: '#f0a050', UNASSIGNED: 'var(--text-muted)' };
+
+        async function loadUsers() {
+            let [usersRes, projectsRes] = await Promise.all([
+                authFetch(`${API}/api/users`),
+                authFetch(`${API}/api/projects`)
+            ]);
+            let users = usersRes.ok ? await usersRes.json() : [];
+            _allProjects = projectsRes.ok ? await projectsRes.json() : [];
+
+            users.sort((a, b) => a.username.localeCompare(b.username));
+
+            let assignmentCounts = await Promise.all(
+                users.map(u => authFetch(`${API}/api/project-assignments/mine?username=${encodeURIComponent(u.username)}`)
+                    .then(r => r.ok ? r.json() : []))
+            );
+
+            let tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = '';
+            document.getElementById('users-empty').style.display = users.length === 0 ? 'block' : 'none';
+
+            users.forEach(function(user, index) {
+                let assignedCount = assignmentCounts[index].length;
+                let isSelf = user.username === currentUsername;
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight:500">${user.username}${isSelf ? ' <span style="color:var(--text-muted);font-weight:400;font-size:11.5px">(you)</span>' : ''}</td>
+                    <td>
+                        <select data-username="${user.username}" class="role-select" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12.5px;background:var(--bg);color:${roleColors[user.role] || 'var(--text-primary)'};font-weight:600">
+                            <option value="ADMIN" ${user.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
+                            <option value="FINANCE" ${user.role === 'FINANCE' ? 'selected' : ''}>Finance</option>
+                            <option value="VISUALIZER" ${user.role === 'VISUALIZER' ? 'selected' : ''}>Visualizer</option>
+                            ${user.role === 'UNASSIGNED' ? '<option value="UNASSIGNED" selected>Unassigned</option>' : ''}
+                        </select>
+                    </td>
+                    <td style="color:var(--text-muted);font-size:12.5px">
+                        ${user.role === 'ADMIN' ? 'All projects' : `${assignedCount} project${assignedCount === 1 ? '' : 's'}`}
+                    </td>
+                    <td style="text-align:right;white-space:nowrap">
+                        <button class="nav-btn" style="font-size:12px;padding:5px 12px;${user.role === 'ADMIN' ? 'display:none' : ''}" onclick="openAccessModal('${user.username}')">Manage Access</button>
+                        <button class="nav-btn" style="font-size:12px;padding:5px 12px" onclick="openPasswordModal('${user.username}')">Reset Password</button>
+                        <button class="dots-btn" style="${isSelf ? 'display:none' : ''}" onclick="deleteUser('${user.username}')" title="Delete account">✕</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.querySelectorAll('.role-select').forEach(select => {
+                select.addEventListener('change', async function() {
+                    let username = this.dataset.username;
+                    let role = this.value;
+                    let response = await authFetch(`${API}/api/users/${encodeURIComponent(username)}/role`, {
+                        method: 'PUT',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ role })
+                    });
+                    if (response.ok) {
+                        showToast(`${username} is now ${roleLabels[role] || role}`, 'success');
+                        loadUsers();
+                    } else {
+                        showToast('Could not change that role', 'error');
+                        loadUsers();
+                    }
+                });
+            });
+        }
+
+        async function openAccessModal(username) {
+            document.getElementById('access-modal-sub').textContent = `Which projects ${username} can see and work on.`;
+            let listEl = document.getElementById('access-project-list');
+            listEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+            document.getElementById('access-modal').classList.add('open');
+
+            let assignedRes = await authFetch(`${API}/api/project-assignments/mine?username=${encodeURIComponent(username)}`);
+            let assigned = new Set(assignedRes.ok ? await assignedRes.json() : []);
+
+            if (_allProjects.length === 0) {
+                listEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No projects yet.</p>';
+                return;
+            }
+
+            listEl.innerHTML = _allProjects.map(p => `
+                <label class="checkbox-item" style="cursor:pointer">
+                    <input type="checkbox" data-project-id="${p.id}" ${assigned.has(p.id) ? 'checked' : ''}
+                        onchange="toggleAccess(${p.id}, '${username}', this.checked)">
+                    <span>${p.name}</span>
+                </label>
+            `).join('');
+        }
+
+        async function toggleAccess(projectId, username, shouldAssign) {
+            if (shouldAssign) {
+                await authFetch(`${API}/api/project-assignments`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ projectId, username })
+                });
+                showToast(`${username} can now access this project`, 'success');
+            } else {
+                await authFetch(`${API}/api/project-assignments/${projectId}/${username}`, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+                showToast(`${username} no longer has access`, 'info');
+            }
+        }
+
+        document.getElementById('access-modal-close').addEventListener('click', function() {
+            document.getElementById('access-modal').classList.remove('open');
+            loadUsers();
+        });
+
+        let passwordTargetUsername = null;
+        function openPasswordModal(username) {
+            passwordTargetUsername = username;
+            document.getElementById('password-modal-sub').textContent = `Set a new password for ${username}.`;
+            document.getElementById('new-password').value = '';
+            document.getElementById('password-modal').classList.add('open');
+        }
+
+        document.getElementById('password-cancel-btn').addEventListener('click', function() {
+            document.getElementById('password-modal').classList.remove('open');
+        });
+
+        document.getElementById('password-confirm-btn').addEventListener('click', async function() {
+            let password = document.getElementById('new-password').value;
+            if (!password) {
+                showToast('Enter a new password', 'error');
+                return;
+            }
+            let response = await authFetch(`${API}/api/users/${encodeURIComponent(passwordTargetUsername)}/password`, {
+                method: 'PUT',
+                headers: authHeaders(),
+                body: JSON.stringify({ password })
+            });
+            if (response.ok) {
+                showToast('Password updated', 'success');
+                document.getElementById('password-modal').classList.remove('open');
+            } else {
+                showToast('Could not update that password', 'error');
+            }
+        });
+
+        async function deleteUser(username) {
+            if (!confirm(`Delete ${username}'s account? This cannot be undone.`)) return;
+            let response = await authFetch(`${API}/api/users/${encodeURIComponent(username)}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+            if (response.ok) {
+                showToast('Account deleted', 'info');
+                loadUsers();
+            } else {
+                let body = await response.json().catch(() => ({}));
+                showToast(body.error || 'Could not delete that account', 'error');
+            }
+        }
+
+        let modal = document.getElementById('modal-overlay');
+        let addBtn = document.getElementById('add-btn');
+        let cancelBtn = document.getElementById('cancel-btn');
+        let confirmBtn = document.getElementById('confirm-btn');
+
+        addBtn.addEventListener('click', function() {
+            document.getElementById('user-username').value = '';
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-role').value = 'VISUALIZER';
+            modal.classList.add('open');
+        });
+
+        cancelBtn.addEventListener('click', function() {
+            modal.classList.remove('open');
+        });
+
+        confirmBtn.addEventListener('click', async function() {
+            let username = document.getElementById('user-username').value.trim();
+            let password = document.getElementById('user-password').value;
+            let role = document.getElementById('user-role').value;
+
+            if (!username || !password) {
+                showToast('Enter a username and password', 'error');
+                return;
+            }
+
+            let response = await authFetch(`${API}/api/users`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ username, password, role })
+            });
+
+            if (response.ok) {
+                modal.classList.remove('open');
+                showToast(`Account created for ${username}`, 'success');
+                loadUsers();
+            } else {
+                let body = await response.json().catch(() => ({}));
+                showToast(body.error || 'Could not create that account', 'error');
+            }
+        });
+
+        loadUsers();
+        updateCartCount();
+    </script>
+</body>
+</html>

@@ -11,15 +11,6 @@
     </head>
 <body>
 
-    <div class="global-topbar">
-        <div class="logo">Construct</div>
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn cart-btn"> BOQ <span id="cart-count">0</span></a>
-        </div>
-    </div>
-
     <div class="page-body">
         <div class="sidebar">
             <a href="index.html" class="nav-btn">← Projects</a>
@@ -154,6 +145,7 @@
         </div>
     </div>
 
+    <script src="topbar.js"></script>
 <script>
     let projectId = localStorage.getItem('selectedProjectId');
     let projectName = localStorage.getItem('selectedProjectName');
@@ -1353,16 +1345,21 @@ async function loadUpdates() {
     renderUpdates('');
 }
 
+// These action types always carry pricing (₹ figures) - VISUALIZER never sees
+// costs anywhere else in the app, so they're filtered out of this feed too.
+const FINANCE_LOG_ACTIONS = new Set(['Rate Changed', 'Install Rate Changed', 'Negotiated Rate Set', 'Negotiated Install Rate Set', 'Change Requested', 'Change Approved', 'Change Rejected']);
+
 function renderUpdates(searchTerm) {
     let container = document.getElementById('view-updates');
-    
-    let filtered = searchTerm 
-        ? _allLogs.filter(l => 
+
+    let baseLogs = isVisualizer() ? _allLogs.filter(l => !FINANCE_LOG_ACTIONS.has(l.action)) : _allLogs;
+    let filtered = searchTerm
+        ? baseLogs.filter(l =>
             (l.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (l.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (l.username || '').toLowerCase().includes(searchTerm.toLowerCase())
           )
-        : _allLogs;
+        : baseLogs;
     
     let visible = filtered.slice(0, _logsShown);
     

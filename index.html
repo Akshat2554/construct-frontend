@@ -15,46 +15,32 @@
 </head>
 <body>
 
-    <div class="global-topbar">
-        <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
-        <div class="search-box">
-            <input type="text" placeholder="Search projects...">
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn">Catalog</a>
-            <a href="index.html" class="nav-btn active">Projects</a>
-            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
-        </div>
-    </div>
-
     <div class="page-body">
-        <div class="sidebar">
-            <button class="add-btn" id="add-btn" style="width:100%">+ New Project</button>
-        </div>
-
-        <div class="main-content">
+        <div class="main-content" style="flex:1">
             <h1>Projects</h1>
-            <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
-                <select id="filter-status" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
-                    <option value="">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Completed">Completed</option>
-                </select>
-                <select id="filter-priority" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
-                    <option value="">All Priority</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                </select>
-                <select id="sort-projects" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
-                    <option value="">Sort: Default</option>
-                    <option value="priority-high">Priority: High First</option>
-                    <option value="priority-low">Priority: Low First</option>
-                    <option value="name">Name A-Z</option>
-                    <option value="budget-high">Budget: High First</option>
-                </select>
+            <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:10px;align-items:center">
+                    <select id="filter-status" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                    <select id="filter-priority" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                        <option value="">All Priority</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select id="sort-projects" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+                        <option value="">Sort: Default</option>
+                        <option value="priority-high">Priority: High First</option>
+                        <option value="priority-low">Priority: Low First</option>
+                        <option value="name">Name A-Z</option>
+                        <option value="budget-high">Budget: High First</option>
+                    </select>
+                </div>
+                <button class="add-btn" id="add-btn">+ New Project</button>
             </div>
             <div id="projects-container"></div>
         </div>
@@ -109,6 +95,18 @@
         </div>
     </div>
 
+    <!-- Manage Access Modal (admin only) -->
+    <div class="modal-overlay" id="access-modal">
+        <div class="modal" style="width:420px">
+            <h2>Manage Access</h2>
+            <p style="font-size:12.5px;color:var(--text-muted);margin-top:-6px">Who can see and work on this project.</p>
+            <div id="access-user-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+            <div class="modal-buttons">
+                <button id="access-modal-close">Done</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Project Selector Modal -->
     <div class="modal-overlay" id="project-modal">
         <div class="modal">
@@ -123,6 +121,7 @@
     <script src="topbar.js"></script>
     <script>
         let editingId = null;
+        document.getElementById('add-btn').style.display = isAdmin() ? '' : 'none';
 
         const statusColors = {
             'Active': '#4ecb71',
@@ -229,6 +228,13 @@
             onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
             View BOQ
         </button>
+        ${isAdmin() ? `
+        <button onclick="event.stopPropagation(); openAccessModal(${project.id}, '${(project.name || '').replace(/'/g, "\\'")}')"
+            style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap"
+            onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
+            Manage Access
+        </button>` : ''}
         <button class="dots-btn" onclick="event.stopPropagation(); editProject(${project.id})">⋮</button>
     </div>
 `;
@@ -248,6 +254,53 @@
             window.location.href = 'boq-detail.html';
         }
 
+        async function openAccessModal(projectId, projectName) {
+            let listEl = document.getElementById('access-user-list');
+            listEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+            document.getElementById('access-modal').classList.add('open');
+
+            let [usersRes, assignedRes] = await Promise.all([
+                authFetch(`${API}/api/users`),
+                authFetch(`${API}/api/project-assignments/${projectId}`)
+            ]);
+            if (!usersRes.ok || !assignedRes.ok) {
+                listEl.innerHTML = '<p style="color:var(--destructive);font-size:13px">Could not load access.</p>';
+                return;
+            }
+            let users = await usersRes.json();
+            let assigned = new Set(await assignedRes.json());
+
+            listEl.innerHTML = users.map(u => `
+                <label class="checkbox-item" style="cursor:pointer">
+                    <input type="checkbox" data-username="${u.username}" ${assigned.has(u.username) ? 'checked' : ''}
+                        onchange="toggleAccess(${projectId}, '${u.username}', this.checked)">
+                    <span>${u.username} <span style="color:var(--text-muted);font-size:11px">(${u.role})</span></span>
+                </label>
+            `).join('') || '<p style="color:var(--text-muted);font-size:13px">No other users yet.</p>';
+        }
+
+        async function toggleAccess(projectId, username, shouldAssign) {
+            if (shouldAssign) {
+                await authFetch(`${API}/api/project-assignments`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ projectId, username })
+                });
+                showToast(`${username} can now access this project`, 'success');
+            } else {
+                await authFetch(`${API}/api/project-assignments/${projectId}/${username}`, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+                showToast(`${username} no longer has access`, 'info');
+            }
+        }
+
+        document.getElementById('access-modal-close').addEventListener('click', function() {
+            document.getElementById('access-modal').classList.remove('open');
+            loadProjects();
+        });
+
         async function editProject(id) {
             let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects/' + id);
             let project = await response.json();
@@ -263,7 +316,7 @@
             document.getElementById('proj-sft').value = project.squareFootage || '';
             document.getElementById('modal-title').textContent = 'Edit Project';
             document.getElementById('confirm-btn').textContent = 'Save';
-            document.getElementById('delete-project-btn').style.display = 'block';
+            document.getElementById('delete-project-btn').style.display = isAdmin() ? 'block' : 'none';
             modal.classList.add('open');
         }
 

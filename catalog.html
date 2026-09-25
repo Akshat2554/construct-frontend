@@ -12,28 +12,15 @@
 
 </head>
 <body>
-    <div class="global-topbar">
-        <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
-        
-        <div class="search-box">
-            <input type="text" placeholder="Search categories...">
-        </div>
-        
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn active">Catalog</a>
-            <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
-        </div>
-    </div>
-
     <div class="page-body">
-        <div class="sidebar">
-            <button class="add-btn" id="add-btn" style="width:100%">+ Add Category</button>
-        </div>
-
-        <div class="main-content">
-            <h1>Product Catalog</h1>
+        <div class="main-content" style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px">
+                <h1 style="margin:0">Product Catalog</h1>
+                <button class="add-btn" id="add-btn">+ Add Category</button>
+            </div>
+            <div class="search-box" style="margin-bottom:16px">
+                <input type="text" placeholder="Search categories...">
+            </div>
             <div class="category-grid" id="category-grid"></div>
         </div>
     </div>

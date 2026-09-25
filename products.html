@@ -13,43 +13,39 @@
 
 </head>
 <body>
-    <div class="global-topbar">
-        <div class="logo">Construct</div>
-        <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No Project</span></button>
-
-        <div class="search-box">
-            <input type="text" placeholder="Search products...">
-        </div>
-
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-            <a href="catalog.html" class="nav-btn active">Catalog</a>
-            <a href="index.html" class="nav-btn">Projects</a>
-            <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
-        </div>
-    </div>
-
     <div class="page-body">
-        <div class="sidebar">
-            <a href="suppliers.html" class="back-btn">← Back to Suppliers</a>
-            <button class="add-btn" id="add-btn" style="width:100%;margin-top:10px">+ Add Product</button>
-            <button class="add-btn" id="upload-pdf-btn" style="width:100%">+ Upload PDF</button>
-            <label class="add-btn" style="width:100%;text-align:center">
-                Upload Excel
-                <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none">
-            </label>
-        </div>
-
-        <div class="main-content">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="main-content" style="flex:1">
+            <a href="suppliers.html" class="back-btn" style="display:inline-block;margin-bottom:14px">← Back to Suppliers</a>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px">
                 <h1 id="category-title" style="margin-bottom:0">Products</h1>
-                <div class="view-toggle">
-                    <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
-                    <button id="list-view-btn" class="view-toggle-btn" onclick="setView('list')">☰ List</button>
+                <div class="search-box" style="max-width:260px">
+                    <input type="text" placeholder="Search products...">
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="view-toggle">
+                        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
+                        <button id="list-view-btn" class="view-toggle-btn" onclick="setView('list')">☰ List</button>
+                    </div>
+                    <div style="position:relative">
+                        <button class="add-btn" id="add-menu-btn" style="width:36px;height:36px;padding:0;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation(); document.getElementById('add-menu-dropdown').classList.toggle('open')">+</button>
+                        <div id="add-menu-dropdown" style="position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.18);min-width:180px;z-index:50;overflow:hidden;display:none">
+                            <button id="add-btn" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer">+ Add Product</button>
+                            <button id="upload-pdf-btn" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer">+ Upload PDF</button>
+                            <label style="display:block;width:100%;text-align:left;padding:10px 14px;color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer">
+                                Upload Excel
+                                <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none">
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="product-grid" id="product-grid"></div>
         </div>
     </div>
+    <style>
+        #add-menu-dropdown.open { display: block !important; }
+        #add-menu-dropdown button:hover, #add-menu-dropdown label:hover { background: var(--bg); }
+    </style>
 
     <div class="modal-overlay" id="pdf-modal">
         <div class="modal">
@@ -217,6 +213,13 @@
 
     <script src="topbar.js"></script>
     <script>
+        document.addEventListener('click', function(e) {
+            let dropdown = document.getElementById('add-menu-dropdown');
+            if (dropdown && !dropdown.contains(e.target) && e.target.id !== 'add-menu-btn') {
+                dropdown.classList.remove('open');
+            }
+        });
+
         let supplier = localStorage.getItem('selectedSupplier');
         let categoryId = localStorage.getItem('selectedCategoryId');
         let categoryName = localStorage.getItem('selectedCategoryName');
@@ -562,6 +565,7 @@ row.addEventListener('click', function(e) {
         }
 
         uploadPdfBtn.addEventListener('click', function() {
+            document.getElementById('add-menu-dropdown').classList.remove('open');
             pdfModal.classList.add('open');
         });
 
@@ -601,6 +605,7 @@ row.addEventListener('click', function(e) {
         let editingProductId = null;
 
         addBtn.addEventListener('click', function() {
+            document.getElementById('add-menu-dropdown').classList.remove('open');
             editingProductId = null;
             document.getElementById('prod-name').value = '';
             document.getElementById('prod-id').value = '';
@@ -668,6 +673,7 @@ row.addEventListener('click', function(e) {
 });
 
         document.getElementById('excel-upload').addEventListener('change', function(e) {
+            document.getElementById('add-menu-dropdown').classList.remove('open');
             let file = e.target.files[0];
             let reader = new FileReader();
 
