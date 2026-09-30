@@ -26,10 +26,17 @@
     </div>
 
     <script>
-        // Check if already logged in
-        if (localStorage.getItem('construct-auth') === 'true') {
+        // Check if already logged in. Must check sessionStorage, not localStorage -
+        // login() below writes to sessionStorage (and so does auth.js on every other
+        // page). Checking the wrong storage here caused a bad bug: a stale
+        // 'true' left behind in localStorage from an older build would send you to
+        // dashboard.html, whose auth.js would immediately bounce you back here
+        // because sessionStorage was empty - back and forth forever.
+        if (sessionStorage.getItem('construct-auth') === 'true') {
             window.location.href = 'dashboard.html';
         }
+        // Clean up any stale flag so it can never cause this again.
+        localStorage.removeItem('construct-auth');
 
         async function login() {
     let username = document.getElementById('username').value.trim();
