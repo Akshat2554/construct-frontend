@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="auth.js"></script>
     <script src="toast.js"></script>
     <script src="api.js"></script>
@@ -1381,46 +1382,55 @@ async function confirmImport() {
 
 
         // ===== Excel Export =====
-        // Styling here is a clean, professional placeholder — swap the color/
-        // spacing constants below once the client's exact template (colors,
-        // column gaps, letterhead) is provided, and this whole function stays
-        // the same shape.
-        const XL_BRAND = '1F2A44';       // letterhead background (dark navy)
-        const XL_BRAND_TEXT = 'FFFFFF';
-        const XL_HEADER_BG = '2E4F42';   // column-header row background
-        const XL_HEADER_TEXT = 'FFFFFF';
-        const XL_SUBHEAD_BG = 'F1EFE8';  // subcategory heading row background
-        const XL_TOTAL_BG = 'E7EAF0';    // total row background
-        const XL_BORDER = 'C9CDD6';
+        // Matches APS's own BOQ template exactly - colors, fonts, banner layout,
+        // and the APS logo itself, all pulled straight from their HTC Begumpet
+        // BOQ file. Uses ExcelJS (not the xlsx-js-style library used for BOQ
+        // import above) because embedding the logo image requires it.
+        const APS_LOGO_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAATwAAACqCAYAAAAwTfPsAAAnTklEQVR4Xu2diX+TVdbH339pOuooKIjsyKowLiAgrijigoq7jKLjgiM4iKO4IAKuCArMuCC4squgrFmaJmmbtEm6JE3TJcl57+/cpEmTAGkW+jx5zrefQ0OaPMt9nvt7zrn33Hv/jwRBECzC/+W+IQiCUKuI4AmCYBlE8ARBsAwieIIgWAYRPEEQLIMIniAIlkEETxAEyyCCJwiCZRDBEwTBMojgCYJgGUTwBEGwDCJ4giBYBhE8QRAsgwieIAiWQQRPEATLIIInCIJlEMETBMEyiOAJgmAZRPAEQbAMIniCIFgGETxBECyDCJ4gCJZBBE8QBMsggicIgmUQwRMEwTKI4AmCYBlE8ARBsAwieIIgWAYRPEEQLIMIniAIlkEETxAEyyCCJwiCZRDBEwTBMojgCYJgGUTwBEGwDCJ4giBYBhE8QRAsgwieIAiWQQTPMCRz36gJkvhJ8r+5f6ow2E/ue4IwGFMIXjKRoERPT+1af7+qrInc064JkurcErEYxZXlnXelLKZ/Q1iNSDKO+7c3/7hrzHCtjY7hBS8Zj1O33UGuW2+rWWu4/XZyL11Kjc+upNb3NlDnz79Qj9tD8e5uqH3KN8K/Q6/QfYEgNa96hTwPLz+3PfQQuZcsoYbFd1XW7rhDneOtKcs/94rZbaocFy8m7/Ll5HvlXxT8bCt1/fEH9Tb7CGKTcf+GXobnQnuuSd5+PBKhHo+XIoePUGDLh9T0wovkWbaMGu68k48v75iHxapzLRrUvdO2c1du8RgO4wueempEfv2Nzlz6l9q2y/5KtssvJftVo8gxZSK55s+nxn88Q6Ft2ynW0MDipz2YoVXYWIObnHNm05kRFym7+Cx2Ee//zKV1+cdlNlPnYhs1guzjxpBj2lQW3OaXV1HH7t3U6/dToq83t4hKR12PRF8f9Xi9FNr+BV8v18IF5Lh6MtnHjibbFZepclVlWwvleh6zjR5B/nVv5JaQ4RDBM6ShguhKYh97JbkWLaLg1s8p5nZz6DAUYq4Gcl4zq8A+BtvpAu+Z09LikiUySgQdE8eR54Fl1P7Nt9Tb0sJCVQ7J/jj1BUPU9tVXLKoQOH5wZF07Kwhd2myjR5L/jf/kFpPhMLjgqYAhrgTv96NkpZunkOGGgvCFDx3i0KnYTgB4h85rryGrl5+2OrKNGUUeFfZ22+0Uj3aV1KHCXl1TEzU995za3uW83fx9Wctwf7a+915uURkOgwsemrAS1O2or52Qq2TT545wF+1D7OkV0UgvgpdtGc/Lee0sav/6G+5QOX8pZsD9iDJtuGdJantSrjD7VaMp9MWXxdySw4rhBQ/0qqep/Up5kmqr4zA3sHmLbo86zx0mgnc2U+U44Spq3fgBixi3jp67KNkT7PX7yHPf/fIAzjHH1CkUPngot8gMhykEry8QIOc1M1M3WX5hW85UOaBzo/PnnynRe+42PRG8cxjKccJY7nCA6J2vQwjtyU3/fIFsV1ya2oaUqbY6ci1cSH2htiE3D1xoTCF48a4u7mk7M/LiAoVtUVOVFb2B6IXVlbUwInjnMXRoTJ9KPY2N580j6/jxR7JPnkBSloMNvdG+Na9xCpmx5c4kgocbEb2N9onjxMsbZHV8o/V3dOQW2QAieEWYepA23HE79be35xbfALgH3fcsJdvlf8v/vqWtjupvuJ6ip05p7+587QLDjCkED2A0AhJo0RsklTdjaDuJnjqtCqjwjSaCV4ypshl5CXX88FPBtB940L0+HzmmTNKfzfu+dc025gpqeecd3eOdW3AGxDSCxzed308Nt9ya1YYiBmvd8L4eTVAAEbzizX333Zyjlwseti3vbSDblVfkfcfSprxdpPggRccsmEfwUj9dx46Rc/a1XNhSibV5HnyI+oLB3CJjRPCKMyRe2y6/hDoPHMwbk5vo7dXJ25xYnP9d61kdh/au+TdRrL4e3sig8jIyphG8NLgZu44fp4bbbtPtKdKmR44Z07hMCvWQieANxeoo8OFHg0dhqPutv7NTeXdIi8r9vNWsTg+BVBGW+4FlHHHlPhyMjvkEDxaPc+jhW7uW7BPHF7gwFrMRF1PH3u9F8CpgmESh1+fPFKCq0PCeddtx/uctZcrDdc6aQcFPPqF4DGO7zePZpTGd4KWB6CFdBRW65a315Fown+yTJ/LAcWN7fRCetPhUSoSUZ/LRRyqyiOcWUxUEL3s76XMZDjvbMZVnSPWJnjiZKUAIXkAJ3pUWFDz1IEWnhFNFEGjfDH2+TTkarZTgWXzyH65mwLSCl4aFLxzmPCr0VkZ+/53Chw5z1rch7cBBat/9HTeCc1g+6jIqv8LWkf/1dQXzyCoreHX6KT99KnkfeZRa1r+tnvafUvDTzy6wbaXWTZs4Cbj+xhvJNvZKfWwVOEfklCGhO026s6x0D08d0+WXUmj7l/n3wnDYoZTlvl/IDh+myLFjFLXbOaKKR6OmC2FzMb3gafRFMMWlwGB1JUzwTiHSaDMqP7+wjhOzC80AUq7gnU4LyWUXcfOBf9066vrjT+prDfAkBpi2CuNReRLOC2iofMjsj7lc1LZjJ89YgjIse9aXkZdQSG0vDSp4uYKH7+I6mJNM3SplejKjUSOCZ054pg4lUpj0M+Ol5FaYYqyOvZ1kb+UFL+05OSZPoOBnn+lJSQ1GQp13zOmkhrvuSvXe557DEEyFcYGPPs5svAKCh3HgmNpLGH5E8IYRPDAheugFRBd/6V5edQUPFdb/1nrORzPqAx5NG32trdzeVHo5/oVD9tb3P8jacPmCpz08V2abwrAhgmcA0LvavKqcscLVFbz6uTfyrL6GR4lT08rnUu2iuedRnNlY8DYO2ma5gndm1KW8TIFZG/prCRE8AwAvr+Xtd8sIx6oreHpguDlSELptNh5ul38exVlVBE95nO1ff1tw2JpwYRHBMwgt775nWMHTEzuawzuBqNRff12B8yjOcgUv3UtrL1nwtDkmjqf23bt59TbdLmD+DgAzIoJnEIwqeMhr7PjhRzJL5URPNabCzz2PYi1X8ODhlZt4zD3dmHtv3BjyPvY4p071tbVh45n9CBcEEwteqrscDf+pF3qkQc5NlO2ZGPT+wnEbVfDs48dw7qBZQMpPOYKH9BvkF2Y2mORpoyoztKyO2xeR3IxjbHp2pV5O8ugxTq+BJ4l98Qp1qQ4ivqtT93b6derAMr/5vQL3vpCHaQUPFx6DuvGkRKVGMmXb199Q8PPPKbBlC7Vu2szJqQH1tEbaR+sHm1LvGdE2kfvee/WSiXmVpBirouBNHEeRw4dzN2tYyhe8v5L/zbeyNkgsQPZJ48vr/c01bEs94Hg5yalTyDV3LqfVeB9ezss9Nr/yLx5B1Lp5C+cFYuhg5NdfKXrGRjG3h6ergufZHw4Tr8sRxygbEbzzYTrBS6dxRE+f5oV/G595lupvvIFvGvv4q8g+ZhSvkXlGPUmRNY+BzphkgF/jPfTgGdFY7EoTJRG8DBUXPNJhMoQIIybyPl+WFbom6ffquNee19gdeyULrmPa1eS85hpOYcIDsvGpp8m3Zg1PDxb6cge179lDnb/s42VNoydOULfTyVM3IV0HjgFGJGFYGHI/zdImW2lMI3js0fX08OgE/5tv8nQ9Mi9e2kTw0lRD8DBGObz/AAtP3ucNYxDIS3jOPlwz5/SreRo117x55L7nHnYM/G+8yesbd+7brzzFM9Rd76Iej4dFsdffwmOGEVL3d4Z5Qk8eQQNxPMcSAmbDFIIHsUPvVudPP1H9dX8nG+eroQKnLffiW82qKHjKs4gcPpK7WcNSDcHDfG+o/M45s6nUcqy+ZdeHQseY/b76fRkSokfwGh24P1wLF7Aweh97jHyvruZV8dq//ZYiR49y+IyoamAoYW+vaT1E4wsexC4a5QHjWKlLt6MUuqBWtuoJnmPqZO5VNMvtXRXB4w0n9YplaC7J/Y5pLVckswz1LG0jLuJ1Z+vnzOFe5tD27Rwi6+UtzdVZYmzBQ3udeqqEdu7itjkRu7NZ9QTPOXMGTxZglid61QSP9HKh9TfNo1LL0ryWEkElfNwePnqknkhi7VoegVNoWjKjYmjBw82LqZ4ckyZmCj3vYohdCMEzC9UUPPSEduzZW9ZIjtowXReRqoMk784ff0pNKmF8b8/QgocOCvfSeyubDlCTVmXB+1MET5OkeFeEe0Sd06ZSqWVaS2YbcTE5Z82ktl3/pURPehSJcTGs4OFpGtq2nWdclRvrfCaCl6baggdDAz48PeyHZ9jO3YbV7DI99Xv4wIFUGRkXQwoeGkL7QiHyPPKotNsVZSJ4aaoreGmQ9N5HMa+HGp9dyTNAc2eGhSMR28hLyHXzQuoLtBpa8owpeMkkVzKe26xA4YrlmghemgsleDzcKzXaJ3r8ODW/+JK6X6fzyAlEJWjYR7I7DxdEGtVlWOKxttuhbWNGUevGD0Twhgo8PCRI6nA2v2DFck0EL82FEbx8eARQJMJlhawCjI1ufull8jz0MLluvY3qZ1/Lict65M+lKSG8RIshDGvewiCM7CmaMLJRx49RT2iOMmqvvjEFT5VV8+o1dEZGUhRpInhphkvw4Nawx6cqO2aGxggFhL0YHcQWi3FPZl8wRN1nbDwErG3HLl7MCeNmvU88Se6lS8m1cCFfLyR865FEpV234bE6dlK6kLeJyQ8MiDEFT/14n3xSP/HyCrUY0zcJ1onwPPoYdf78C1d8HkLT3GxI8619XT/x886lGBPBSzNsglckHApDFFNiGI928wgGdIRgWBfarpHvh1XCetR90e1wUOf+/TwnYcs771LT8y+Q58GHyHXLLYSZqB3XzCTHlEkD3iNGUJxrISNMVWXj19n3QwVDbXUMCO95KUcDYkjBw9PS/cADVM5FsE8aR4FNm3l8YKJHD4UxqpsNjDo9lAje8MH3bALi2MveIULmPohiMEi9fh+Pg4UgRk+dosixPyh8+AgvMYnshpZ331Uh9SpeThMruiFfDj2pmJrKMWGsbi7C/VbpTsERF6sQ/lYl4l25p2MIDCl40CX3knuo9AtRR55lD/CNweppAkTwKgPCyVoRPKATYfTP4HdTv/khrv/PrxIJLZBdXcpj7ODlNBFB4D6AMEIUMaFr23//x2v8tm7YSP5/r6Wm555XdW4Jj60ty+NDioq63zABgRExpuApl7/hrrvzC7NoqyP/ujfUdozZjlAIEbzKAMHDAue551G0GUzwqk6qp7k/3Ek9jU0U2rlT3S/XUqn3C8oP46/jInjFg5lReGHl3MIs1lShQ0AGPxWNjQheZdBTvN+cdx5Fm9UEjzIeJH4wUUfo821U6v3CgjdlIrdJGhFjCl53lBpuvz2/MIu1kZfw9DZmAVEJGqRF8MoHHQCYBy73PIo2CwpeNoiuuh1OKvV+QfnZRfCGRtmCN+Iiatm40TQeHqfhrHpFemkrQGjXLm6Uzz2Pog1rWry1PnezlgEdJT1NzVTq/cKCN2mCCN5QKFvw1MVqeftt8wieCsMa7rwz1WOWey7FmAhegtM9+vX0TSWnM/2Fvzto1TKLgU4PtOWVer/gHraNHSOCNxTKFTzkIUEA9Bqgxie0YwfZx8MrKfEms7jg8YzY3d3UvHq1XrOkwHkUbRC8jZtyd2EZENJi+vdS7xeMEEH+qwjeEGCPZ/HiAoVZvDlmTOeEzYHVnIzm7KF3DPP9HTzEU4dj8HXuORRv1RM8hxHnw0tdy7TQoYI2rlihl1Is2UtO2ciLOY/tfBg4pbNEdIoLkp+R4cBr6eaWTTGGkHa8eHhDIplIck5QqZUU30PWuWveXHXzfkFRm17arsfj1eYdPoshWdRZT5379nHjOIsRi12p56rPt1qChwZotIt1nThhGIsc+ZVHzwSVMDW/vIpHHFRqGJbtir/xkohnAw9QjNjJPSazW+S336jtq6+o6YUXyTEZE+7ml01RBsGbLG14QyOJxOPyBI9/Y0rqq0bxCmf1CxbwOMVhN3UcWIgIw4EyQlfqeWbOt1qCh4Hujonjlac33Tg27WquVDxagNvr0mVY2jlmm0NtF0scng3krGHcKzxfhPt5x2ZWwzKn464s/+ErvbQloFxrrKBUVsFbyqoneFYzz/3388iEs4Exog2L7yIpz7MY8vCuniSCNxTQNuN9/PHyetssZSJ4lbE6Cnz4EXtxZ0ME7zzGQ8tmUTwsglc0aBD2YXqoiq/0Xqsmgle+1XE4Fz58mB+4Z0ME7zyGyQMWLaL+cCS36AyBQQUvydPhYAbVvAIVK2AieOVbHXmXL6feQAB3YG4xDiCCdx7D9FCrVsn0UEMBCcPRk6fKG8RsKRPBK8/qOC0o8utvPBb3XIjgnc1QHnVkv2oUdR0/zhOhGhFDCh4kD/lAjU8+lcqrkpvr3CaCV7rpUNar7rV4+PwzfIjgncNGqnD25pv5oXGuZoHhxLCChyEumLMLM7nmFaxYjonglWyqkiJNqNfvL2o6MRG8s1kdL2CEtWiMKnbAoIKn6W32kefh5dJbe14TwSvJ1H2F/LP2b3fzA7YYRPAKG1Zoc9+zlGerMTKGFjzchJi6GrMvpNsIcgtaDCaCN2QbcTE5Jo2n4Mefcpuxnmji/J6JCF4BU2VZP2c2RY4epWLKcDgxtuCpn3hPjDp++kmFtqNrtz2Pz6uccxPBK97q2LNzzpxO7d98m6qexVdSEbwcU/eu85qZ1LF3rw5liy/KYcHQggd46buYEr3vv9fDscodHG5Ac86ayRn+elhP/t/PbyJ4xRnE7mLyLHuQomdsqaUEi/Ps0ojgZVsduebeyOOaMRGGnlGh+LIcDgwveIBnxejpoW6bjdxL700t0G3WGy4dmtexeNdffz2nQ/jf+I8hZzw2r6XLOfUaPYjz5lHH7u+ov62NZ+QpBRE8Xa6YmQajobqdTo7CzIIpBA/o9Tz7ea3Oju9/IPd995EDbXsle0XDaErYnFOnkG/Nauq2O3h9UiyrZxPBq6CpSjl6BE804H30MY4QMGNOApWzjF5E6wqenoEIyzx6H32UOvcf4PVz9YOj9PK80JhG8DKFmmSBQBoBXOnWDe9T41NP84ShmFfOMW0q97xh5STjmDqemTPINX8+eR95hNevCB86TP0dHdwxwyNLtm3X64bmfbcYm6JXaSuw2nvZgqdCQKQG5e/TSDaFhQ2z4rhuXsgLVfteXU3BrVsp8vtRXqoQ67uWoXMD4N6DgOp7bLjus9S+1b3unDG9aoZZVDD1FibywAMV44xx3/YFWlO92sYPYXMxkeAVBvOT9XdgiblG5S3ZqevP4xQ+8iuvv2kUQ8gaPX1GiY+b+kMhSvTphcEHzkG9xvFHfvs977tF2ZEj/P1CqRXlCp79qtEU+Phj3kfefg1kKLv0vIfwPBKx7qq0KeF+i7lcw1oekdTvrj/+oG51X1XDcL9iYtVYvYt6fX5e57bQ/WU2TC94gDuHEPLip7L3d/kUPJ7BFZGPvYwDz6RV5FO24E0cx091w5MqQ91TmC7fwmVSCcq4XJUn+3Qrafof/pV6ZXpqQvCEs1MJwYscNoHgCUIRiODVOCJ4gpBBBK/GEcEThAwieDWOCJ4gZBDBq3FE8AQhgwhejSOCJwgZRPBqHBE8QcggglfjVFPwkPuHFb6wYEtfqI16W1upx++n3pYW6g0EeSQJxlmmR5NUCgxn6guFeLQNLwdYwW1fUJA3GI9TX1CfCxKm4wZdC2IwSZ7VuC8Y5GveHw4XHOVjRETwapxqCR5Epz8SpvCBg+R7fR15li+nhjvvpPoF83mYn/u++6n5xZeofc8eFqVKVQiIJ0bTeB5YxkOeml9aVVExvZBA7Hr9PvI8+CCXXeMTT/J6EEZP9MWY9uip0+ReupQ8Dz1E/tdf5yUZzIAIXo1TFcFL6rG/9X+fw+OXvU89Ra2bNlPHDz9S17E/qLu+nitu+3d7VWVYR00rV/L7g7L3S0APwWui+htu4LHDkd9+4zGeZvPweFyMEm4MB8T08p5ly6jb4eAHRPjgQf6EMVGenRK7boeTJxFoefc9HuKGawwP1QyI4NU4lRY8jKn0LH+E3PfeSx17v+dlDRHS9Ph8FNjyIbluuJGCn3yaCmd7qF99HmNcW9a/Xd4QOvU1hFGuBQvJ99paFUq1KJHdRK0bPyh9m8NGksPYpuf/Sa6FC3kGoNC2bVxGKDejCl4ymWBhcy9eTM3/epVfN7+8io+9Uh58tRHBq3HKFTzbVaOpc98+FpX+SIRFzbtiBcVcDTwxK7+vQlbMAIOZPBpX/IMH8KcrAKou2npCn+vFXUqpyvge2rYCm7dQw2238SQMmGEXniVmQ2l85lkK7djJIaIZgHBjirP62ddSTHlL8H6bV73C3uu5BujrseIowfTo6czY4WRfP4eVmEijWuDB1vrBJnUNbuf2RtwX/jfe4HY8syCCV+OULXijR/IU+6hYuLE9DzzA20z0ZZ7oqLAIb72PPcafyRYeTMvUfeYMNb/0cumCh/DP41Vh1CQKq0qGWTww/VPXn39S8LOtPMU42vWwLzOAUNarvGTfmjXUdfQY+Va/NjAv4rlA+SX6dYdN5PffeVW/rj/+5AdR+3d7OLSMoxOnCiTjCT5G1623qvvhZ37oND67kr13HJNZEMGrccoXvBHU8SMETz3h2zvI/9pr3IaD3ln2LJTIBFVI41q4gKdNSoet+IHnBw+s6bnnqW2n9sD62topHo3y6+xIFP/HurCozDypZOqP+Le/M8yhq3vJEupV4R/mQMSEnl3H/+T3mp5/nnuJ09Nu6a+mvh/v1z2f2TvLQR9t5hW+Aw91sLeV+/2Up4XpyVS5wLsqHNbpz0HMEK7ic+1ff0P1N1xPoS++oJa331Fi7lbl0sblhc/l7ikN/t75yy/U9MKLPNswRB+dNzGvl5dH7PxlX9Yx6P1mH2dSCRP/zmxyAMwCHT19mr3xwd/Vv3COaErwPvGE8u6C1PLmWxQ5ckRfS1VO8Pb5+GPnFu3hRgSvxilf8EZSJwtekisT5kbzrV3LFQM3O7aPStC2c5cWrWgXe3nouAh98SV5Hn6Y2nfvZqEKHz7MDd0QLxYIeCycYhJUXuIxCnzyCYdMvHI9BBWoz2CeQ6fyIDHFf2j7F9T+zTfcO4yJXzFpauCjjyi067/cptTT1KQrnhKthDoebltUoXCPEoVC4aIWrHb2UuO9PRy2RdSxIERm8U3gnFSlTmZ9F8eNSWjVtsOHDnGHDSbH7PFmz0kI4VVCoLYZc7s5hOU2RyXW6MV23XILtbzzDoex0dOnuBOoZf16njJdy29GltLl1P7tt7zQtW/dOn644LjYyzp1ir0vXiIR1wkPFpyT8oCxf3iAeN22axf1qWuDcolHuzPHqr6Da9xw+23c8dSjjhflBc8cDwtePVB5lDhuLGnZpsom9OVO3n+8G/eAm9qUiON8Ovft5+PNPn4jIYJX41RK8HQFzlRiCEHnzz+z6DS//PJAXhwqZePKldS4YgWFlAjGPB4WAvTU1s+fR21ffc3reKACxpU3AO+k6cUXuROkDUKmRBGhGhr1AYSFO0MWLuRwtk0JGwQNwoeeQv+/13JYh0rX62smt/J4IEDwNPo7O7hRHesv4HuF1rHoj3RR6/sbOSRHqNn21VfknHMtOWapMPnoUfa+gmpfOGcmifbEKEVPnuQQHoKOtix04OA40nl0LP5KaML793HKie/VV/lz8OgwWzGEHx0+XB7z5pJPnQd6ntEWyqKVdYx43aMeNEjDgbBjwRy+FkqI4DU2r1rF6SEs6knd1gpx5QXGm5rVA+c79XoOOWdfw5OH4noElcBC9Hhfanut777LSy22KEGG59jxww+6qQAPAnVO/v+8yfvAgy305Q4+BpQDvH9OqVH3QUh58bjuyYQInjBMVE7w8oFQOGdMo4ZbbqWA8sw4rOK1DoLsRaBCwmNB2IlFmpFzhoqEfLMeVRERgqETwrf2de79hVfiumURh8c9SsBQZ9A54l5yDzU++RRXNgggvJ2mF15gAWBPUe0HAgnRarj9Dl6RDJ8JfvoZOadP5fOHhGihyHhqECXMGmyfPIFFAd4XhNT7yKOcKhLYsoVc829S35+lZ/zFNpTwQSzgoYW2b+dt9ng95FD78a1ew+eQFiL0ukJkuo4d5bU0kEYDD82/dh2LdqsSPfu4K9mriqlyQocPPMFcTxTHHPj4E24aQI+unq4+JXhqOxC2AES+DyErcuRO8RTt8GzRY47r0vj4E7wyHrxr14IFLG7ac01yGWLaes+Dy/Q59fVyL7h93Bi+nt31LmpYvFiJ+3K9tGXKi8Qxocxx7XGfIeTFw4aPTwRPGA6qKXi+1/5N/jff4o4DJB8jDOW2r6QeWYHQtkGJHUIhiJtfhcLIm8P7HT/+SPU33sAeDUQEozOQyGobeQlXehYn5SkgLHbOnKHf60O7YYL355g2hcWJKz08GiVWWMYT+WwIZxF6IaHXtehmbvPC9vCZ7HwxhHfwTJB6A1GA6HXu38/lhURqtE1iXQd0CKBhHvtib/OmedSB95T4xhpcqtLPZi8SU/lrEQpzudRff50KDxu4TCB2EHr2VA8d5vNyqP22/e8rFubGfzzD4SCEG55iNgiz2/fu5c4CeGDhAwd4P/FYjNvysB8kAnOZK08Q4mWfNJ49MRj2jTZDeL8I1fEa+2SBVNvBZ+qvu45a3lzP76FZAmkn8HLRnBD46GMWeO6tV+WAskQvOXuqb63nBxGuK7aDB0NEhfn4nBERwatxqiF47OmoMAceCQQGHgJCHtzwabGDBTZ/yB5Aq/I02r/7jsNehJn4DryMxqefVh5RG7e7IScNHpVt1GV8zKiIqPium27iz6FRHGIHjwxpEfDA4CUirEIboX3iWCUK37MIdSpBQEcGwkfsv9vpYM8F4RkqdBp4YfDKIDwQRZxH4zPPcIiG3kcW29nX6vQbdTwI4RHmIfSEZ4V2s4a77lKi8wR7oRBtHA88QHwP4So8u7DykiBo2Lb36RUUPXGC3HfdzR0Ooa1buRMInRa9La1cTjzaIstDgjeFhwlCS+yj+ZVX2LtGCFs/dy63H0L08SBpfW8D9wA7pkykppXP6Xw/9RvnxMngykPDIuT4fEJ5YpHffyOn8hAhhtg/ygReoH3yRBZgnCfKBg807B/lC2FHmeFBxgslHT3GZYdUFXirbV9/LYInDA/VEjx4CPDO0JgNDwSdFF7lFUFUtJeX5HQLhKzwqtCehc8hpG3ZsIE9CngbXSdOKkFbwWKJzggIBdrjeEW6jRt50eymF19ib6ZTeYUI0RAeI28NHSEQFaRjOCaM5dQViBLaoFBZ3RAj5eUFNm3i3k0kQmeHtAiX4QGiDQ2eUaK3j7cPUY13oR1sM6dhwAOFR4fFjBByo4e488BBvfyj8nSwH4ggwve2//2PvSO81+P2sBcKwcGiOGgDQ9tdt83O24Uw9oc7+dzgSUHE0AmCIXvJrIiQO07UZyB6MVXOnvvuY88KYmQfP5bbPdGJgfJC5wGOsX7uDdxWh+/gnNBbjhw9XDfXokX6wQCPUW0HYXbws8+o+4yNR3vg2Dv27GHxhshB0NGZxL3E6l6Ap4yV7NB5wZ1X6tpCfFFeEFSIaW5YbhRE8GqcwYJ3NvsLnR4kdJm/4caGeGQDMUM7F4QKf9PeR5QFqeGOO9gDQAVF6AYvEJUQFQHhYGjHDq7cEDv8H14YGr5RmZAWAY8OXgrSWFCZ0NkAoYDYIJTtCwb4Owjl8H2EmzFnvfIw/8P/h5fI2//yS25fdN97H1dSTvdgFUkpiXodOfKr8tAW657FhPZMEZJxp4zyqiDOEKaAEgkIFzwohKBoG4NwIVTE5yEA3sceZ88IoTfOA8eK76CdCz2xOL8G5dUhJQWeLh4W/rWvs+jgswgbuYMgHBlU1gCChlAbbXO+Na9x+AixxsQMDXffzR0eOHd8H6ki7ruX8LEPnFM0OtDcED54iB9CQXVcwa3buFxxzdDzDoNocU5j6qGFUB7bbnzySf6N64HOnRZ1jfzr1lH7nr38sAp8+CE/BHjpUS5iacMThoGeZh+577+f23nQO1rQVEgDUYQhBMz+G4d3qgIP6jVUdzQqbvDzbdzTmAYVC5UCFRsVHxW7p6mROpTXhTGi3UqY0KiOEAzige9y6kdcJwzjb5GjRzn9BEKCmoP8ry4VAqKNCiLKHRQq/INniHSP9PKB+FvM6+HPIzEZISM6HFDB072ag0iivcvHnmne3/jPOo8QYTW8My2YCR1W4rjROYEf7BupLCqs6/F4UnlpWjh5eUMOxfX/G5C0q7xDToVRwgDBhCfbdeK43l68UB4fkX/9eg7J8SBAmI0mAN1skOBebqTRINRNr9eMUDtdptnwOSmPEoKG8sT5ceeMuh5dx0/wdjkNJed7uEa4B9CxgnPV5RClrpMn9fGrMupt8XM5G1Xo0ojg1Th4sqMywNM7q6lKj0oCzwjeUvbf4J2w+GSR9pTSbXXZ4KbH09+1YD57Mejhg0Cxl6EqU397G4dcEKuB72dtY2B7qffTf09/ln8KvU51FqDiooHdOWum9txSP4UqYuZvhUn/fdD+cn54uzl/1/vKvAJoB2QvcPNmPkYtSPheZk+FjhHwNEwqfEfomPba+Cf1e+AY0j9cZrlbSZM6tgQmL2jidriY0zHwfvq4B5PaD283+3Pp/eHt1H4LfNtIiOAJVQGeDKc/KC+Rx7oqDwX5dc3PPcc5eWjgrlTlSHtMCC3Rc4zZVNAjCm/EMCgxQGcNeqs5uVgr3TCR5JA1sGmLKrMN3OFgFUTwhKrAYY/ySNB2h2RU182L2PNqfuVfOozlzoMKVHolHPBgm/75Twp+/DGF9+/ntAsIbtrrMQw4npSHlvaShoWkDm0dM6Zxc8GgUSQ1jgieUD1QwTmvK8riB0NYWznvJsm5dOghRWpKoruL3GiAX72G26eEwuCaoG3TMWkCe5tWQgRPMC3wltAbiRxAzBKCtBZ0zmTayIRCIPz3PPgQOf8+O5WIXakHkPERwRNMC0St5f2NnNaBqeTRUYIRFph0VCgMHhI8GcOc2dyuao41NCqHCJ5gWng0xsmT3CuMzgq0F3JaRcVC5tqD03qCQU4nwRAyMmiCcLUQwRNMjJ42CSEaUl+48X0gPUI4F4bqzLmAiOAJgmAZRPAEQbAMIniCIFgGETxBECyDCJ4gCJZBBE8QBMsggicIgmUQwRMEwTKI4AmCYBlE8ARBsAwieIIgWAYRPEEQLIMIniAIlkEETxAEyyCCJwiCZRDBEwTBMojgCYJgGUTwBEGwDCJ4giBYBhE8QRAsgwieIAiWQQRPEATLIIInCIJlEMETBMEyiOAJgmAZRPAEQbAMIniCIFgGETxBECyDCJ4gCJZBBE8QBMsggicIgmUQwRMEwTKI4AmCYBlE8ARBsAz/D4/Nmh6hHETXAAAAAElFTkSuQmCC';
 
-        const xlBorder = { top: { style: 'thin', color: { rgb: XL_BORDER } }, bottom: { style: 'thin', color: { rgb: XL_BORDER } }, left: { style: 'thin', color: { rgb: XL_BORDER } }, right: { style: 'thin', color: { rgb: XL_BORDER } } };
+        const XL_RED = 'FFFF0000';
+        const XL_RED_TEXT = 'FFFFFFFF';
+        const XL_GRAY = 'FFC0C0C0';
+        const XL_GRAY_TEXT = 'FF000000';
+        const XL_TOTAL_BG = 'FFE6E6E6';
+        const XL_BORDER_THIN = { style: 'thin', color: { argb: 'FF000000' } };
+        const XL_BORDER_MEDIUM = { style: 'medium', color: { argb: 'FF000000' } };
         const xlMoneyFmt = '#,##0.00';
 
-        function xlSetCell(ws, r, c, value, style, z) {
-            let ref = XLSX.utils.encode_cell({ r, c });
-            let cell = typeof value === 'object' && value !== null ? { ...value } : { v: value };
-            if (typeof value === 'object' && value !== null && 'f' in value) {
-                cell = { f: value.f };
-            } else if (typeof value === 'number') {
-                cell.t = 'n';
-            }
-            if (style) cell.s = style;
-            if (z) cell.z = z;
-            ws[ref] = cell;
-            return ref;
+        function xlBorderAll(mediumTop) {
+            return { top: mediumTop ? XL_BORDER_MEDIUM : XL_BORDER_THIN, bottom: XL_BORDER_THIN, left: XL_BORDER_THIN, right: XL_BORDER_THIN };
         }
 
+        function xlSanitizeSheetName(name) {
+            return name.replace(/[\\\/\?\*\[\]:]/g, '').substring(0, 31) || 'Sheet';
+        }
+
+        // Category sheet letterhead: red title bar (Calibri) over a gray sub-bar
+        // naming the project (Arial) — same two-banner look as the template's
+        // per-category tabs (e.g. "QUOTATION FOR FURNITURE").
         function xlLetterhead(ws, title, subtitle, numCols) {
-            let lastColLetter = XLSX.utils.encode_col(numCols - 1);
-            xlSetCell(ws, 0, 0, title, { font: { bold: true, sz: 14, color: { rgb: XL_BRAND_TEXT } }, fill: { fgColor: { rgb: XL_BRAND } }, alignment: { horizontal: 'center', vertical: 'center' } });
-            xlSetCell(ws, 1, 0, subtitle, { font: { bold: true, sz: 11, color: { rgb: XL_BRAND } }, fill: { fgColor: { rgb: XL_SUBHEAD_BG } }, alignment: { horizontal: 'center' } });
-            xlSetCell(ws, 2, 0, 'Generated ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), { font: { italic: true, sz: 9, color: { rgb: '6B7280' } }, alignment: { horizontal: 'center' } });
-            ws['!merges'] = ws['!merges'] || [];
-            ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: numCols - 1 } });
-            ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: numCols - 1 } });
-            ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: numCols - 1 } });
-            ws['!rows'] = ws['!rows'] || [];
-            ws['!rows'][0] = { hpt: 26 };
+            ws.mergeCells(1, 1, 1, numCols);
+            let c1 = ws.getCell(1, 1);
+            c1.value = title;
+            c1.font = { name: 'Calibri', bold: true, size: 14, color: { argb: XL_RED_TEXT } };
+            c1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_RED } };
+            c1.alignment = { horizontal: 'center', vertical: 'middle' };
+            c1.border = xlBorderAll(false);
+            ws.getRow(1).height = 26;
+
+            ws.mergeCells(2, 1, 2, numCols);
+            let c2 = ws.getCell(2, 1);
+            c2.value = (subtitle || '').toUpperCase();
+            c2.font = { name: 'Arial', bold: true, size: 12, color: { argb: XL_GRAY_TEXT } };
+            c2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_GRAY } };
+            c2.alignment = { horizontal: 'center' };
+            c2.border = xlBorderAll(true);
+
+            ws.mergeCells(3, 1, 3, numCols);
+            let c3 = ws.getCell(3, 1);
+            c3.value = 'Generated ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            c3.font = { name: 'Arial', italic: true, size: 9, color: { argb: 'FF6B7280' } };
+            c3.alignment = { horizontal: 'center' };
         }
 
         async function generateExcel() {
@@ -1431,29 +1441,40 @@ async function confirmImport() {
     }
 
     let groups = await getGroups();
-    let wb = XLSX.utils.book_new();
+    let wb = new ExcelJS.Workbook();
     let categoryTotals = {};
-    const HEADER_ROWS = 4; // 3 letterhead rows + 1 blank spacer before the column header row
+    const HEADER_ROW = 5;       // row for column headers (1-3 letterhead, 4 blank spacer)
+    const DATA_START_ROW = 6;
+
+    // Summary is added first so it's the first tab in the workbook - it gets
+    // filled in after the category sheets below, once their totals are known.
+    let summaryWs = wb.addWorksheet('Summary');
 
     // ===== Category Sheets =====
     for (let category of Object.keys(groups)) {
     let items = groups[category];
-    let sheetName = category.substring(0, 31);
+    let sheetName = xlSanitizeSheetName(category);
     let letters = 'abcdefghijklmnopqrstuvwxyz';
-    let headerLabels = ['S.No', 'Description', 'Unit', 'Qty', 'Rate - Supply (₹)', 'Rate - Install (₹)', 'Amount - Supply (₹)', 'Amount - Install (₹)', 'Total (₹)', 'Remarks'];
+    // Matches APS's own BOQ template (S.No / Description / Ref Image / Unit / Qty /
+    // Rate / Amount / Remarks, one combined rate per line) - the actual categories
+    // and subcategories used are whatever the project has, but the sheet shape
+    // itself always mirrors that template regardless.
+    let headerLabels = ['S.No', 'Description', 'Ref Image / Drawing', 'Unit', 'Qty', 'Rate (₹)', 'Amount (₹)', 'Remarks'];
     let numCols = headerLabels.length;
 
-    let ws = {};
-    xlLetterhead(ws, (projectName || 'Project') + ' — Bill of Quantities', category, numCols);
+    let ws = wb.addWorksheet(sheetName);
+    xlLetterhead(ws, 'Bill of Quantities - ' + category, projectName || 'Project', numCols);
 
-    let headerRowIdx = HEADER_ROWS; // 0-indexed row for column headers
-    headerLabels.forEach((label, c) => {
-        xlSetCell(ws, headerRowIdx, c, label, { font: { bold: true, sz: 10, color: { rgb: XL_HEADER_TEXT } }, fill: { fgColor: { rgb: XL_HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: xlBorder });
+    headerLabels.forEach((label, i) => {
+        let cell = ws.getCell(HEADER_ROW, i + 1);
+        cell.value = label;
+        cell.font = { name: 'Arial', bold: true, size: 11, color: { argb: XL_GRAY_TEXT } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_GRAY } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = xlBorderAll(true);
     });
 
-    let dataStartRow = headerRowIdx + 2; // 1-indexed spreadsheet row of the first data row (for formulas)
-    let currentRow = dataStartRow;
-    let rIdx = headerRowIdx + 1; // 0-indexed row cursor
+    let currentRow = DATA_START_ROW;
 
     // Group by subcategory, same logic as the on-screen BOQ view
     let subcatOrder = [];
@@ -1468,35 +1489,52 @@ async function confirmImport() {
     let sno = 1;
     for (let subcatKey of subcatOrder) {
         if (subcatKey !== '') {
-            xlSetCell(ws, rIdx, 0, subcatKey, { font: { bold: true, sz: 10.5 }, fill: { fgColor: { rgb: XL_SUBHEAD_BG } }, border: xlBorder });
-            ws['!merges'].push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: numCols - 1 } });
-            for (let c = 1; c < numCols; c++) xlSetCell(ws, rIdx, c, '', { fill: { fgColor: { rgb: XL_SUBHEAD_BG } }, border: xlBorder });
-            rIdx++;
+            ws.mergeCells(currentRow, 1, currentRow, numCols);
+            for (let c = 1; c <= numCols; c++) {
+                let cell = ws.getCell(currentRow, c);
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_GRAY } };
+                cell.border = xlBorderAll(false);
+            }
+            let hc = ws.getCell(currentRow, 1);
+            hc.value = subcatKey;
+            hc.font = { name: 'Arial', bold: true, size: 11 };
             currentRow++;
         }
 
         for (let item of subcatGroups[subcatKey]) {
-            let dataCellStyle = { border: xlBorder, font: { sz: 10 } };
-            let moneyCellStyle = { border: xlBorder, font: { sz: 10 }, alignment: { horizontal: 'right' } };
-            xlSetCell(ws, rIdx, 0, sno++, dataCellStyle);
-            xlSetCell(ws, rIdx, 1, item.name, dataCellStyle);
-            xlSetCell(ws, rIdx, 2, item.unit || '', dataCellStyle);
-            xlSetCell(ws, rIdx, 3, item.quantity || 1, dataCellStyle);
-            xlSetCell(ws, rIdx, 4, item.unitPrice || 0, moneyCellStyle, xlMoneyFmt);
-            xlSetCell(ws, rIdx, 5, item.installRate || 0, moneyCellStyle, xlMoneyFmt);
-            xlSetCell(ws, rIdx, 6, { f: `D${currentRow}*E${currentRow}` }, moneyCellStyle, xlMoneyFmt);
-            xlSetCell(ws, rIdx, 7, { f: `D${currentRow}*F${currentRow}` }, moneyCellStyle, xlMoneyFmt);
-            xlSetCell(ws, rIdx, 8, { f: `G${currentRow}+H${currentRow}` }, { ...moneyCellStyle, font: { sz: 10, bold: true } }, xlMoneyFmt);
-            xlSetCell(ws, rIdx, 9, item.remarks || '', dataCellStyle);
-            rIdx++;
+            // Template carries one combined Rate/Amount per line (not split supply vs
+            // install) - Construct still tracks those separately internally, this is
+            // just how they're presented here to match the template.
+            let combinedRate = (item.unitPrice || 0) + (item.installRate || 0);
+            let r = currentRow;
+            ws.getCell(r, 1).value = sno++;
+            ws.getCell(r, 2).value = item.name;
+            ws.getCell(r, 3).value = '';
+            ws.getCell(r, 4).value = item.unit || '';
+            ws.getCell(r, 5).value = item.quantity || 1;
+            ws.getCell(r, 6).value = combinedRate;
+            ws.getCell(r, 6).numFmt = xlMoneyFmt;
+            ws.getCell(r, 7).value = { formula: `E${r}*F${r}` };
+            ws.getCell(r, 7).numFmt = xlMoneyFmt;
+            ws.getCell(r, 7).font = { name: 'Arial', size: 10, bold: true };
+            ws.getCell(r, 8).value = item.remarks || '';
+            for (let c = 1; c <= numCols; c++) {
+                let cell = ws.getCell(r, c);
+                cell.border = xlBorderAll(false);
+                if (!cell.font) cell.font = { name: 'Arial', size: 10 };
+                if (c === 6 || c === 7) cell.alignment = { horizontal: 'right' };
+            }
             currentRow++;
 
             let subItems = item.productId ? await getSubItems(item.productId, category) : [];
             for (let [si, sub] of subItems.entries()) {
                 if (sub.text && sub.text.trim()) {
-                    xlSetCell(ws, rIdx, 0, letters[si], { font: { sz: 9, color: { rgb: '6B7280' } } });
-                    xlSetCell(ws, rIdx, 1, sub.text, { font: { sz: 9, italic: true, color: { rgb: '6B7280' } } });
-                    rIdx++;
+                    let sc1 = ws.getCell(currentRow, 1);
+                    sc1.value = letters[si];
+                    sc1.font = { size: 9, color: { argb: 'FF6B7280' } };
+                    let sc2 = ws.getCell(currentRow, 2);
+                    sc2.value = sub.text;
+                    sc2.font = { size: 9, italic: true, color: { argb: 'FF6B7280' } };
                     currentRow++;
                 }
             }
@@ -1504,81 +1542,126 @@ async function confirmImport() {
     }
 
     let totalRow = currentRow;
-    let totalStyle = { font: { bold: true, sz: 10.5 }, fill: { fgColor: { rgb: XL_TOTAL_BG } }, border: xlBorder };
-    xlSetCell(ws, rIdx, 0, '', totalStyle);
-    xlSetCell(ws, rIdx, 1, 'TOTAL', totalStyle);
-    xlSetCell(ws, rIdx, 2, '', totalStyle);
-    xlSetCell(ws, rIdx, 3, '', totalStyle);
-    xlSetCell(ws, rIdx, 4, { f: `SUM(E${dataStartRow}:E${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-    xlSetCell(ws, rIdx, 5, { f: `SUM(F${dataStartRow}:F${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-    xlSetCell(ws, rIdx, 6, { f: `SUM(G${dataStartRow}:G${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-    xlSetCell(ws, rIdx, 7, { f: `SUM(H${dataStartRow}:H${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-    xlSetCell(ws, rIdx, 8, { f: `SUM(I${dataStartRow}:I${totalRow - 1})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-    xlSetCell(ws, rIdx, 9, '', totalStyle);
+    for (let c = 1; c <= numCols; c++) {
+        let cell = ws.getCell(totalRow, c);
+        cell.font = { name: 'Arial', bold: true, size: 11 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_TOTAL_BG } };
+        cell.border = xlBorderAll(false);
+    }
+    ws.getCell(totalRow, 2).value = 'TOTAL';
+    let totalAmountCell = ws.getCell(totalRow, 7);
+    totalAmountCell.value = { formula: `SUM(G${DATA_START_ROW}:G${totalRow - 1})` };
+    totalAmountCell.numFmt = xlMoneyFmt;
+    totalAmountCell.alignment = { horizontal: 'right' };
 
     categoryTotals[sheetName] = totalRow;
 
-    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rIdx, c: numCols - 1 } });
-    ws['!cols'] = [
-        { wch: 8 }, { wch: 40 }, { wch: 8 }, { wch: 8 },
-        { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 },
-        { wch: 16 }, { wch: 24 },
+    ws.columns = [
+        { width: 8 }, { width: 44 }, { width: 16 }, { width: 8 },
+        { width: 8 }, { width: 16 }, { width: 18 }, { width: 24 },
     ];
-
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
 }
         // ===== Summary Sheet =====
     let notesRes = await fetch(`${API}/api/boq-notes/${projectId}`, { headers: authHeaders() });
-let notesArray = await notesRes.json();
-let categoryNotes = {};
-notesArray.forEach(n => { categoryNotes[encodeURIComponent(n.category)] = n.notes; });
+    let notesArray = await notesRes.json();
+    let categoryNotes = {};
+    notesArray.forEach(n => { categoryNotes[encodeURIComponent(n.category)] = n.notes; });
 
-    let summaryHeaderLabels = ['S.No', 'Category', 'Grand Total (₹)', 'Remarks'];
+    let summaryHeaderLabels = ['S.No', 'Description', 'Amount (₹)', 'Remarks'];
     let summaryNumCols = summaryHeaderLabels.length;
-    let summaryWs = {};
-    xlLetterhead(summaryWs, (projectName || 'Project') + ' — Bill of Quantities', 'Summary', summaryNumCols);
 
-    let sHeaderRowIdx = HEADER_ROWS;
-    summaryHeaderLabels.forEach((label, c) => {
-        xlSetCell(summaryWs, sHeaderRowIdx, c, label, { font: { bold: true, sz: 10, color: { rgb: XL_HEADER_TEXT } }, fill: { fgColor: { rgb: XL_HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center' }, border: xlBorder });
+    // Row 1 is reserved for the APS logo (matches the template's own Summary tab,
+    // which has the logo floating over its top row), then the same gray "BOQ
+    // SUMMARY" banner, a plain white project/date line, and a red section bar.
+    summaryWs.getRow(1).height = 55;
+    let logoImageId = wb.addImage({ base64: APS_LOGO_BASE64, extension: 'png' });
+    summaryWs.addImage(logoImageId, { tl: { col: 0.15, row: 0.1 }, ext: { width: 130, height: 70 } });
+
+    summaryWs.mergeCells(2, 1, 2, summaryNumCols);
+    let sTitle = summaryWs.getCell(2, 1);
+    sTitle.value = 'BOQ SUMMARY';
+    sTitle.font = { name: 'Calibri', bold: true, size: 15, color: { argb: XL_GRAY_TEXT } };
+    sTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_GRAY } };
+    sTitle.alignment = { horizontal: 'center' };
+    sTitle.border = xlBorderAll(false);
+
+    summaryWs.mergeCells(3, 1, 3, summaryNumCols);
+    let sSub = summaryWs.getCell(3, 1);
+    sSub.value = (projectName || 'Project') + '   ·   Date: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    sSub.font = { name: 'Calibri', bold: true, size: 13 };
+    sSub.alignment = { horizontal: 'center' };
+
+    summaryWs.mergeCells(4, 1, 4, summaryNumCols);
+    let sBar = summaryWs.getCell(4, 1);
+    sBar.value = 'BILL OF QUANTITIES SUMMARY';
+    sBar.font = { name: 'Calibri', bold: true, size: 14, color: { argb: XL_RED_TEXT } };
+    sBar.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_RED } };
+    sBar.alignment = { horizontal: 'center' };
+
+    summaryHeaderLabels.forEach((label, i) => {
+        let cell = summaryWs.getCell(HEADER_ROW, i + 1);
+        cell.value = label;
+        cell.font = { name: 'Calibri', bold: true, size: 12, color: { argb: XL_RED_TEXT } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_RED } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = xlBorderAll(false);
     });
 
-    let sRIdx = sHeaderRowIdx + 1;
-    let firstDataRow = sHeaderRowIdx + 2;
+    let sRow = DATA_START_ROW;
+    let firstDataRow = DATA_START_ROW;
     let sno = 1;
 
     for (let category of Object.keys(groups)) {
-        let sheetName = category.substring(0, 31);
+        let sheetName = xlSanitizeSheetName(category);
         let totalRow = categoryTotals[sheetName];
         let remarks = categoryNotes[encodeURIComponent(category)] || '';
-        let cellStyle = { border: xlBorder, font: { sz: 10 } };
-        xlSetCell(summaryWs, sRIdx, 0, sno++, cellStyle);
-        xlSetCell(summaryWs, sRIdx, 1, category, cellStyle);
-        xlSetCell(summaryWs, sRIdx, 2, { f: `'${sheetName}'!I${totalRow}` }, { ...cellStyle, font: { sz: 10, bold: true }, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-        xlSetCell(summaryWs, sRIdx, 3, remarks, cellStyle);
-        sRIdx++;
+        summaryWs.getCell(sRow, 1).value = sno++;
+        summaryWs.getCell(sRow, 2).value = category;
+        let amtCell = summaryWs.getCell(sRow, 3);
+        amtCell.value = { formula: `'${sheetName}'!G${totalRow}` };
+        amtCell.numFmt = xlMoneyFmt;
+        amtCell.font = { size: 10, bold: true };
+        amtCell.alignment = { horizontal: 'right' };
+        summaryWs.getCell(sRow, 4).value = remarks;
+        for (let c = 1; c <= summaryNumCols; c++) {
+            let cell = summaryWs.getCell(sRow, c);
+            cell.border = xlBorderAll(false);
+            if (!cell.font) cell.font = { size: 10 };
+        }
+        sRow++;
     }
 
     let lastDataRow = firstDataRow + Object.keys(groups).length - 1;
-    let totalStyle = { font: { bold: true, sz: 11 }, fill: { fgColor: { rgb: XL_TOTAL_BG } }, border: xlBorder };
-    xlSetCell(summaryWs, sRIdx, 0, '', totalStyle);
-    xlSetCell(summaryWs, sRIdx, 1, 'GRAND TOTAL', totalStyle);
-    xlSetCell(summaryWs, sRIdx, 2, { f: `SUM(C${firstDataRow}:C${lastDataRow})` }, { ...totalStyle, alignment: { horizontal: 'right' } }, xlMoneyFmt);
-    xlSetCell(summaryWs, sRIdx, 3, '', totalStyle);
+    for (let c = 1; c <= summaryNumCols; c++) {
+        let cell = summaryWs.getCell(sRow, c);
+        cell.font = { bold: true, size: 11 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_TOTAL_BG } };
+        cell.border = xlBorderAll(false);
+    }
+    summaryWs.getCell(sRow, 2).value = 'GRAND TOTAL';
+    let grandTotalCell = summaryWs.getCell(sRow, 3);
+    grandTotalCell.value = { formula: `SUM(C${firstDataRow}:C${lastDataRow})` };
+    grandTotalCell.numFmt = xlMoneyFmt;
+    grandTotalCell.alignment = { horizontal: 'right' };
 
-    summaryWs['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: sRIdx, c: summaryNumCols - 1 } });
-    summaryWs['!cols'] = [
-        { wch: 8 },
-        { wch: 40 },
-        { wch: 20 },
-        { wch: 24 },
+    summaryWs.columns = [
+        { width: 8 },
+        { width: 40 },
+        { width: 20 },
+        { width: 24 },
     ];
 
-    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-    wb.SheetNames = ['Summary', ...wb.SheetNames.filter(n => n !== 'Summary')];
-
     let fileName = (projectName || 'Project') + ' — BOQ.xlsx';
-    XLSX.writeFile(wb, fileName);
+    let buffer = await wb.xlsx.writeBuffer();
+    let blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
         // ===== Init =====

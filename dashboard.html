@@ -327,7 +327,7 @@
         let container = document.getElementById('dash-tasks');
         let open = tasks.filter(t => t.status !== 'COMPLETED');
         if (open.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">Nothing on your plate. 🎉</p>';
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0">Nothing on your plate. </p>';
             return;
         }
         container.innerHTML = open.map(task => `

@@ -178,12 +178,10 @@
         if (currentTab === 'todo') loadTodoTab(); else loadAssignedTab();
     }
 
+    // Everyone can assign tasks to everyone else, not just admins - the
+    // assignee dropdown just needs the full user list to pick from.
     async function loadUsersForAssignee() {
         let select = document.getElementById('task-assignee');
-        if (!isAdmin()) {
-            select.style.display = 'none';
-            return;
-        }
         select.style.display = '';
         try {
             if (_allUsers.length === 0) {
