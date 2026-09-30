@@ -62,15 +62,6 @@ function canEditBOQDirectly() {
         }
         .sb-sidebar.collapsed .sb-logo-text { display: none; }
 
-        .sb-project-chip {
-            display: flex; align-items: center; margin: 10px 10px 0;
-            padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border);
-            background: var(--bg); cursor: pointer; font-size: 12px; color: var(--text-secondary);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .sb-project-chip:hover { border-color: var(--accent); }
-        .sb-sidebar.collapsed .sb-project-chip { display: none; }
-
         .sb-nav { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 2px; }
         .sb-nav-link {
             display: flex; align-items: center; gap: 12px;
@@ -140,8 +131,6 @@ function canEditBOQDirectly() {
         navItems.push({ href: 'users.html', label: 'Users', icon: icons.users });
     }
 
-    let hasProjectSwitcher = !!document.getElementById('project-modal');
-
     let sidebar = document.createElement('div');
     sidebar.className = 'sb-sidebar';
     sidebar.id = 'app-sidebar';
@@ -150,11 +139,6 @@ function canEditBOQDirectly() {
             <div class="sb-logo-mark" id="sb-logo-mark">C</div>
             <span class="sb-logo-text" id="sb-logo-text">Construct</span>
         </div>
-        ${hasProjectSwitcher ? `
-            <button class="sb-project-chip" id="project-selector-btn">
-                <span id="topbar-project-name">No Project</span>
-            </button>
-        ` : ''}
         <div class="sb-nav">
             ${navItems.map(item => `
                 <a href="${item.href}" class="sb-nav-link${item.href === path ? ' active' : ''}">
@@ -221,49 +205,7 @@ if (!document.getElementById('progress-bar')) {
     document.body.insertBefore(pb, document.body.firstChild);
 }
 
-async function loadProjectName() {
-    let el = document.getElementById('topbar-project-name');
-    if (!el) return;
-    let projectName = localStorage.getItem('selectedProjectName');
-    el.textContent = projectName || 'No Project';
-}
-
-async function openProjectModal() {
-    let response = await authFetch('https://construct-backend-production.up.railway.app/api/projects');
-    let projects = await response.json();
-    let container = document.getElementById('project-list-modal');
-    container.innerHTML = '';
-
-    if (projects.length === 0) {
-        container.innerHTML = '<p style="color:#6b7280">No projects yet.</p>';
-    }
-
-    projects.forEach(function(project) {
-        let item = document.createElement('div');
-        item.style.cssText = 'padding:12px;border:1px solid #edf0f5;border-radius:8px;margin-bottom:8px;cursor:pointer';
-        item.innerHTML = `<div style="font-weight:600">${project.name}</div><div style="font-size:12px;color:#6b7280">${project.location || ''}</div>`;
-        item.addEventListener('click', function() {
-            localStorage.setItem('selectedProjectId', project.id);
-            localStorage.setItem('selectedProjectName', project.name);
-            loadProjectName();
-            document.getElementById('project-modal').classList.remove('open');
-        });
-        container.appendChild(item);
-    });
-
-    document.getElementById('project-modal').classList.add('open');
-}
-
-// Not every page has the project switcher (e.g. tasks.html, project-detail.html, dashboard.html).
-let projectSelectorBtn = document.getElementById('project-selector-btn');
-if (projectSelectorBtn) {
-    projectSelectorBtn.addEventListener('click', openProjectModal);
-}
-let projectModalClose = document.getElementById('project-modal-close');
-if (projectModalClose) {
-    projectModalClose.addEventListener('click', function() {
-        document.getElementById('project-modal').classList.remove('open');
-    });
-}
-
-loadProjectName();
+// The sidebar project-switcher (chip + modal) was removed - it duplicated the
+// Projects page, which is the actual way to open a project, and just sat there
+// showing stale localStorage state ("No Project" or an old project name) that
+// had nothing to do with what you were looking at.
