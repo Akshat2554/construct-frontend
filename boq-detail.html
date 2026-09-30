@@ -245,6 +245,44 @@
         let projectName = localStorage.getItem('selectedProjectName');
         document.getElementById('project-title').textContent = projectName || 'BOQ';
 
+        // The project name/id above come from localStorage, cached from whenever a
+        // project was last opened - they aren't re-checked against the database.
+        // If that project has since been deleted (e.g. a data wipe) the cached name
+        // just sits there forever looking like a real, current project. This checks
+        // the cached id is still real before loading anything, and clears it (showing
+        // a plain "no project selected" state) if it isn't.
+        async function verifyProjectStillExists() {
+            if (!projectId) {
+                showNoProjectState();
+                return false;
+            }
+            try {
+                let res = await authFetch(`https://construct-backend-production.up.railway.app/api/projects/${projectId}`);
+                if (!res.ok) {
+                    localStorage.removeItem('selectedProjectId');
+                    localStorage.removeItem('selectedProjectName');
+                    showNoProjectState();
+                    return false;
+                }
+            } catch (e) {
+                // Network hiccup - don't wipe the cached project over a transient error.
+                return true;
+            }
+            return true;
+        }
+
+        function showNoProjectState() {
+            document.getElementById('project-title').textContent = 'BOQ';
+            document.querySelector('.sidebar').style.display = 'none';
+            document.querySelector('.main-content').innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center;gap:10px">
+                    <div style="font-size:15px;font-weight:600;color:var(--text-primary)">No project selected</div>
+                    <div style="font-size:13px;color:var(--text-muted);max-width:320px">Open a project from the Projects page to see its BOQ.</div>
+                    <a href="index.html" class="add-btn" style="margin-top:8px;text-decoration:none">Go to Projects</a>
+                </div>
+            `;
+        }
+
         let currentView = 'summary';
         // FINANCE-only: edits staged locally, not yet sent for approval.
         // { [itemId]: { unitPrice?, quantity?, installRate? } }
@@ -1656,6 +1694,8 @@ async function confirmImport() {
 
         // ===== Init =====
         async function init() {
+            let ok = await verifyProjectStillExists();
+            if (!ok) return;
             applyRoleUI();
             await loadSummary();
             updateCartCountFromCache();
