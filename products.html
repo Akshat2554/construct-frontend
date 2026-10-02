@@ -181,7 +181,9 @@
             <input type="text" id="prod-unit" placeholder="Unit">
             <input type="number" id="prod-price" placeholder="Price">
             <input type="text" id="prod-brand" placeholder="Brand">
-            <div id="image-drop-zone" 
+            <input type="text" id="prod-subcategory" placeholder="Subcategory (e.g. Office Furniture)">
+            <div style="font-size:11px;color:var(--text-muted);margin:-6px 0 4px 2px">When this product is added to a BOQ, it's placed straight into this section instead of the general list.</div>
+            <div id="image-drop-zone"
     style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative"
     ondragover="event.preventDefault(); this.style.borderColor='var(--accent)'; this.style.background='var(--accent-glow)'"
     ondragleave="this.style.borderColor='var(--border)'; this.style.background='transparent'"
@@ -311,16 +313,17 @@ if (addingToRoom) {
     let safeCategory = (categoryName || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
     let safeUnit = (product.unit || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
     let safeNumber = (product.productNumber || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
-    
+    let safeSubcategory = (product.subcategory || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+
     if (!product.name || !product.unit || !product.price) {
         return `alert('Cannot add to BOQ: missing name, unit, or price')`;
     }
-    
+
     if (localStorage.getItem('addingToRoom')) {
         let roomId = localStorage.getItem('addingToRoom');
         return `addToRoomShortlist(${product.id}, '${safeName}', ${product.price}, '${safeUnit}', ${roomId});`;
     }
-    return `addToCart({productId: ${product.id}, name: '${safeName}', productNumber: '${safeNumber}', supplierName: '${safeSupplier}', category: '${safeCategory}', unit: '${safeUnit}', unitPrice: ${product.price}, quantity: 1, totalPrice: ${product.price}})`;
+    return `addToCart({productId: ${product.id}, name: '${safeName}', productNumber: '${safeNumber}', supplierName: '${safeSupplier}', category: '${safeCategory}', subcategory: '${safeSubcategory}', unit: '${safeUnit}', unitPrice: ${product.price}, quantity: 1, totalPrice: ${product.price}})`;
 }
 
         async function renderProductsGrid(grid, products) {
@@ -430,6 +433,7 @@ function openProductDetail(product) {
         productNumber: product.productNumber || '',
         supplierName: supplier || '',
         category: categoryName || '',
+        subcategory: product.subcategory || '',
         unit: product.unit || '',
         unitPrice: product.price,
         quantity: 1,
@@ -605,6 +609,7 @@ row.addEventListener('click', function(e) {
             document.getElementById('prod-unit').value = '';
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-brand').value = '';
+            document.getElementById('prod-subcategory').value = '';
             document.getElementById('modal-title').textContent = 'Add Product';
             document.getElementById('confirm-btn').textContent = 'Add';
             document.getElementById('delete-product-btn').style.display = 'none';
@@ -623,6 +628,7 @@ row.addEventListener('click', function(e) {
     let unit = document.getElementById('prod-unit').value.trim();
     let price = document.getElementById('prod-price').value.trim();
     let brandName = document.getElementById('prod-brand').value.trim();
+    let subcategory = document.getElementById('prod-subcategory').value.trim();
     let supplierId = localStorage.getItem('selectedSupplierId');
 
     if (name === '') {
@@ -630,10 +636,11 @@ row.addEventListener('click', function(e) {
         return;
     }
 
-    let product = { 
-        name, productNumber, dimensions, availability, unit, 
-        price: parseFloat(price), 
-        brandName, 
+    let product = {
+        name, productNumber, dimensions, availability, unit,
+        price: parseFloat(price),
+        brandName,
+        subcategory,
         supplierId: parseInt(supplierId)
     };
 
@@ -714,6 +721,7 @@ async function handleAddToCart(productId) {
             productNumber: product.productNumber || '',
             supplierName: supplier || '',
             category: categoryName || '',
+            subcategory: product.subcategory || '',
             unit: product.unit || '',
             unitPrice: product.price,
             quantity: 1,
@@ -1019,6 +1027,7 @@ window._existingImageUrl = prod.imageURL || null;
             document.getElementById('prod-unit').value = prod.unit || '';
             document.getElementById('prod-price').value = prod.price || '';
             document.getElementById('prod-brand').value = prod.brandName || '';
+            document.getElementById('prod-subcategory').value = prod.subcategory || '';
             document.getElementById('modal-title').textContent = 'Edit Product';
             document.getElementById('confirm-btn').textContent = 'Save';
             document.getElementById('delete-product-btn').style.display = 'block';
