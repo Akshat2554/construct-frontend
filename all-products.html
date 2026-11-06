@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>All products</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>All products — Construct</title>
         <link rel="stylesheet" href="styles.css">
         <script src="auth.js"></script>
         <script src="toast.js"></script>
@@ -10,29 +12,17 @@
 
     </head>
     <body>
-        <div class="global-topbar">
-            <div class="logo">Construct</div>
-            <button class="nav-btn" id="project-selector-btn"> <span id="topbar-project-name">No project</span></button>
-
-            <div class="search-box">
-                <input type="text" placeholder="Search Products">
-            </div>
-
-            <div style="display:flex;gap:10px;align-items:center;margin-left:auto">
-                <a href="catalog.html" class="nav-btn active">Catalog</a>
-                <a href="index.html" class="nav-btn">Projects</a>
-                <a href="boq-detail.html" class="nav-btn"> BOQ <span id="cart-count">0</span></a>
-            </div>
-        </div>
-
         <div class="page-body">
             <div class="sidebar">
                 <a href="suppliers.html" class="back-btn">← Back to suppliers</a>
             </div>
 
             <div class="main-content">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-                    <h1 id="category-title" style="margin-bottom:0">Products</h1>
+                <div class="page-header">
+                    <h1 id="category-title">Products</h1>
+                    <div class="search-box">
+                        <input type="search" placeholder="Search products" aria-label="Search products">
+                    </div>
                     <div class="view-toggle">
                         <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
                         <button id="list-view-btn" class="view-toggle-btn " onclick="setView('list')">☰ List</button>
@@ -105,7 +95,7 @@
             let currentView = localStorage.getItem('productView') || 'grid';
             let categoryId = localStorage.getItem('selectedCategoryId');
             let categoryName = localStorage.getItem('selectedCategoryName');
-            document.getElementById('category-title').textContent = categoryName + ' - All Products';
+            document.getElementById('category-title').textContent = categoryName ? categoryName + ' — all products' : 'All products';
 
             async function loadAllProducts() {
                 let productsResponse = await authFetch('https://construct-backend-production.up.railway.app/api/products/by-category/' + categoryId);
