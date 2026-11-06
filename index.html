@@ -43,7 +43,7 @@
                     <option value="budget-high">Budget: high first</option>
                 </select>
             </div>
-            <div id="projects-container"></div>
+            <div id="projects-container"><div class="skeleton card" role="status" aria-label="Loading"><div class="skel-row"><span class="skel" style="width:62%"></span><span class="skel skel-sm" style="width:28%"></span></div><div class="skel-row"><span class="skel" style="width:48%"></span><span class="skel skel-sm" style="width:22%"></span></div><div class="skel-row"><span class="skel" style="width:56%"></span><span class="skel skel-sm" style="width:30%"></span></div></div></div>
         </div>
     </div>
 
@@ -226,7 +226,7 @@
 
         async function openAccessModal(projectId, projectName) {
             let listEl = document.getElementById('access-user-list');
-            listEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+            listEl.innerHTML = skeleton(3);
             document.getElementById('access-modal').classList.add('open');
 
             let [usersRes, assignedRes] = await Promise.all([

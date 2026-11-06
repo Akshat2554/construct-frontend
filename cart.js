@@ -36,14 +36,14 @@ function invalidateCartCache() {
 function updateCartCountFromCache() {
     let count = _cartCache ? _cartCache.length : 0;
     let badge = document.getElementById('cart-count');
-    if (badge) { badge.textContent = count; badge.dataset.count = count; }
+    if (badge) { let changed = badge.dataset.count !== undefined && badge.dataset.count !== String(count); badge.textContent = count; badge.dataset.count = count; if (changed) { badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump'); } }
 }
 
 async function updateCartCount() {
     let cart = await getCart();
     let count = cart.length;
     let badge = document.getElementById('cart-count');
-    if (badge) { badge.textContent = count; badge.dataset.count = count; }
+    if (badge) { let changed = badge.dataset.count !== undefined && badge.dataset.count !== String(count); badge.textContent = count; badge.dataset.count = count; if (changed) { badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump'); } }
 }
 
 // ===== Activity Logging =====

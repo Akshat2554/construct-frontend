@@ -22,7 +22,7 @@
                     <p class="page-subtitle">BOQ changes waiting on your sign-off, across every project</p>
                 </div>
             </div>
-            <div id="approvals-container"></div>
+            <div id="approvals-container"><div class="skeleton card" role="status" aria-label="Loading"><div class="skel-row"><span class="skel" style="width:62%"></span><span class="skel skel-sm" style="width:28%"></span></div><div class="skel-row"><span class="skel" style="width:48%"></span><span class="skel skel-sm" style="width:22%"></span></div><div class="skel-row"><span class="skel" style="width:56%"></span><span class="skel skel-sm" style="width:30%"></span></div></div></div>
             <div id="approvals-empty" class="empty-state card" style="display:none"><strong>You're all caught up</strong>No BOQ changes are waiting for approval.</div>
         </div>
     </div>
@@ -72,7 +72,7 @@
         // one group per project+category+requestedBy so nothing gets lost.
         async function loadApprovals() {
             let container = document.getElementById('approvals-container');
-            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+            container.innerHTML = skeleton(3);
 
             let projectsRes = await authFetch(`${API}/api/projects`);
             let projects = projectsRes.ok ? await projectsRes.json() : [];

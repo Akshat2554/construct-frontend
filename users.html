@@ -167,7 +167,7 @@
         async function openAccessModal(username) {
             document.getElementById('access-modal-sub').textContent = `Which projects ${username} can see and work on.`;
             let listEl = document.getElementById('access-project-list');
-            listEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+            listEl.innerHTML = skeleton(3);
             document.getElementById('access-modal').classList.add('open');
 
             let assignedRes = await authFetch(`${API}/api/project-assignments/mine?username=${encodeURIComponent(username)}`);

@@ -37,13 +37,29 @@
             .dash-panel-body { padding: 12px 18px; overflow-y: auto; flex: 1; min-height: 0; }
             .dash-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 16px; flex: 1; min-height: 0; }
             .dash-grid > div { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-            .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; flex-shrink: 0; }
-            .stat-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; text-decoration: none; color: inherit; }
-            .stat-label { font-size: var(--fs-13); font-weight: 500; color: var(--text-secondary); }
-            .stat-value { font-size: var(--fs-28); font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-            .stat-card.is-link { transition: border-color var(--dur-fast) ease, box-shadow var(--dur-base) var(--ease-out), transform var(--dur-press) var(--ease-out); }
-            .stat-card.is-link:active { transform: scale(0.98); }
-            @media (hover: hover) and (pointer: fine) { .stat-card.is-link:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); } }
+            .stat-row {
+                display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                background: var(--shell); color: var(--shell-text-strong);
+                border-radius: var(--radius-xl); margin-bottom: 18px; flex-shrink: 0; overflow: hidden;
+                position: relative;
+            }
+            .stat-row::after {
+                content: ""; position: absolute; inset: 0; pointer-events: none;
+                background-image: linear-gradient(rgba(243,239,230,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(243,239,230,.04) 1px, transparent 1px);
+                background-size: 24px 24px;
+            }
+            .stat-card { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 6px; padding: 18px 22px; text-decoration: none; color: inherit; }
+            .stat-card + .stat-card { border-left: 1px solid var(--shell-line); }
+            .stat-label { font-size: var(--fs-13); font-weight: 500; color: var(--shell-text); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+            .stat-value { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+            .stat-value.is-alert { color: #F2C9A0; }
+            .stat-card.is-link { transition: background-color var(--dur-fast) ease; }
+            .stat-card.is-link .stat-go { opacity: .5; transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-fast) ease; }
+            @media (hover: hover) and (pointer: fine) {
+                .stat-card.is-link:hover { background: var(--shell-hover); }
+                .stat-card.is-link:hover .stat-go { opacity: 1; transform: translateX(3px); }
+            }
+            .dash-greeting { font-size: 32px; margin: 0 0 4px; }
             @media (max-width: 1000px) {
                 .dash-main { height: auto; overflow: visible; }
                 .dash-grid { grid-template-columns: 1fr; }
@@ -52,7 +68,10 @@
             @media (max-width: 767px) {
                 .dash-main { padding: 16px; }
                 .stat-row { grid-template-columns: 1fr 1fr; }
-                .stat-value { font-size: var(--fs-24); }
+                .stat-card:nth-child(3) { border-left: none; }
+                .stat-card:nth-child(n+3) { border-top: 1px solid var(--shell-line); }
+                .stat-value { font-size: 28px; }
+                .dash-greeting { font-size: 24px; }
             }
         </style>
     </head>
@@ -60,7 +79,7 @@
 
     <div class="dash-main">
         <div style="margin-bottom:18px;flex-shrink:0">
-            <h1 id="dash-greeting" style="font-size:var(--fs-24);margin:0 0 2px"></h1>
+            <h1 id="dash-greeting" class="dash-greeting"></h1>
             <p class="page-subtitle" id="dash-date"></p>
         </div>
 
@@ -76,7 +95,7 @@
                         <span class="dash-panel-title" id="dash-projects-title">Active projects</span>
                         <a href="index.html" class="btn btn-secondary btn-sm">View all</a>
                     </div>
-                    <div id="dash-projects" class="dash-panel-body"></div>
+                    <div id="dash-projects" class="dash-panel-body"><div class="skeleton" role="status" aria-label="Loading"><div class="skel-row"><span class="skel" style="width:62%"></span><span class="skel skel-sm" style="width:28%"></span></div><div class="skel-row"><span class="skel" style="width:48%"></span><span class="skel skel-sm" style="width:22%"></span></div><div class="skel-row"><span class="skel" style="width:56%"></span><span class="skel skel-sm" style="width:30%"></span></div></div></div>
                 </div>
 
                 <div class="dash-panel" id="dash-approvals-panel" style="flex:1;min-height:0;display:none">
@@ -84,7 +103,7 @@
                         <span class="dash-panel-title">Approvals</span>
                         <a href="approvals.html" class="btn btn-secondary btn-sm">Open</a>
                     </div>
-                    <div id="dash-approvals" class="dash-panel-body"></div>
+                    <div id="dash-approvals" class="dash-panel-body"><div class="skeleton" role="status" aria-label="Loading"><div class="skel-row"><span class="skel" style="width:62%"></span><span class="skel skel-sm" style="width:28%"></span></div><div class="skel-row"><span class="skel" style="width:48%"></span><span class="skel skel-sm" style="width:22%"></span></div><div class="skel-row"><span class="skel" style="width:56%"></span><span class="skel skel-sm" style="width:30%"></span></div></div></div>
                 </div>
             </div>
 
@@ -93,7 +112,7 @@
                     <div class="dash-panel-header">
                         <span class="dash-panel-title">Recent activity</span>
                     </div>
-                    <div id="dash-activity" class="dash-panel-body"></div>
+                    <div id="dash-activity" class="dash-panel-body"><div class="skeleton" role="status" aria-label="Loading"><div class="skel-row"><span class="skel" style="width:62%"></span><span class="skel skel-sm" style="width:28%"></span></div><div class="skel-row"><span class="skel" style="width:48%"></span><span class="skel skel-sm" style="width:22%"></span></div><div class="skel-row"><span class="skel" style="width:56%"></span><span class="skel skel-sm" style="width:30%"></span></div></div></div>
                 </div>
 
                 <div class="dash-panel" style="flex:1;min-height:0">
@@ -101,7 +120,7 @@
                         <span class="dash-panel-title">Your tasks</span>
                         <a href="tasks.html" class="btn btn-secondary btn-sm">Open</a>
                     </div>
-                    <div id="dash-tasks" class="dash-panel-body"></div>
+                    <div id="dash-tasks" class="dash-panel-body"><div class="skeleton" role="status" aria-label="Loading"><div class="skel-row"><span class="skel" style="width:62%"></span><span class="skel skel-sm" style="width:28%"></span></div><div class="skel-row"><span class="skel" style="width:48%"></span><span class="skel skel-sm" style="width:22%"></span></div><div class="skel-row"><span class="skel" style="width:56%"></span><span class="skel skel-sm" style="width:30%"></span></div></div></div>
                 </div>
             </div>
         </div>
@@ -126,12 +145,14 @@
     }
 
     function statCard(label, value, accent, href) {
+        let alert = accent && accent !== 'var(--text-primary)';
+        let go = href ? '<svg class="stat-go" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' : '';
         let inner = `
-                <span class="stat-label">${label}</span>
-                <span class="stat-value" style="color:${accent || 'var(--text-primary)'}">${value}</span>`;
+                <span class="stat-label">${label}${go}</span>
+                <span class="stat-value${alert ? ' is-alert' : ''}">${value}</span>`;
         return href
-            ? `<a class="stat-card card is-link" href="${href}">${inner}</a>`
-            : `<div class="stat-card card">${inner}</div>`;
+            ? `<a class="stat-card is-link" href="${href}">${inner}</a>`
+            : `<div class="stat-card">${inner}</div>`;
     }
 
     function timeAgo(iso) {

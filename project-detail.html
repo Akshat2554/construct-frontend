@@ -188,7 +188,7 @@ async function loadAllProjectData() {
 
 async function loadVendorShortlist() {
     let container = document.getElementById('view-shortlist');
-    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+    container.innerHTML = skeleton(3);
     
     let response = await authFetch(`${API}/api/vendor-shortlist/${projectId}`);
     let shortlist = await response.json();
@@ -1324,7 +1324,7 @@ let _logsShown = 50;
 
 async function loadUpdates() {
     let container = document.getElementById('view-updates');
-    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+    container.innerHTML = skeleton(3);
     
     let res = await authFetch(`${API}/api/activity/${projectId}`);
     _allLogs = await res.json();
@@ -1716,7 +1716,7 @@ async function saveOpening() {
 
 async function loadVendorShortlist() {
     let container = document.getElementById('view-shortlist');
-    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading...</p>';
+    container.innerHTML = skeleton(3);
     
     let response = await authFetch(`${API}/api/vendor-shortlist/${projectId}`);
     let shortlist = await response.json();

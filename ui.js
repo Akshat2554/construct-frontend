@@ -163,3 +163,11 @@ function formatINR(value) {
     if (value === null || value === undefined || value === '' || isNaN(n)) return '—';
     return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
+
+// Placeholder rows shown while data loads (replaces "Loading...")
+function skeleton(rows = 3) {
+    let widths = [72, 54, 64, 46, 58];
+    return `<div class="skeleton" role="status" aria-label="Loading">${Array.from({ length: rows }, (_, i) =>
+        `<div class="skel-row"><span class="skel" style="width:${widths[i % widths.length]}%"></span><span class="skel skel-sm" style="width:${widths[(i + 2) % widths.length] / 2}%"></span></div>`
+    ).join('')}</div>`;
+}

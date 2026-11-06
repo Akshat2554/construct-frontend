@@ -53,6 +53,8 @@ function canEditBOQDirectly() {
         navItems.push({ href: 'users.html', label: 'Users', icon: icons.users });
     }
 
+    let userName = (sessionStorage.getItem('construct-user') || 'You').replace(/[<>&"]/g, '');
+    let roleLabel = { ADMIN: 'Admin', FINANCE: 'Finance', VISUALIZER: 'Visualizer', UNASSIGNED: 'No role yet' }[getRole()] || 'Member';
     let sidebar = document.createElement('nav');
     sidebar.className = 'sb-sidebar';
     sidebar.id = 'app-sidebar';
@@ -74,11 +76,20 @@ function canEditBOQDirectly() {
             `).join('')}
         </div>
         <div class="sb-sidebar-footer">
-            <button type="button" class="sb-collapse-btn" id="sidebar-collapse-btn" aria-label="Collapse sidebar" aria-expanded="true">${icons.collapse}</button>
-            <a href="#" class="sb-nav-link" id="sb-sign-out" title="Sign out">
-                ${icons.signout}
-                <span class="sb-nav-label">Sign out</span>
-            </a>
+            <div class="sb-user" title="${userName}">
+                <span class="sb-avatar" aria-hidden="true">${userName.charAt(0) || '?'}</span>
+                <span class="sb-user-text">
+                    <span class="sb-user-name">${userName}</span>
+                    <span class="sb-user-role">${roleLabel}</span>
+                </span>
+            </div>
+            <div class="sb-footer-row">
+                <a href="#" class="sb-nav-link" id="sb-sign-out" title="Sign out">
+                    ${icons.signout}
+                    <span class="sb-nav-label">Sign out</span>
+                </a>
+                <button type="button" class="sb-collapse-btn" id="sidebar-collapse-btn" aria-label="Collapse sidebar" aria-expanded="true">${icons.collapse}</button>
+            </div>
         </div>
     `;
 
