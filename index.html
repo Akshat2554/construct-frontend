@@ -144,7 +144,9 @@
     if (projects.length === 0) {
         container.innerHTML = (statusFilter || priorityFilter)
             ? '<div class="empty-state card"><strong>No projects match these filters</strong>Change the status or priority filter to see more.</div>'
-            : '<div class="empty-state card"><strong>No projects yet</strong>Create a project to start measuring rooms and building its BOQ.</div>';
+            : (isAdmin()
+                ? '<div class="empty-state card"><strong>No projects yet</strong>Create a project to start measuring rooms and building its BOQ.</div>'
+                : '<div class="empty-state card"><strong>No projects assigned to you</strong>Ask an admin to give you access to a project.</div>');
         return;
     }
 

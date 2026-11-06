@@ -219,7 +219,7 @@
     function renderProjects(projects) {
         let container = document.getElementById('dash-projects');
         if (projects.length === 0) {
-            container.innerHTML = '<p class="text-13 text-muted" style="padding:10px 0">No projects yet.</p>';
+            container.innerHTML = '<p class="text-13 text-muted" style="padding:10px 0">' + (isAdmin() ? 'No projects yet.' : 'No projects assigned to you yet.') + '</p>';
             return;
         }
         container.innerHTML = projects.map(project => `
