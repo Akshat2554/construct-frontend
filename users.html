@@ -63,7 +63,7 @@
     <div class="modal-overlay" id="password-modal">
         <div class="modal" style="width:360px">
             <h2>Reset Password</h2>
-            <p style="font-size:12.5px;color:var(--text-muted);margin-top:-6px" id="password-modal-sub"></p>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:-6px" id="password-modal-sub"></p>
             <input type="password" id="new-password" placeholder="New password" autocomplete="new-password">
             <div class="modal-buttons">
                 <button id="password-cancel-btn">Cancel</button>
@@ -76,7 +76,7 @@
     <div class="modal-overlay" id="access-modal">
         <div class="modal" style="width:420px">
             <h2>Manage Access</h2>
-            <p style="font-size:12.5px;color:var(--text-muted);margin-top:-6px" id="access-modal-sub">Which projects this account can see and work on.</p>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:-6px" id="access-modal-sub">Which projects this account can see and work on.</p>
             <div id="access-project-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
             <div class="modal-buttons">
                 <button id="access-modal-close">Done</button>
@@ -95,7 +95,7 @@
         let currentUsername = sessionStorage.getItem('construct-user') || '';
         let _allProjects = [];
         let roleLabels = { ADMIN: 'Admin', FINANCE: 'Finance', VISUALIZER: 'Visualizer', UNASSIGNED: 'Unassigned' };
-        let roleColors = { ADMIN: '#4ecb71', FINANCE: '#5b8def', VISUALIZER: '#f0a050', UNASSIGNED: 'var(--text-muted)' };
+        let roleColors = { ADMIN: '#355E45', FINANCE: '#3B5470', VISUALIZER: '#7A5C22', UNASSIGNED: 'var(--text-muted)' };
 
         async function loadUsers() {
             let [usersRes, projectsRes] = await Promise.all([
@@ -121,22 +121,22 @@
                 let isSelf = user.username === currentUsername;
                 let row = document.createElement('tr');
                 row.innerHTML = `
-                    <td style="font-weight:500">${user.username}${isSelf ? ' <span style="color:var(--text-muted);font-weight:400;font-size:11.5px">(you)</span>' : ''}</td>
+                    <td style="font-weight:500">${user.username}${isSelf ? ' <span style="color:var(--text-muted);font-weight:400;font-size:12px">(you)</span>' : ''}</td>
                     <td>
-                        <select data-username="${user.username}" class="role-select" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12.5px;background:var(--bg);color:${roleColors[user.role] || 'var(--text-primary)'};font-weight:600">
+                        <select data-username="${user.username}" class="role-select" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:${roleColors[user.role] || 'var(--text-primary)'};font-weight:600">
                             <option value="ADMIN" ${user.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
                             <option value="FINANCE" ${user.role === 'FINANCE' ? 'selected' : ''}>Finance</option>
                             <option value="VISUALIZER" ${user.role === 'VISUALIZER' ? 'selected' : ''}>Visualizer</option>
                             ${user.role === 'UNASSIGNED' ? '<option value="UNASSIGNED" selected>Unassigned</option>' : ''}
                         </select>
                     </td>
-                    <td style="color:var(--text-muted);font-size:12.5px">
+                    <td style="color:var(--text-muted);font-size:13px">
                         ${user.role === 'ADMIN' ? 'All projects' : `${assignedCount} project${assignedCount === 1 ? '' : 's'}`}
                     </td>
                     <td style="text-align:right;white-space:nowrap">
                         <button class="nav-btn" style="font-size:12px;padding:5px 12px;${user.role === 'ADMIN' ? 'display:none' : ''}" onclick="openAccessModal('${user.username}')">Manage Access</button>
                         <button class="nav-btn" style="font-size:12px;padding:5px 12px" onclick="openPasswordModal('${user.username}')">Reset Password</button>
-                        <button class="dots-btn" style="${isSelf ? 'display:none' : ''}" onclick="deleteUser('${user.username}')" title="Delete account">✕</button>
+                        <button class="dots-btn" style="${isSelf ? 'display:none' : ''}" onclick="deleteUser('${user.username}')" title="Delete account" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                     </td>
                 `;
                 tbody.appendChild(row);

@@ -51,7 +51,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
                 <h2 id="calc-modal-title" style="margin:0"></h2>
                 <button onclick="document.getElementById('calc-modal').classList.remove('open')"
-                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
     
             <!-- Base area -->
@@ -65,7 +65,7 @@
             <!-- Exclusions -->
             <div style="margin-bottom:16px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Exclusions</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Exclusions</span>
                     <button onclick="addCalcItem('exclusion')"
                         style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Add</button>
                 </div>
@@ -75,7 +75,7 @@
             <!-- Inclusions -->
             <div style="margin-bottom:16px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Inclusions</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Inclusions</span>
                     <button onclick="addCalcItem('inclusion')"
                         style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Add</button>
                 </div>
@@ -87,8 +87,8 @@
     
             <!-- Working -->
             <div style="background:var(--bg);border-radius:8px;padding:12px 16px;margin-bottom:16px">
-                <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Working</div>
-                <div id="calc-working" style="font-size:12.5px;color:var(--text-secondary);line-height:1.8"></div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:6px">Working</div>
+                <div id="calc-working" style="font-size:13px;color:var(--text-secondary);line-height:1.8"></div>
                 <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
                     <span style="font-size:12px;color:var(--text-muted)">Result</span>
                     <span id="calc-result-display" style="font-size:16px;font-weight:700;color:var(--accent)">—</span>
@@ -194,12 +194,12 @@ async function loadVendorShortlist() {
     let response = await authFetch(`${API}/api/vendor-shortlist/${projectId}`);
     let shortlist = await response.json();
     
-    let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
+    let statusColors = { 'Approved': '#2E4F42', 'Pending': '#7A5C22', 'Rejected': '#B3362B' };
     
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <span style="font-size:13px;color:var(--text-muted)">Vendors shortlisted for this project</span>
-            <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:12.5px">+ Add Vendor</button>
+            <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:13px">+ Add Vendor</button>
         </div>
     `;
     
@@ -213,9 +213,9 @@ async function loadVendorShortlist() {
                     <tr>
                         <td style="font-weight:500">${vendor.supplierName}</td>
                         <td style="color:var(--text-muted)">${vendor.category || '—'}</td>
-                        <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
+                        <td><span style="font-size:12px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
                         <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
-                        <td><button onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+                        <td><button class="hover-danger" onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -290,7 +290,7 @@ async function loadLayout() {
                     ${floorList.map(f => `<option value="${f}" ${f === currentFloor ? 'selected' : ''}>Floor ${f}</option>`).join('')}
                 </select>
                 <button onclick="addFloor(${Math.max(...floorList) + 1})" 
-                    style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12.5px;color:var(--text-secondary);cursor:pointer">
+                    style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:13px;color:var(--text-secondary);cursor:pointer">
                     + Add Floor
                 </button>
                 ${currentFloor > 1 ? `
@@ -371,25 +371,25 @@ let totalsBar = document.createElement('div');
 totalsBar.style.cssText = 'display:flex;gap:24px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--border)';
 totalsBar.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Paint Area</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Paint Area</span>
         <input type="number" id="total-paint-area" value="${project.totalPaintArea || totalPaintArea.toFixed(0)}"
             style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
             onchange="saveProjectTotal('totalPaintArea', this.value)">
-        <span style="font-size:11px;color:var(--text-muted)">sqft</span>
+        <span style="font-size:12px;color:var(--text-muted)">sqft</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Floor Area</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Floor Area</span>
         <input type="number" id="total-floor-area" value="${project.totalFloorArea || totalFloorArea.toFixed(0)}"
             style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
             onchange="saveProjectTotal('totalFloorArea', this.value)">
-        <span style="font-size:11px;color:var(--text-muted)">sqft</span>
+        <span style="font-size:12px;color:var(--text-muted)">sqft</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Ceiling Area</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Ceiling Area</span>
         <input type="number" id="total-ceiling-area" value="${project.totalCeilingArea || totalCeilingArea.toFixed(0)}"
             style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
             onchange="saveProjectTotal('totalCeilingArea', this.value)">
-        <span style="font-size:11px;color:var(--text-muted)">sqft</span>
+        <span style="font-size:12px;color:var(--text-muted)">sqft</span>
     </div>
 `;
 layout.insertBefore(totalsBar, layout.firstChild);
@@ -593,18 +593,18 @@ let wallArea = room.wallArea || 0;
             border-radius:8px;
             padding:14px;
             cursor:pointer;
-            transition:all 0.15s;
+            transition:background-color .15s ease,border-color .15s ease,color .15s ease;
         `;
         card.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
                 <div style="display:flex;align-items:center;gap:8px">
-                    <div style="width:22px;height:22px;background:var(--accent);color:white;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">${index + 1}</div>
-                    <div style="font-size:13.5px;font-weight:600;color:var(--text-primary)">${room.name}</div>
+                    <div style="width:22px;height:22px;background:var(--accent);color:white;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">${index + 1}</div>
+                    <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${room.name}</div>
                 </div>
-                <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:4px;font-weight:500">${room.roomType || '—'}</span>
+                <span style="font-size:12px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:4px;font-weight:500">${room.roomType || '—'}</span>
             </div>
-            ${room.length ? `<div style="font-size:11.5px;color:var(--text-muted)">${room.length} × ${room.breadth} × ${room.height} mm</div>` : ''}
-            ${area ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">${area} sqft floor</div>` : ''}
+            ${room.length ? `<div style="font-size:12px;color:var(--text-muted)">${room.length} × ${room.breadth} × ${room.height} mm</div>` : ''}
+            ${area ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${area} sqft floor</div>` : ''}
         `;
         card.addEventListener('mouseover', function() { this.style.borderColor = 'var(--accent)'; });
         card.addEventListener('mouseout', function() { this.style.borderColor = 'var(--border)'; });
@@ -637,17 +637,17 @@ async function renderRenderPins(renderId) {
         `;
         
         pinEl.innerHTML = `
-    <div style="width:20px;height:20px;background:var(--accent);border:2px solid white;border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white"
+    <div style="width:20px;height:20px;background:var(--accent);border:2px solid white;border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white"
         onmouseenter="document.getElementById('pin-tooltip-${pin.id}').style.display='block'"
         onmouseleave="setTimeout(function(){var t=document.getElementById('pin-tooltip-${pin.id}');if(t&&!t.matches(':hover'))t.style.display='none'},200)">
         ${pins.indexOf(pin) + 1}
         <div id="pin-tooltip-${pin.id}" 
             style="display:none;position:absolute;bottom:28px;left:50%;transform:translateX(-50%);background:white;border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,0.15);pointer-events:all;z-index:100;font-weight:normal"
             onmouseleave="this.style.display='none'">
-            <div style="font-size:12.5px;font-weight:600;color:var(--text-primary);margin-bottom:4px">${productName}</div>
-            ${pin.note ? `<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:6px">${pin.note}</div>` : ''}
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px">${productName}</div>
+            ${pin.note ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">${pin.note}</div>` : ''}
             <button data-pin-id="${pin.id}"
-    style="font-size:11px;color:var(--destructive);background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Remove pin</button>
+    style="font-size:12px;color:var(--destructive);background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Remove pin</button>
         </div>
     </div>
 `;
@@ -691,7 +691,7 @@ let { offsetX, offsetY, renderedW, renderedH } = getImageRenderRect(img);
             background:var(--accent);
             color:white;
             border-radius:50%;
-            font-size:11px;
+            font-size:12px;
             font-weight:700;
             display:flex;
             align-items:center;
@@ -778,11 +778,10 @@ async function openRoomDetail(room) {
             
             <!-- Back + Room name + tag -->
             <div style="display:flex;align-items:center;gap:10px;min-width:200px">
-                <button onclick="loadLayout()" 
-                    style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;padding:0;line-height:1;transition:color 0.15s"
-                    onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">←</button>
-                <span style="font-size:17px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${room.name}</span>
-                <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:20px;font-weight:600">${room.roomType || '—'}</span>
+                <button class="hover-text" onclick="loadLayout()" 
+                    style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;padding:0;line-height:1;transition:color 0.15s">←</button>
+                <span style="font-size:16px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${room.name}</span>
+                <span style="font-size:12px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:20px;font-weight:600">${room.roomType || '—'}</span>
             </div>
 
             <!-- Divider -->
@@ -791,31 +790,31 @@ async function openRoomDetail(room) {
             <!-- Dimensions — inline label + value -->
             <div style="display:flex;align-items:center;gap:16px;flex:1">
                 <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:11px;color:var(--text-muted);font-weight:500">L</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:500">L</span>
                     <input type="number" value="${room.length || ''}" 
                         onchange="updateRoomDimension(${room.id}, 'length', this.value)"
                         placeholder="—"
                         style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
                         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                    <span style="font-size:10px;color:var(--text-muted)">mm</span>
+                    <span style="font-size:12px;color:var(--text-muted)">mm</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:11px;color:var(--text-muted);font-weight:500">B</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:500">B</span>
                     <input type="number" value="${room.breadth || ''}" 
                         onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
                         placeholder="—"
                         style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
                         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                    <span style="font-size:10px;color:var(--text-muted)">mm</span>
+                    <span style="font-size:12px;color:var(--text-muted)">mm</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:11px;color:var(--text-muted);font-weight:500">H</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:500">H</span>
                     <input type="number" value="${room.height || ''}" 
                         onchange="updateRoomDimension(${room.id}, 'height', this.value)"
                         placeholder="—"
                         style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
                         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                    <span style="font-size:10px;color:var(--text-muted)">mm</span>
+                    <span style="font-size:12px;color:var(--text-muted)">mm</span>
                 </div>
             </div>
 
@@ -825,15 +824,15 @@ async function openRoomDetail(room) {
             <!-- Area stats — clean text, no boxes -->
             <div style="display:flex;align-items:center;gap:20px">
                 <div style="display:flex;flex-direction:column;gap:1px">
-                    <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Wall</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em">Wall</span>
 <span id="header-wall-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${wallArea}</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:1px">
-                    <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Floor</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em">Floor</span>
 <span id="header-floor-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${area}</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:1px">
-                    <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Ceiling</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em">Ceiling</span>
 <span id="header-ceiling-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${ceilingArea}</span>                </div>
             </div>
 
@@ -841,9 +840,8 @@ async function openRoomDetail(room) {
             <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
 
             <!-- Delete -->
-            <button onclick="deleteRoom(${room.id}, '${room.name}')"
-                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;font-family:inherit;transition:color 0.15s"
-                onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">Delete Room</button>
+            <button class="hover-danger" onclick="deleteRoom(${room.id}, '${room.name}')"
+                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;font-family:inherit;transition:color 0.15s">Delete Room</button>
         </div>
 
         <!-- hidden inputs for calculators -->
@@ -864,24 +862,23 @@ async function openRoomDetail(room) {
                         <div onclick="switchRender(${r.id})" id="thumb-${r.id}"
                             style="position:relative;flex-shrink:0;width:120px;height:80px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ${i === 0 ? 'var(--accent)' : 'var(--border)'}">
                             <img src="${r.fileName}" style="width:100%;height:100%;object-fit:cover">
-                            <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);padding:2px 5px;font-size:9px;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.displayName || 'View ' + (i+1)}</div>
+                            <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);padding:2px 5px;font-size:12px;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.displayName || 'View ' + (i+1)}</div>
                             <button onclick="event.stopPropagation();deleteRender(${r.id})"
-                                style="position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:white;font-size:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+                                style="position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                         </div>
                     `).join('')}
-                    <label style="flex-shrink:0;width:90px;height:90px;border:2px dashed var(--border);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);gap:2px;transition:border-color 0.15s"
-                        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <label class="hover-accent" style="flex-shrink:0;width:90px;height:90px;border:2px dashed var(--border);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);gap:2px;transition:border-color 0.15s">
                         <span style="font-size:18px;line-height:1">+</span>
-                        <span style="font-size:9px">Add</span>
+                        <span style="font-size:12px">Add</span>
                         <input type="file" accept="image/*" style="display:none" onchange="uploadRender(this, ${room.id})">
                     </label>
                 </div>
 
                 <!-- Render canvas -->
                 <div style="flex:1;padding:10px;overflow:hidden">
-                    <div id="render-canvas" style="width:100%;height:100%;border-radius:8px;position:relative;background:#111;cursor:crosshair;overflow:hidden">
+                    <div id="render-canvas" style="width:100%;height:100%;border-radius:8px;position:relative;background:var(--text-primary);cursor:crosshair;overflow:hidden">
                         ${_renders.length === 0 ? `
-                            <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#666">
+                            <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-muted)">
                                 <div style="font-size:44px">🏠</div>
                                 <div style="font-size:13px">Upload a render to get started</div>
                                 <label style="padding:8px 18px;background:var(--accent);color:white;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">
@@ -904,7 +901,7 @@ async function openRoomDetail(room) {
             <!-- RIGHT: Room Shortlist -->
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
                 <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
-                    <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Room Shortlist</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.08em">Room Shortlist</span>
                 </div>
                 <div id="room-shortlist-container" style="padding:12px 16px;overflow-y:auto;flex:1"></div>
             </div>
@@ -1067,31 +1064,29 @@ async function renderCalculators() {
 
     calcContainer.innerHTML = `
         <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
-            <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Calculators</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.08em">Calculators</span>
         </div>
 
         <!-- Openings section -->
         <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Openings & Adjustments</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:10px">Openings & Adjustments</div>
             
             <!-- Doors -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <button onclick="openOpeningModal('door')"
-                    style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-primary)"
-                    onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    Doors ${doors.length > 0 ? `<span style="background:var(--accent);color:white;border-radius:10px;padding:1px 6px;font-size:10px">${doors.length}</span>` : ''}
+                <button class="hover-accent" onclick="openOpeningModal('door')"
+                    style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-primary)">
+                    Doors ${doors.length > 0 ? `<span style="background:var(--accent);color:white;border-radius:10px;padding:1px 6px;font-size:12px">${doors.length}</span>` : ''}
                 </button>
-                <span style="font-size:11px;color:var(--text-muted)">${doors.filter(d=>d.active!==false).reduce((s,d)=>s+(d.area||0),0).toFixed(1)} sqft excl.</span>
+                <span style="font-size:12px;color:var(--text-muted)">${doors.filter(d=>d.active!==false).reduce((s,d)=>s+(d.area||0),0).toFixed(1)} sqft excl.</span>
             </div>
 
             <!-- Windows -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <button onclick="openOpeningModal('window')"
-                    style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-primary)"
-                    onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    Windows ${windows.length > 0 ? `<span style="background:var(--accent);color:white;border-radius:10px;padding:1px 6px;font-size:10px">${windows.length}</span>` : ''}
+                <button class="hover-accent" onclick="openOpeningModal('window')"
+                    style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-primary)">
+                    Windows ${windows.length > 0 ? `<span style="background:var(--accent);color:white;border-radius:10px;padding:1px 6px;font-size:12px">${windows.length}</span>` : ''}
                 </button>
-                <span style="font-size:11px;color:var(--text-muted)">${windows.filter(w=>w.active!==false).reduce((s,w)=>s+(w.area||0),0).toFixed(1)} sqft excl.</span>
+                <span style="font-size:12px;color:var(--text-muted)">${windows.filter(w=>w.active!==false).reduce((s,w)=>s+(w.area||0),0).toFixed(1)} sqft excl.</span>
             </div>
 
             <!-- Custom items -->
@@ -1101,16 +1096,14 @@ async function renderCalculators() {
                         onchange="toggleOpening(${item.id}, this.checked)"
                         style="accent-color:var(--accent)">
                     <span style="flex:1;font-size:12px;color:var(--text-primary)">${item.name}</span>
-                    <span style="font-size:11px;color:var(--text-muted)">${(item.area||0).toFixed(1)} sqft</span>
-                    <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:${item.itemType==='exclusion'?'#C0392B18':'#2E4F4218'};color:${item.itemType==='exclusion'?'#C0392B':'#2E4F42'}">${item.itemType}</span>
-                    <button onclick="deleteOpening(${item.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px">✕</button>
+                    <span style="font-size:12px;color:var(--text-muted)">${(item.area||0).toFixed(1)} sqft</span>
+                    <span style="font-size:12px;padding:1px 5px;border-radius:3px;background:${item.itemType==='exclusion'?'#C0392B18':'#2E4F4218'};color:${item.itemType==='exclusion'?'var(--destructive)':'var(--accent)'}">${item.itemType}</span>
+                    <button onclick="deleteOpening(${item.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                 </div>
             `).join('')}
 
-            <button onclick="openOpeningModal('custom')"
-                style="width:100%;margin-top:4px;padding:5px;border:1px dashed var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-muted)"
-                onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-                onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
+            <button class="hover-accent" onclick="openOpeningModal('custom')"
+                style="width:100%;margin-top:4px;padding:5px;border:1px dashed var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-muted)">
                 + Add Custom Item
             </button>
         </div>
@@ -1118,19 +1111,19 @@ async function renderCalculators() {
         <!-- Results table -->
         <div style="flex:1">
             <div style="display:grid;grid-template-columns:1fr auto auto;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
-                <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Item</span>
-                <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Net Area</span>
-                <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;width:70px;text-align:right">Result</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Item</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-muted);width:70px;text-align:right">Net Area</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-muted);width:70px;text-align:right">Result</span>
             </div>
 
             <!-- Paint -->
             <div style="border-bottom:1px solid var(--border);padding:10px 16px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                    <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
                         onclick="openCalcModal('paint')">Paint</span>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center">
-                    <span style="font-size:11px;color:var(--text-muted)">Wall (excl. openings)</span>
+                    <span style="font-size:12px;color:var(--text-muted)">Wall (excl. openings)</span>
                     <span style="font-size:12px;font-weight:600;color:var(--text-secondary);width:70px;text-align:right">${netWallArea.toFixed(1)} sqft</span>
                     <span id="paint-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">${paintLitres > 0 ? paintLitres.toFixed(1) + ' L' : '—'}</span>
                 </div>
@@ -1144,11 +1137,11 @@ async function renderCalculators() {
             <!-- Flooring -->
             <div style="border-bottom:1px solid var(--border);padding:10px 16px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                    <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
                         onclick="openCalcModal('flooring')">Flooring</span>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center">
-                    <span style="font-size:11px;color:var(--text-muted)">Floor area</span>
+                    <span style="font-size:12px;color:var(--text-muted)">Floor area</span>
                     <span style="font-size:12px;font-weight:600;color:var(--text-secondary);width:70px;text-align:right">${netFloorArea.toFixed(1)} sqft</span>
                     <span id="floor-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">${tiles > 0 ? tiles + ' tiles' : '—'}</span>
                 </div>
@@ -1162,11 +1155,11 @@ async function renderCalculators() {
             <!-- Ceiling -->
             <div style="padding:10px 16px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
+                    <span style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:underline"
                         onclick="openCalcModal('ceiling')">False Ceiling</span>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center">
-                    <span style="font-size:11px;color:var(--text-muted)">Ceiling area</span>
+                    <span style="font-size:12px;color:var(--text-muted)">Ceiling area</span>
                     <span style="font-size:12px;font-weight:600;color:var(--text-secondary);width:70px;text-align:right">${netFloorArea.toFixed(1)} sqft</span>
                     <span id="ceiling-result" style="font-size:12px;font-weight:600;color:var(--accent);width:70px;text-align:right">${netFloorArea > 0 ? Math.ceil(netFloorArea) + ' sqft' : '—'}</span>
                 </div>
@@ -1224,10 +1217,8 @@ async function renderRoomShortlist(assignments) {
                 onclick="openAssignmentProductDetail(${assignment.boqItemId})">${assignment.productName}</td>
             <td style="color:var(--text-secondary)">${assignment.quantity || '—'}</td>
             ${showCost ? `<td style="font-weight:600;color:var(--accent)">₹${itemTotal.toLocaleString('en-IN')}</td>` : ''}
-            <td>${isVisualizer() ? '' : `<button onclick="removeRoomAssignment(${assignment.id})"
-                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px"
-                onmouseover="this.style.color='var(--destructive)'"
-                onmouseout="this.style.color='var(--text-muted)'">✕</button>`}</td>
+            <td>${isVisualizer() ? '' : `<button class="hover-danger" onclick="removeRoomAssignment(${assignment.id})"
+                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>`}</td>
         `;
         tbody.appendChild(row);
     });
@@ -1407,13 +1398,13 @@ function renderUpdates(searchTerm) {
     
     Object.keys(groups).forEach(function(dateKey) {
         html += `<div style="margin-bottom:24px">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)">${dateKey}</div>`;
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.08em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)">${dateKey}</div>`;
         
         groups[dateKey].forEach(function(log) {
             let time = new Date(log.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
             html += `
                 <div style="display:grid;grid-template-columns:55px 80px 1fr;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border)">
-                    <span style="font-size:11.5px;color:var(--text-muted)">${time}</span>
+                    <span style="font-size:12px;color:var(--text-muted)">${time}</span>
                     <span style="font-size:12px;font-weight:600;color:var(--accent)">${log.username}</span>
                     <div>
                         <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${log.action}</div>
@@ -1462,16 +1453,14 @@ function renderCalcItems() {
             row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
             row.innerHTML = `
                 <input type="text" value="${item.name}" placeholder="Name"
-                    style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12.5px;background:var(--bg)"
+                    style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)"
                     onchange="updateCalcItem(${item.id}, 'name', this.value)">
                 <input type="number" value="${item.area}" placeholder="sqft"
-                    style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12.5px;text-align:center;background:var(--bg)"
+                    style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;text-align:center;background:var(--bg)"
                     onchange="updateCalcItem(${item.id}, 'area', this.value)">
-                <span style="font-size:11px;color:var(--text-muted)">sqft</span>
-                <button onclick="removeCalcItem(${item.id}, '${itemType}')"
-                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
-                    onmouseover="this.style.color='var(--destructive)'"
-                    onmouseout="this.style.color='var(--text-muted)'">✕</button>
+                <span style="font-size:12px;color:var(--text-muted)">sqft</span>
+                <button class="hover-danger" onclick="removeCalcItem(${item.id}, '${itemType}')"
+                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             `;
             container.appendChild(row);
         });
@@ -1674,12 +1663,10 @@ async function openOpeningModal(type) {
                     onchange="toggleOpening(${item.id}, this.checked)"
                     style="accent-color:var(--accent)">
                 <span style="flex:1;font-size:13px;color:var(--text-primary)">${item.name}</span>
-                ${item.width && item.height ? `<span style="font-size:11px;color:var(--text-muted)">${item.width}×${item.height}mm</span>` : ''}
+                ${item.width && item.height ? `<span style="font-size:12px;color:var(--text-muted)">${item.width}×${item.height}mm</span>` : ''}
                 <span style="font-size:12px;font-weight:600;color:var(--accent)">${(item.area||0).toFixed(2)} sqft</span>
-                <button onclick="deleteOpening(${item.id})"
-                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px"
-                    onmouseover="this.style.color='var(--destructive)'"
-                    onmouseout="this.style.color='var(--text-muted)'">✕</button>
+                <button class="hover-danger" onclick="deleteOpening(${item.id})"
+                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
         `).join('');
     }
@@ -1743,22 +1730,22 @@ async function loadVendorShortlist() {
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <span style="font-size:13px;color:var(--text-muted)">Vendors shortlisted for this project</span>
-            <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:12.5px">+ Add Vendor</button>
+            <button class="add-btn" onclick="openVendorModal()" style="padding:7px 14px;font-size:13px">+ Add Vendor</button>
         </div>
     `;
     
     if (shortlist.length === 0) {
         html += '<p style="color:var(--text-muted);font-size:13px">No vendors shortlisted yet.</p>';
     } else {
-        let statusColors = { 'Approved': '#2E4F42', 'Pending': '#8A6A2E', 'Rejected': '#C0392B' };
+        let statusColors = { 'Approved': '#2E4F42', 'Pending': '#7A5C22', 'Rejected': '#B3362B' };
         html += '<table class="list-table"><thead><tr><th>Supplier</th><th>Category</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>';
         shortlist.forEach(function(vendor) {
             html += `<tr>
-                <td style="font-weight:500">${vendor.supplierName}${vendor.category ? ` <span style="font-size:10.5px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;margin-left:6px">${vendor.category}</span>` : ''}</td>
+                <td style="font-weight:500">${vendor.supplierName}${vendor.category ? ` <span style="font-size:12px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;margin-left:6px">${vendor.category}</span>` : ''}</td>
                 <td style="color:var(--text-muted)">${vendor.category || '—'}</td>
-                <td><span style="font-size:11px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
+                <td><span style="font-size:12px;font-weight:600;color:${statusColors[vendor.status]};background:${statusColors[vendor.status]}18;padding:3px 8px;border-radius:4px">${vendor.status}</span></td>
                 <td style="color:var(--text-secondary)">${vendor.notes || '—'}</td>
-                <td><button onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onmouseover="this.style.color='var(--destructive)'" onmouseout="this.style.color='var(--text-muted)'">✕</button></td>
+                <td><button class="hover-danger" onclick="removeVendor(${vendor.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td>
             </tr>`;
         });
         html += '</tbody></table>';
@@ -1894,7 +1881,7 @@ updateCartCount();
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <h2 id="opening-modal-title" style="margin:0">Add Door</h2>
             <button onclick="document.getElementById('opening-modal').classList.remove('open')"
-                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
 
         <!-- Existing items list -->
@@ -1902,20 +1889,20 @@ updateCartCount();
 
         <!-- Add new item form -->
         <div id="opening-add-form" style="border-top:1px solid var(--border);padding-top:16px">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px">Add New</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px">Add New</div>
             <div style="display:flex;flex-direction:column;gap:8px">
                 <input type="text" id="opening-name" placeholder="Name (e.g. Main Door, Bay Window)"
                     style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)">
                 
                 <div id="opening-dimension-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                     <div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">Width (mm)</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:3px">Width (mm)</div>
                         <input type="number" id="opening-width" placeholder="e.g. 900"
                             style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)"
                             oninput="updateOpeningArea()">
                     </div>
                     <div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">Height (mm)</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:3px">Height (mm)</div>
                         <input type="number" id="opening-height" placeholder="e.g. 2100"
                             style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)"
                             oninput="updateOpeningArea()">
@@ -1923,7 +1910,7 @@ updateCartCount();
                 </div>
 
                 <div id="opening-area-field" style="display:none">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">Area (sqft)</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:3px">Area (sqft)</div>
                     <input type="number" id="opening-area" placeholder="e.g. 12.5"
                         style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg)">
                 </div>
@@ -1931,7 +1918,7 @@ updateCartCount();
                 <div id="opening-calc-preview" style="display:none;font-size:12px;color:var(--accent);font-weight:600;padding:4px 0"></div>
 
                 <div id="opening-type-field" style="display:none">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Type</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Type</div>
                     <div style="display:flex;gap:8px">
                         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
                             <input type="radio" name="opening-item-type" value="exclusion" checked style="accent-color:var(--accent)">

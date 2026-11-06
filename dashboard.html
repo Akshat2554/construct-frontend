@@ -33,7 +33,7 @@
                 display: flex; align-items: center; justify-content: space-between;
                 padding: 14px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0;
             }
-            .dash-panel-title { font-size: 14px; font-weight: 700; color: var(--text-primary); font-family: 'Syne', sans-serif; }
+            .dash-panel-title { font-size:14px; font-weight: 700; color: var(--text-primary); font-family: 'Syne', sans-serif; }
             .dash-panel-body { padding: 12px 18px; overflow-y: auto; flex: 1; min-height: 0; }
         </style>
     </head>
@@ -41,7 +41,7 @@
 
     <div class="dash-main">
         <div style="margin-bottom:18px;flex-shrink:0">
-            <h1 id="dash-greeting" style="font-family:'Syne',sans-serif;margin:0 0 4px;font-size:22px"></h1>
+            <h1 id="dash-greeting" style="font-family:'Syne',sans-serif;margin:0 0 4px;font-size:24px"></h1>
             <span style="font-size:13px;color:var(--text-muted)" id="dash-date"></span>
         </div>
 
@@ -90,7 +90,7 @@
 
     <script src="topbar.js?v=2"></script>
 <script>
-    const statusColors = { 'Active': '#4ecb71', 'On Hold': '#f0a050', 'Completed': '#8892a4' };
+    const statusColors = { 'Active': '#355E45', 'On Hold': '#7A5C22', 'Completed': '#6B6963' };
 
     let currentUsername = sessionStorage.getItem('construct-user') || '';
 
@@ -109,9 +109,9 @@
     function statCard(label, value, accent, href) {
         let clickable = href ? `cursor:pointer;transition:border-color .15s` : '';
         return `
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;width:220px;box-sizing:border-box;${clickable}"
-                ${href ? `onclick="window.location.href='${href}'" onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'"` : ''}>
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">${label}</div>
+            <div class="hover-raise" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;width:220px;box-sizing:border-box;${clickable}"
+                ${href ? `onclick="window.location.href='${href}'"` : ''}>
+                <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:8px">${label}</div>
                 <div style="font-size:24px;font-weight:700;color:${accent || 'var(--text-primary)'};font-family:'Syne',sans-serif">${value}</div>
             </div>
         `;
@@ -158,9 +158,9 @@
 
         let cards = statCard('Active Projects', activeProjects.length);
         if (!isVisualizer()) {
-            cards += statCard('Pending Approvals', pendingApprovals, pendingApprovals > 0 ? '#e05252' : 'var(--text-primary)');
+            cards += statCard('Pending Approvals', pendingApprovals, pendingApprovals > 0 ? '#B3362B' : 'var(--text-primary)');
         }
-        cards += statCard('Pending Tasks', pendingTasksCount, pendingTasksCount > 0 ? '#f0a050' : 'var(--text-primary)');
+        cards += statCard('Pending Tasks', pendingTasksCount, pendingTasksCount > 0 ? '#7A5C22' : 'var(--text-primary)');
         if (isAdmin() && teamCount !== null) {
             cards += statCard('Team', teamCount, 'var(--text-primary)', 'users.html');
         }
@@ -195,7 +195,7 @@
                 </div>
                 <div style="display:flex;align-items:center;gap:10px">
                     ${project.budget && !isVisualizer() ? `<span style="font-size:13px;font-weight:600;color:var(--text-primary)">₹${Number(project.budget).toLocaleString('en-IN')}</span>` : ''}
-                    <span style="font-size:11px;font-weight:600;color:${statusColors[project.status] || 'var(--text-muted)'};background:${statusColors[project.status] || 'var(--text-muted)'}18;padding:3px 8px;border-radius:4px">${project.status || '—'}</span>
+                    <span style="font-size:12px;font-weight:600;color:${statusColors[project.status] || 'var(--text-muted)'};background:${statusColors[project.status] || 'var(--text-muted)'}18;padding:3px 8px;border-radius:4px">${project.status || '—'}</span>
                 </div>
             </div>
         `).join('');
@@ -222,11 +222,11 @@
         let projectName = id => (projects.find(p => p.id === id) || {}).name || '';
         container.innerHTML = logs.map(log => `
             <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-                <div style="font-size:12.5px;color:var(--text-primary)">
+                <div style="font-size:13px;color:var(--text-primary)">
                     <strong>${log.username || 'Someone'}</strong> ${log.action || 'made a change'}
                     ${log.details ? ` — ${log.details}` : ''}
                 </div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">
                     ${projectName(log.projectId) ? projectName(log.projectId) + ' · ' : ''}${timeAgo(log.timestamp)}
                 </div>
             </div>
@@ -289,11 +289,11 @@
                 <div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px">
                     <div style="min-width:0">
                         <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${group.category || '—'} <span style="font-weight:500;color:var(--text-muted)">· ${group.projectName || ''}</span></div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Requested by ${group.requestedBy || '—'}${when ? ' · ' + when : ''} · ${group.items.length} item${group.items.length > 1 ? 's' : ''}</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Requested by ${group.requestedBy || '—'}${when ? ' · ' + when : ''} · ${group.items.length} item${group.items.length > 1 ? 's' : ''}</div>
                     </div>
                     <div style="display:flex;gap:6px;flex-shrink:0">
-                        <button onclick="approveGroupPreview(${idx})" style="padding:5px 12px;border:none;border-radius:6px;background:var(--success);color:white;font-size:11.5px;font-weight:600;cursor:pointer">Approve</button>
-                        <button onclick="rejectGroupPreview(${idx})" style="padding:5px 12px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:11.5px;font-weight:600;cursor:pointer">Reject</button>
+                        <button onclick="approveGroupPreview(${idx})" style="padding:5px 12px;border:none;border-radius:6px;background:var(--success);color:white;font-size:12px;font-weight:600;cursor:pointer">Approve</button>
+                        <button onclick="rejectGroupPreview(${idx})" style="padding:5px 12px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:12px;font-weight:600;cursor:pointer">Reject</button>
                     </div>
                 </div>
             `;
@@ -336,7 +336,7 @@
         container.innerHTML = open.map(task => `
             <div style="padding:10px 0;border-bottom:1px solid var(--border)">
                 <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${task.title}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:3px">
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">
                     ${task.assignedBy && task.assignedBy !== currentUsername ? 'Assigned by ' + task.assignedBy : 'Personal task'}
                     ${task.dueDate ? ' · Due ' + task.dueDate : ''}
                 </div>

@@ -25,8 +25,8 @@
                         <input type="search" placeholder="Search products" aria-label="Search products">
                     </div>
                     <div class="view-toggle">
-                        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
-                        <button id="list-view-btn" class="view-toggle-btn " onclick="setView('list')">☰ List</button>
+                        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Grid</button>
+                        <button id="list-view-btn" class="view-toggle-btn " onclick="setView('list')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> List</button>
                     </div>
                 </div>
                 <div class="product-grid" id="product-grid"></div>
@@ -48,38 +48,38 @@
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
                     <h2 id="pd-name" style="font-size:18px;max-width:480px"></h2>
                     <button onclick="document.getElementById('product-detail-modal').classList.remove('open')"
-                        style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0">✕</button>
+                        style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                 </div>
         
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
                     <div>
-                        <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Brand</div>
-                        <div id="pd-brand" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        <div class="label-caps">Brand</div>
+                        <div id="pd-brand" style="font-size:14px;color:var(--text-primary)"></div>
                     </div>
                     <div>
-                        <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Code</div>
-                        <div id="pd-code" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        <div class="label-caps">Code</div>
+                        <div id="pd-code" style="font-size:14px;color:var(--text-primary)"></div>
                     </div>
                     <div>
-                        <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Dimensions</div>
-                        <div id="pd-dimensions" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        <div class="label-caps">Dimensions</div>
+                        <div id="pd-dimensions" style="font-size:14px;color:var(--text-primary)"></div>
                     </div>
                     <div>
-                        <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Unit</div>
-                        <div id="pd-unit" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        <div class="label-caps">Unit</div>
+                        <div id="pd-unit" style="font-size:14px;color:var(--text-primary)"></div>
                     </div>
                     <div>
-                        <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Availability</div>
-                        <div id="pd-availability" style="font-size:13.5px;color:var(--text-primary)"></div>
+                        <div class="label-caps">Availability</div>
+                        <div id="pd-availability" style="font-size:14px;color:var(--text-primary)"></div>
                     </div>
                     <div>
-                        <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Price</div>
+                        <div class="label-caps">Price</div>
                         <div id="pd-price" style="font-size:18px;font-weight:700;color:var(--accent)"></div>
                     </div>
                 </div>
         
                 <div id="pd-description-section" style="display:none;margin-bottom:16px">
-                    <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Description / Specification</div>
+                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:8px">Description / Specification</div>
                     <div id="pd-description" style="font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;white-space:pre-wrap;max-height:200px;overflow-y:auto"></div>
                 </div>
         
@@ -107,7 +107,7 @@
 
                 if (products.length > 0) {
                     let header = document.createElement('div');
-                    header.style.cssText = 'grid-column:1/-1;font-size:15px;font-weight:600;color:#1a1f2e;margin:16px 0 8px';
+                    header.style.cssText = 'grid-column:1/-1;font-size:16px;font-weight:600;color:var(--text-primary);margin:16px 0 8px';
                     header.textContent = 'Products';
                     grid.appendChild(header);
 
@@ -120,7 +120,7 @@
                 }
 
                 if (products.length === 0) {
-                grid.innerHTML = '<p style="color:#64748b;padding:20px">No catalogs or products uploaded yet.</p>';
+                grid.innerHTML = '<p style="color:var(--text-muted);padding:20px">No catalogs or products uploaded yet.</p>';
             }
             }
 
@@ -164,7 +164,7 @@
             <div class="product-tile-image">
                 ${product.imageURL
                     ? `<img src="${product.imageURL}" alt="${product.name}">`
-                    : `<div class="product-tile-placeholder">📦</div>`}
+                    : `<div class="product-tile-placeholder"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`}
             </div>
             <div class="product-tile-body">
                 <div class="product-tile-name">${product.name}</div>
@@ -217,29 +217,23 @@ function buildCartControl(productId, qty) {
             onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
     }
     
-    let compareBtn = `<button onclick="event.stopPropagation(); addToCompare(${productId})"
+    let compareBtn = `<button class="hover-accent" onclick="event.stopPropagation(); addToCompare(${productId})"
         title="Compare"
-        style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">⇄</button>`;
+        style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 16V4M3 8l4-4 4 4M17 8v12M21 16l-4 4-4-4"/></svg></button>`;
     
     if (qty > 0) {
         return `
             <div style="display:flex;align-items:center;gap:4px" onclick="event.stopPropagation()">
                 ${compareBtn}
                 <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden">
-                    <button onclick="handleDecrease(${productId})"
-                        style="width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                        onmouseover="this.style.background='var(--bg)'"
-                        onmouseout="this.style.background='transparent'">−</button>
+                    <button class="hover-bg" onclick="handleDecrease(${productId})"
+                        style="width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
                     <input type="number" value="${qty}" min="1"
                         style="width:32px;height:22px;border:none;text-align:center;font-family:inherit;font-size:12px;font-weight:600;color:var(--text-primary);background:transparent;outline:none;-moz-appearance:textfield;appearance:textfield"
                         onchange="handleQtyInput(${productId}, this.value)"
                         onclick="event.stopPropagation()">
-                    <button onclick="handleIncrease(${productId})"
-                        style="width:22px;height:22px;border:none;background:transparent;color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                        onmouseover="this.style.background='var(--bg)'"
-                        onmouseout="this.style.background='transparent'">+</button>
+                    <button class="hover-bg" onclick="handleIncrease(${productId})"
+                        style="width:22px;height:22px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
                 </div>
             </div>
         `;
@@ -344,7 +338,7 @@ async function renderProductsList(grid, products) {
             <td>
                 ${product.imageURL
                     ? `<img src="${product.imageURL}" alt="${product.name}" class="list-thumb">`
-                    : `<div class="list-thumb-placeholder">📦</div>`}
+                    : `<div class="list-thumb-placeholder"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`}
             </td>
             <td style="font-weight:500">${product.name}</td>
             <td>${product.brandName || '—'}</td>
@@ -435,7 +429,7 @@ function updateCompareTray() {
         chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;white-space:nowrap;flex-shrink:0';
         chip.innerHTML = `
             <span style="font-size:12px;color:var(--text-primary);font-weight:500">${product.name.substring(0, 30)}${product.name.length > 30 ? '...' : ''}</span>
-            <button onclick="removeFromCompare(${product.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:0">✕</button>
+            <button onclick="removeFromCompare(${product.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:0" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         `;
         items.appendChild(chip);
     });
@@ -467,7 +461,7 @@ function openCompareView() {
     
     // Header row — product names
     let headerLabel = document.createElement('div');
-    headerLabel.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:flex-end;padding-bottom:8px;border-bottom:2px solid var(--border)';
+    headerLabel.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;display:flex;align-items:flex-end;padding-bottom:8px;border-bottom:2px solid var(--border)';
     headerLabel.textContent = '';
     grid.appendChild(headerLabel);
     
@@ -476,7 +470,7 @@ function openCompareView() {
         header.style.cssText = 'padding-bottom:8px;border-bottom:2px solid var(--accent);text-align:center';
         header.innerHTML = `
             <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${product.name.substring(0, 40)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${product.brandName || '—'}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${product.brandName || '—'}</div>
         `;
         grid.appendChild(header);
     });
@@ -495,7 +489,7 @@ function openCompareView() {
             if (field.type === 'image') {
                 cell.innerHTML = product.imageURL 
                     ? `<img src="${product.imageURL}" style="width:80px;height:80px;object-fit:contain;border-radius:6px">`
-                    : `<div style="width:80px;height:80px;background:var(--bg);border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:24px">📦</div>`;
+                    : `<div style="width:80px;height:80px;background:var(--bg);border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:24px"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`;
             } else if (field.type === 'price') {
                 cell.innerHTML = `<span style="font-size:16px;font-weight:700;color:var(--accent)">₹${(product[field.key] || 0).toLocaleString('en-IN')}</span>`;
             } else {
@@ -556,7 +550,7 @@ function openProductDetail(product) {
 
         <!-- Compare Tray -->
 <div id="compare-tray" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 24px;z-index:500;display:flex;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
-    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Comparing</span>
+    <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;white-space:nowrap">Comparing</span>
     <div id="compare-tray-items" style="display:flex;gap:8px;flex:1;overflow-x:auto"></div>
     <button onclick="clearCompare()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">Clear</button>
     <button id="compare-btn" onclick="openCompareView()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:none">Compare →</button>
@@ -568,7 +562,7 @@ function openProductDetail(product) {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <h2 style="margin:0">Compare Products</h2>
             <button onclick="document.getElementById('compare-modal').classList.remove('open')"
-                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
         <div id="compare-grid" style="display:grid;gap:16px;overflow-x:auto"></div>
     </div>

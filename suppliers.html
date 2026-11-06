@@ -156,7 +156,7 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
                 let container = document.getElementById('supplier-container');
 
                 let header = document.createElement('div');
-                header.style.cssText = 'font-size:15px;font-weight:600;color:#1a1f2e;margin:20px 0 10px';
+                header.style.cssText = 'font-size:16px;font-weight:600;color:var(--text-primary);margin:20px 0 10px';
                 header.textContent = title;
                 container.appendChild(header);
 
@@ -242,7 +242,7 @@ btn.innerHTML = `
     <span class="material-symbols-outlined" style="font-size:24px;display:block;margin-bottom:4px">
     ${filterIcons[subcat.name] || 'category'}
 </span>
-    <span style="font-size:11px">${subcat.name}</span>
+    <span style="font-size:12px">${subcat.name}</span>
 `;
 btn.addEventListener('click', function() {
     let subcatId = subcat.id;

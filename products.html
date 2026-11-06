@@ -24,8 +24,8 @@
                 </div>
                 <div style="display:flex;align-items:center;gap:10px">
                     <div class="view-toggle">
-                        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')">⊞ Grid</button>
-                        <button id="list-view-btn" class="view-toggle-btn" onclick="setView('list')">☰ List</button>
+                        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Grid</button>
+                        <button id="list-view-btn" class="view-toggle-btn" onclick="setView('list')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> List</button>
                     </div>
                     <div style="position:relative">
                         <button class="add-btn" id="add-menu-btn" style="width:36px;height:36px;padding:0;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation(); document.getElementById('add-menu-dropdown').classList.toggle('open')">+</button>
@@ -63,40 +63,40 @@
     <div class="modal-overlay" id="mapping-modal">
         <div class="modal">
             <h2>Map Your Columns</h2>
-            <p style="font-size:13px;color:#6b7280;margin-bottom:8px">Match your Excel columns to product fields</p>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px">Match your Excel columns to product fields</p>
 
             <div style="display:flex;flex-direction:column;gap:10px">
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Product Number</span>
-                    <select id="map-productNumber" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-productNumber" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Brand</span>
-                    <select id="map-brand" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-brand" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Name</span>
-                    <select id="map-name" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-name" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Description</span>
-                    <select id="map-description" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-description" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Dimensions</span>
-                    <select id="map-dimensions" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-dimensions" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Unit</span>
-                    <select id="map-unit" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-unit" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Price</span>
-                    <select id="map-price" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-price" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px">
                     <span style="width:130px;font-size:13px">Availability</span>
-                    <select id="map-availability" style="flex:1;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"></select>
+                    <select id="map-availability" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
                     <span style="width:120px;font-size:13px;color:var(--text-primary)">Image URL</span>
@@ -118,7 +118,7 @@
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
                 <h2 id="pd-name" style="font-size:18px;max-width:680px"></h2>
                 <button onclick="document.getElementById('product-detail-modal').classList.remove('open')"
-                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0">✕</button>
+                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);flex-shrink:0" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
     
             <div style="display:flex;gap:0">
@@ -129,34 +129,34 @@
                 <div id="pd-details-panel" style="flex:1">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
                         <div>
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Brand</div>
-                            <div id="pd-brand" style="font-size:13.5px;color:var(--text-primary)"></div>
+                            <div class="label-caps">Brand</div>
+                            <div id="pd-brand" style="font-size:14px;color:var(--text-primary)"></div>
                         </div>
                         <div>
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Code</div>
-                            <div id="pd-code" style="font-size:13.5px;color:var(--text-primary)"></div>
+                            <div class="label-caps">Code</div>
+                            <div id="pd-code" style="font-size:14px;color:var(--text-primary)"></div>
                         </div>
                         <div>
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Dimensions</div>
-                            <div id="pd-dimensions" style="font-size:13.5px;color:var(--text-primary)"></div>
+                            <div class="label-caps">Dimensions</div>
+                            <div id="pd-dimensions" style="font-size:14px;color:var(--text-primary)"></div>
                         </div>
                         <div>
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Unit</div>
-                            <div id="pd-unit" style="font-size:13.5px;color:var(--text-primary)"></div>
+                            <div class="label-caps">Unit</div>
+                            <div id="pd-unit" style="font-size:14px;color:var(--text-primary)"></div>
                         </div>
                         <div>
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Availability</div>
-                            <div id="pd-availability" style="font-size:13.5px;color:var(--text-primary)"></div>
+                            <div class="label-caps">Availability</div>
+                            <div id="pd-availability" style="font-size:14px;color:var(--text-primary)"></div>
                         </div>
                         <div>
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Price</div>
+                            <div class="label-caps">Price</div>
                             <div id="pd-price" style="font-size:18px;font-weight:700;color:var(--accent)"></div>
                         </div>
                     </div>
     
                     <div id="pd-description-section" style="display:none;margin-bottom:16px">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Description</div>
+                            <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Description</div>
                             <button class="desc-toggle" onclick="let d=document.getElementById('pd-description'); d.style.display=d.style.display==='none'?'block':'none'; this.textContent=d.style.display==='none'?'Show':'Hide'"
                                 style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit">Show</button>
                         </div>
@@ -183,21 +183,21 @@
             <input type="number" id="prod-price" placeholder="Price">
             <input type="text" id="prod-brand" placeholder="Brand">
             <input type="text" id="prod-subcategory" placeholder="Subcategory (e.g. Office Furniture)">
-            <div style="font-size:11px;color:var(--text-muted);margin:-6px 0 4px 2px">When this product is added to a BOQ, it's placed straight into this section instead of the general list.</div>
+            <div style="font-size:12px;color:var(--text-muted);margin:-6px 0 4px 2px">When this product is added to a BOQ, it's placed straight into this section instead of the general list.</div>
             <div id="image-drop-zone"
-    style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative"
+    style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease;position:relative"
     ondragover="event.preventDefault(); this.style.borderColor='var(--accent)'; this.style.background='var(--accent-glow)'"
     ondragleave="this.style.borderColor='var(--border)'; this.style.background='transparent'"
     ondrop="handleImageDrop(event)">
     <div id="image-preview" style="margin-bottom:8px">
-        <div style="font-size:28px">🖼️</div>
-        <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">Drag & drop product image here</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">or click to browse</div>
+        <div style="font-size:28px"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Drag & drop product image here</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">or click to browse</div>
     </div>
     <input type="file" id="image-file-input" accept="image/*" style="display:none" onchange="handleImageFile(this)">
 </div>
             <div class="modal-buttons">
-                <button id="delete-product-btn" style="display:none;background:#ef4444;color:white;margin-right:auto">Delete</button>
+                <button id="delete-product-btn" style="display:none;background:var(--destructive);color:white;margin-right:auto">Delete</button>
                 <button id="cancel-btn">Cancel</button>
                 <button id="confirm-btn">Add</button>
             </div>
@@ -251,14 +251,14 @@ if (addingToRoom) {
             grid.innerHTML = '';
 
             if (catalogs.length > 0) {
-                grid.innerHTML += `<div style="grid-column:1/-1;font-size:15px;font-weight:600;color:#1a1f2e;margin-bottom:8px">Catalogs</div>`;
+                grid.innerHTML += `<div style="grid-column:1/-1;font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Catalogs</div>`;
 
                 let pdfRow = document.createElement('div');
                 pdfRow.style.cssText = 'grid-column:1/-1;display:flex;gap:16px;overflow-x:auto;padding-bottom:8px';
 
                 catalogs.forEach(function(catalog) {
                     let card = document.createElement('div');
-                    card.style.cssText = 'min-width:200px;background:white;border:1px solid #edf0f5;border-radius:12px;overflow:hidden;flex-shrink:0';
+                    card.style.cssText = 'min-width:200px;background:white;border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;flex-shrink:0';
                     card.innerHTML = `
     <div style="position:relative">
         <iframe 
@@ -269,7 +269,7 @@ if (addingToRoom) {
         </iframe>
         <button class="dots-btn" onclick="deleteCatalog(${catalog.id})" 
             style="position:absolute;top:6px;right:6px;background:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2);font-size:16px"
-            title="Delete catalog">✕</button>
+            title="Delete catalog" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div style="padding:10px 12px">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${catalog.displayName}</div>
@@ -284,7 +284,7 @@ if (addingToRoom) {
 
             if (products.length > 0) {
                 let header = document.createElement('div');
-                header.style.cssText = 'grid-column:1/-1;font-size:15px;font-weight:600;color:#1a1f2e;margin:16px 0 8px';
+                header.style.cssText = 'grid-column:1/-1;font-size:16px;font-weight:600;color:var(--text-primary);margin:16px 0 8px';
                 header.textContent = 'Products';
                 grid.appendChild(header);
 
@@ -296,7 +296,7 @@ if (addingToRoom) {
             }
 
             if (catalogs.length === 0 && products.length === 0) {
-                grid.innerHTML = '<p style="color:#64748b;padding:20px">No catalogs or products uploaded yet.</p>';
+                grid.innerHTML = '<p style="color:var(--text-muted);padding:20px">No catalogs or products uploaded yet.</p>';
             }
         }
 
@@ -343,7 +343,7 @@ if (addingToRoom) {
     <div class="product-tile-image">
         ${product.imageURL
             ? `<img src="${product.imageURL}" alt="${product.name}">`
-            : `<div class="product-tile-placeholder">📦</div>`}
+            : `<div class="product-tile-placeholder"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`}
         <button class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button>
     </div>
     <div class="product-tile-body">
@@ -482,7 +482,7 @@ function openProductDetail(product) {
                     <td>
                         ${product.imageURL
                             ? `<img src="${product.imageURL}" alt="${product.name}" class="list-thumb">`
-                            : `<div class="list-thumb-placeholder">📦</div>`}
+                            : `<div class="list-thumb-placeholder"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`}
                     </td>
                     <td style="font-weight:500">${product.name}</td>
                     <td>${product.brandName || '—'}</td>
@@ -490,7 +490,7 @@ function openProductDetail(product) {
                     <td>${product.dimensions || '—'}</td>
                     <td>${product.unit || '—'}</td>
                     <td>${product.availability || '—'}</td>
-                    <td style="color:#e8742a;font-weight:600">₹${product.price}</td>
+                    <td style="color:var(--warning);font-weight:600">₹${product.price}</td>
                     <td><button class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button></td>
                     <td data-product-id="${product.id}">${buildCartControl(product.id, qty)}</td>
                 `;
@@ -743,29 +743,23 @@ function buildCartControl(productId, qty) {
             onclick="event.stopPropagation(); handleAddToCart(${productId})">+</button>`;
     }
     
-    let compareBtn = `<button onclick="event.stopPropagation(); addToCompare(${productId})"
+    let compareBtn = `<button class="hover-accent" onclick="event.stopPropagation(); addToCompare(${productId})"
         title="Compare"
-        style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">⇄</button>`;
+        style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 16V4M3 8l4-4 4 4M17 8v12M21 16l-4 4-4-4"/></svg></button>`;
     
     if (qty > 0) {
         return `
             <div style="display:flex;align-items:center;gap:4px" onclick="event.stopPropagation()">
                 ${compareBtn}
                 <div style="display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden">
-                    <button onclick="handleDecrease(${productId})"
-                        style="width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                        onmouseover="this.style.background='var(--bg)'"
-                        onmouseout="this.style.background='transparent'">−</button>
+                    <button class="hover-bg" onclick="handleDecrease(${productId})"
+                        style="width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
                     <input type="number" value="${qty}" min="1"
                         style="width:32px;height:22px;border:none;text-align:center;font-family:inherit;font-size:12px;font-weight:600;color:var(--text-primary);background:transparent;outline:none;-moz-appearance:textfield;appearance:textfield"
                         onchange="handleQtyInput(${productId}, this.value)"
                         onclick="event.stopPropagation()">
-                    <button onclick="handleIncrease(${productId})"
-                        style="width:22px;height:22px;border:none;background:transparent;color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                        onmouseover="this.style.background='var(--bg)'"
-                        onmouseout="this.style.background='transparent'">+</button>
+                    <button class="hover-bg" onclick="handleIncrease(${productId})"
+                        style="width:22px;height:22px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
                 </div>
             </div>
         `;
@@ -859,7 +853,7 @@ async function uploadProductImage(file) {
     // Show preview
     document.getElementById('image-preview').innerHTML = `
         <img src="${imageUrl}" style="max-height:120px;max-width:100%;border-radius:6px;object-fit:contain">
-        <div style="font-size:11px;color:var(--success);margin-top:6px">✓ Image uploaded</div>
+        <div style="font-size:12px;color:var(--success);margin-top:6px">✓ Image uploaded</div>
     `;
     zone.style.borderColor = 'var(--success)';
 }
@@ -908,7 +902,7 @@ function updateCompareTray() {
         chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;white-space:nowrap;flex-shrink:0';
         chip.innerHTML = `
             <span style="font-size:12px;color:var(--text-primary);font-weight:500">${product.name.substring(0, 30)}${product.name.length > 30 ? '...' : ''}</span>
-            <button onclick="removeFromCompare(${product.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:0">✕</button>
+            <button onclick="removeFromCompare(${product.id})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;line-height:1;padding:0" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         `;
         items.appendChild(chip);
     });
@@ -940,7 +934,7 @@ function openCompareView() {
     
     // Header row — product names
     let headerLabel = document.createElement('div');
-    headerLabel.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:flex-end;padding-bottom:8px;border-bottom:2px solid var(--border)';
+    headerLabel.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;display:flex;align-items:flex-end;padding-bottom:8px;border-bottom:2px solid var(--border)';
     headerLabel.textContent = '';
     grid.appendChild(headerLabel);
     
@@ -949,7 +943,7 @@ function openCompareView() {
         header.style.cssText = 'padding-bottom:8px;border-bottom:2px solid var(--accent);text-align:center';
         header.innerHTML = `
             <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${product.name.substring(0, 40)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${product.brandName || '—'}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${product.brandName || '—'}</div>
         `;
         grid.appendChild(header);
     });
@@ -968,7 +962,7 @@ function openCompareView() {
             if (field.type === 'image') {
                 cell.innerHTML = product.imageURL 
                     ? `<img src="${product.imageURL}" style="width:80px;height:80px;object-fit:contain;border-radius:6px">`
-                    : `<div style="width:80px;height:80px;background:var(--bg);border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:24px">📦</div>`;
+                    : `<div style="width:80px;height:80px;background:var(--bg);border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:24px"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`;
             } else if (field.type === 'price') {
                 cell.innerHTML = `<span style="font-size:16px;font-weight:700;color:var(--accent)">₹${(product[field.key] || 0).toLocaleString('en-IN')}</span>`;
             } else {
@@ -1007,14 +1001,14 @@ let zone = document.getElementById('image-drop-zone');
 if (prod.imageURL) {
     preview.innerHTML = `
         <img src="${prod.imageURL}" style="max-height:120px;max-width:100%;border-radius:6px;object-fit:contain">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Current image — drop new one to replace</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Current image — drop new one to replace</div>
     `;
     zone.style.borderColor = 'var(--success)';
 } else {
     preview.innerHTML = `
-        <div style="font-size:28px">🖼️</div>
-        <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">Drag & drop product image here</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">or click to browse</div>
+        <div style="font-size:28px"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Drag & drop product image here</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">or click to browse</div>
     `;
     zone.style.borderColor = 'var(--border)';
 }
@@ -1074,7 +1068,7 @@ window._existingImageUrl = prod.imageURL || null;
 
     <!-- Compare Tray -->
 <div id="compare-tray" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 24px;z-index:500;display:flex;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
-    <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Comparing</span>
+    <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;white-space:nowrap">Comparing</span>
     <div id="compare-tray-items" style="display:flex;gap:8px;flex:1;overflow-x:auto"></div>
     <button onclick="clearCompare()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">Clear</button>
     <button id="compare-btn" onclick="openCompareView()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:none">Compare →</button>
@@ -1086,7 +1080,7 @@ window._existingImageUrl = prod.imageURL || null;
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <h2 style="margin:0">Compare Products</h2>
             <button onclick="document.getElementById('compare-modal').classList.remove('open')"
-                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
         <div id="compare-grid" style="display:grid;gap:16px;overflow-x:auto"></div>
     </div>

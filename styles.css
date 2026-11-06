@@ -440,6 +440,7 @@ label.add-btn { cursor: pointer; }
     .hover-danger:hover { color: var(--destructive) !important; border-color: var(--destructive) !important; }
     .hover-raise:hover { border-color: var(--border-strong) !important; box-shadow: var(--shadow-md); }
     .hover-bg:hover { background: var(--surface-raised) !important; }
+    .hover-text:hover { color: var(--text-primary) !important; }
     .link-btn:hover { color: var(--accent-hover); text-decoration: underline; }
 }
 
