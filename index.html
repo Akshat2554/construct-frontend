@@ -17,31 +17,31 @@
 <body>
 
     <div class="page-body">
-        <div class="main-content" style="flex:1">
-            <h1>Projects</h1>
-            <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;justify-content:space-between">
-                <div style="display:flex;gap:10px;align-items:center">
-                    <select id="filter-status" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="On Hold">On Hold</option>
-                        <option value="Completed">Completed</option>
-                    </select>
-                    <select id="filter-priority" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
-                        <option value="">All Priority</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
-                    <select id="sort-projects" onchange="loadProjects()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
-                        <option value="">Sort: Default</option>
-                        <option value="priority-high">Priority: High First</option>
-                        <option value="priority-low">Priority: Low First</option>
-                        <option value="name">Name A-Z</option>
-                        <option value="budget-high">Budget: High First</option>
-                    </select>
-                </div>
-                <button class="add-btn" id="add-btn">+ New Project</button>
+        <div class="main-content">
+            <div class="page-header">
+                <h1>Projects</h1>
+                <button class="add-btn" id="add-btn">+ New project</button>
+            </div>
+            <div class="filter-bar">
+                <select id="filter-status" onchange="loadProjects()" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="On Hold">On hold</option>
+                    <option value="Completed">Completed</option>
+                </select>
+                <select id="filter-priority" onchange="loadProjects()" aria-label="Filter by priority">
+                    <option value="">All priorities</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+                <select id="sort-projects" onchange="loadProjects()" aria-label="Sort projects">
+                    <option value="">Sort: default</option>
+                    <option value="priority-high">Priority: high first</option>
+                    <option value="priority-low">Priority: low first</option>
+                    <option value="name">Name A–Z</option>
+                    <option value="budget-high">Budget: high first</option>
+                </select>
             </div>
             <div id="projects-container"></div>
         </div>
@@ -52,40 +52,36 @@
         <div class="modal" style="width:620px;max-width:95vw">
             <h2 id="modal-title">New Project</h2>
             
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <input type="text" id="proj-name" placeholder="Project name">
-                <input type="text" id="proj-clientName" placeholder="Client name">
-                <input type="text" id="proj-location" placeholder="Site location">
-                <div style="display:flex;gap:8px">
-                    <select id="proj-status" style="flex:1">
-                        <option value="">Status</option>
-                        <option value="Active">Active</option>
-                        <option value="On Hold">On Hold</option>
-                        <option value="Completed">Completed</option>
-                    </select>
-                    <select id="proj-priority" style="flex:1">
-                        <option value="">Priority</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
+            <div class="form-grid">
+                <label class="field"><span class="field-label">Project name</span><input type="text" id="proj-name" placeholder="e.g. HTC office fit-out"></label>
+                <label class="field"><span class="field-label">Client</span><input type="text" id="proj-clientName" placeholder="Client name"></label>
+                <label class="field"><span class="field-label">Site location</span><input type="text" id="proj-location" placeholder="e.g. Whitefield, Bengaluru"></label>
+                <div class="form-grid-2">
+                    <label class="field"><span class="field-label">Status</span>
+                        <select id="proj-status">
+                            <option value="">Not set</option>
+                            <option value="Active">Active</option>
+                            <option value="On Hold">On hold</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </label>
+                    <label class="field"><span class="field-label">Priority</span>
+                        <select id="proj-priority">
+                            <option value="">Not set</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </label>
                 </div>
-                <div style="position:relative">
-                    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none">₹</span>
-                    <input type="number" id="proj-budget" placeholder="Budget" style="padding-left:24px;width:100%">
-                </div>
-                <div style="position:relative">
-                    <input type="number" id="proj-sft" placeholder="Area" style="padding-right:36px;width:100%">
-                    <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none">sqft</span>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.06em">Start Date</label>
-                    <input type="date" id="proj-startDate">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <label style="font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.06em">End Date</label>
-                    <input type="date" id="proj-endDate">
-                </div>
+                <label class="field"><span class="field-label">Budget</span>
+                    <span class="input-affix"><span class="affix-left">₹</span><input type="number" id="proj-budget" inputmode="decimal" placeholder="0" style="padding-left:26px;width:100%"></span>
+                </label>
+                <label class="field"><span class="field-label">Area</span>
+                    <span class="input-affix"><input type="number" id="proj-sft" inputmode="decimal" placeholder="0" style="padding-right:44px;width:100%"><span class="affix-right">sqft</span></span>
+                </label>
+                <label class="field"><span class="field-label">Start date</span><input type="date" id="proj-startDate"></label>
+                <label class="field"><span class="field-label">End date</span><input type="date" id="proj-endDate"></label>
             </div>
     
             <div class="modal-buttons" style="margin-top:16px">
@@ -100,7 +96,7 @@
     <div class="modal-overlay" id="access-modal">
         <div class="modal" style="width:420px">
             <h2>Manage Access</h2>
-            <p style="font-size:13px;color:var(--text-muted);margin-top:-6px">Who can see and work on this project.</p>
+            <p class="text-13 text-muted">Who can see and work on this project.</p>
             <div id="access-user-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
             <div class="modal-buttons">
                 <button id="access-modal-close">Done</button>
@@ -146,7 +142,9 @@
     container.innerHTML = '';
 
     if (projects.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted);padding:20px">No projects yet.</p>';
+        container.innerHTML = (statusFilter || priorityFilter)
+            ? '<div class="empty-state card"><strong>No projects match these filters</strong>Change the status or priority filter to see more.</div>'
+            : '<div class="empty-state card"><strong>No projects yet</strong>Create a project to start measuring rooms and building its BOQ.</div>';
         return;
     }
 
@@ -172,56 +170,41 @@
 
         // render card
         let card = document.createElement('div');
-        card.style.cssText = `background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:background-color .15s ease,border-color .15s ease,color .15s ease;`;
+        card.className = 'project-card card';
+        let safeName = (project.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        let statusBadge = project.status ? `<span class="badge" style="color:${statusColors[project.status] || 'var(--text-secondary)'};background:${(statusColors[project.status] || '#6B6963')}1A">${escapeHtml(project.status)}</span>` : '';
+        let priorityBadge = project.priority ? `<span class="badge" style="color:${priorityColors[project.priority] || 'var(--text-secondary)'};background:${(priorityColors[project.priority] || '#6B6963')}1A">${escapeHtml(project.priority)} priority</span>` : '';
+        let facts = [];
+        if (project.squareFootage) facts.push(['Area', Number(project.squareFootage).toLocaleString('en-IN') + ' sqft']);
+        if (project.budget && !isVisualizer()) facts.push(['Budget', formatINR(project.budget)]);
+        if (project.startDate) facts.push(['Timeline', project.startDate + ' – ' + (project.endDate || 'open')]);
         card.innerHTML = `
-    <div style="flex:1;cursor:pointer" onclick="selectProject(${project.id}, '${project.name}')">
-        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
-            <div style="font-size:16px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${project.name}</div>
-            ${project.clientName ? `<div style="font-size:13px;color:var(--text-muted)">${project.clientName}</div>` : ''}
+    <div class="project-main" onclick="selectProject(${project.id}, '${safeName}')" aria-label="Open ${escapeHtml(project.name)}">
+        <div class="project-title-row">
+            <h2 class="project-name">${escapeHtml(project.name)}</h2>
+            ${project.clientName ? `<span class="text-13 text-muted">${escapeHtml(project.clientName)}</span>` : ''}
         </div>
-
-        <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:12px;color:${statusColors[project.status] || 'var(--text-muted)'};background:${statusColors[project.status] || 'var(--text-muted)'}18;padding:3px 8px;border-radius:4px;font-weight:600">${project.status || '—'}</span>
-            <span style="font-size:12px;color:${priorityColors[project.priority] || 'var(--text-muted)'};background:${priorityColors[project.priority] || 'var(--text-muted)'}18;padding:3px 8px;border-radius:4px;font-weight:600">${project.priority || '—'} Priority</span>
-            ${project.location ? `<span style="font-size:12px;color:var(--text-muted)">· ${project.location}</span>` : ''}
-        </div>
-
-        <div style="display:flex;gap:24px;margin-bottom:12px">
-            ${project.squareFootage ? `
-                <div>
-                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:2px">Area</div>
-                    <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${Number(project.squareFootage).toLocaleString('en-IN')} sqft</div>
-                </div>` : ''}
-            ${project.budget && !isVisualizer() ? `
-                <div>
-                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:2px">Budget</div>
-                    <div style="font-size:14px;font-weight:600;color:var(--text-primary)">₹${Number(project.budget).toLocaleString('en-IN')}</div>
-                </div>` : ''}
-            ${project.startDate ? `
-                <div>
-                    <div style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:2px">Timeline</div>
-                    <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${project.startDate} → ${project.endDate || '?'}</div>
-                </div>` : ''}
-        </div>
-
-        <div style="display:flex;align-items:center;gap:10px">
-            <div style="flex:1;height:3px;background:var(--border);border-radius:99px;overflow:hidden">
-                <div style="height:100%;width:${progress}%;background:var(--accent);border-radius:99px;transition:width 0.3s"></div>
-            </div>
-            <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-weight:500">${confirmedCatsCount}/${totalCats} confirmed</span>
+        ${(statusBadge || priorityBadge || project.location) ? `
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            ${statusBadge}${priorityBadge}
+            ${project.location ? `<span class="text-12 text-muted">${escapeHtml(project.location)}</span>` : ''}
+        </div>` : ''}
+        ${facts.length ? `
+        <dl class="project-facts">
+            ${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}
+        </dl>` : ''}
+        <div class="project-progress">
+            ${totalCats > 0 ? `
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="${totalCats}" aria-valuenow="${confirmedCatsCount}" aria-label="BOQ categories confirmed"><div style="width:${progress}%"></div></div>
+            <span class="text-12 text-secondary tnum">${confirmedCatsCount} of ${totalCats} categories confirmed</span>
+            ` : `<span class="text-12 text-muted">No BOQ items yet</span>`}
         </div>
     </div>
 
-    <div style="display:flex;gap:8px;align-items:center;margin-left:20px;flex-shrink:0">
-        <button class="hover-accent" onclick="event.stopPropagation(); viewBOQ(${project.id}, '${project.name}')"
-            style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background-color .15s ease,border-color .15s ease,color .15s ease;white-space:nowrap">
-            View BOQ
-        </button>
+    <div class="project-actions">
+        <button class="btn btn-secondary" onclick="event.stopPropagation(); viewBOQ(${project.id}, '${safeName}')">View BOQ</button>
         ${isAdmin() ? `
-        <button class="hover-accent" onclick="event.stopPropagation(); openAccessModal(${project.id}, '${(project.name || '').replace(/'/g, "\\'")}')"
-            style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background-color .15s ease,border-color .15s ease,color .15s ease;white-space:nowrap">
-            Manage Access
-        </button>` : ''}
+        <button class="btn btn-secondary" onclick="event.stopPropagation(); openAccessModal(${project.id}, '${safeName}')">Manage access</button>` : ''}
         <button aria-label="Edit project" title="Edit project" class="dots-btn" onclick="event.stopPropagation(); editProject(${project.id})"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
 `;

@@ -15,13 +15,15 @@
 <body>
 
     <div class="page-body">
-        <div class="main-content" style="flex:1">
-            <div style="margin-bottom:20px">
-                <h1 style="margin-bottom:4px">Approvals</h1>
-                <span style="font-size:13px;color:var(--text-muted)">BOQ changes waiting on your sign-off, across every project</span>
+        <div class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Approvals</h1>
+                    <p class="page-subtitle">BOQ changes waiting on your sign-off, across every project</p>
+                </div>
             </div>
             <div id="approvals-container"></div>
-            <div id="approvals-empty" style="display:none;color:var(--text-muted);font-size:13px;padding:20px 0">No changes waiting for approval.</div>
+            <div id="approvals-empty" class="empty-state card" style="display:none"><strong>You're all caught up</strong>No BOQ changes are waiting for approval.</div>
         </div>
     </div>
 
@@ -83,7 +85,7 @@
             let pending = pendingLists.flat();
 
             container.innerHTML = '';
-            document.getElementById('approvals-empty').style.display = pending.length === 0 ? 'block' : 'none';
+            document.getElementById('approvals-empty').style.display = pending.length === 0 ? 'flex' : 'none';
             if (pending.length === 0) return;
 
             let groups = {};
@@ -101,7 +103,7 @@
 
             _approvalGroups.forEach(function(group, idx) {
                 let card = document.createElement('div');
-                card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden';
+                card.className = 'card'; card.style.cssText = 'margin-bottom:16px;overflow-x:auto';
 
                 let when = group.requestedAt ? new Date(group.requestedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
@@ -120,17 +122,17 @@
                 let rejectAction = `rejectGroup(${idx})`;
 
                 card.innerHTML = `
-                    <div style="padding:14px 16px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:12px">
+                    <div class="approval-head">
                         <div>
                             <div style="font-weight:600;color:var(--text-primary);font-size:14px">${group.category || '—'} <span style="font-weight:500;color:var(--text-muted)">· ${group.projectName || ''}</span></div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Requested by ${group.requestedBy || '—'}${when ? ' · ' + when : ''} · ${group.items.length} item${group.items.length > 1 ? 's' : ''}</div>
                         </div>
                         <div style="display:flex;gap:8px;flex-shrink:0">
-                            <button onclick="${approveAction}" style="padding:6px 16px;border:none;border-radius:6px;background:var(--success);color:white;font-size:13px;font-weight:600;cursor:pointer">Approve All</button>
-                            <button onclick="${rejectAction}" style="padding:6px 16px;border:none;border-radius:6px;background:var(--destructive);color:white;font-size:13px;font-weight:600;cursor:pointer">Reject All</button>
+                            <button onclick="${approveAction}" class="btn" style="background:var(--success);border-color:var(--success);color:#fff">Approve All</button>
+                            <button onclick="${rejectAction}" class="btn btn-danger-outline">Reject All</button>
                         </div>
                     </div>
-                    <table class="list-table" style="margin:0">
+                    <table class="list-table" style="border:none;border-radius:0">
                         <thead><tr><th>Item</th><th>Current</th><th>Requested</th></tr></thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>

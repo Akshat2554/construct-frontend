@@ -5,27 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign in — Construct</title>
     <link rel="stylesheet" href="styles.css?v=2">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-</head>
-<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)">
-    <div style="width:360px;padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md)">
-        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Construct</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:32px">Internal Procurement Platform</div>
-        
-        <div style="display:flex;flex-direction:column;gap:12px">
-            <input type="text" id="username" placeholder="Username"
-                style="padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none"
-                onfocus="this.style.borderColor='var(--accent)'"
-                onblur="this.style.borderColor='var(--border)'">
-            <input type="password" id="password" placeholder="Password"
-                style="padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none"
-                onfocus="this.style.borderColor='var(--accent)'"
-                onblur="this.style.borderColor='var(--border)'"
-                onkeydown="if(event.key==='Enter') login()">
-            <div id="error-msg" style="font-size:12px;color:var(--destructive);display:none">Incorrect username or password</div>
-            <button onclick="login()" class="add-btn" style="width:100%;padding:11px">Sign In</button>
+    </head>
+<body class="login-body">
+    <main class="login-card">
+        <div class="login-brand">
+            <span class="sb-logo-mark" aria-hidden="true">C</span>
+            <span class="sb-logo-text">Construct</span>
         </div>
-    </div>
+        <p class="login-sub">Internal Procurement Platform</p>
+
+        <form id="login-form" class="stack" style="gap:14px" novalidate>
+            <label class="field">
+                <span class="field-label">Username</span>
+                <input type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+            </label>
+            <label class="field">
+                <span class="field-label">Password</span>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+            </label>
+            <p id="error-msg" class="login-error" role="alert" style="display:none">Incorrect username or password</p>
+            <button type="submit" id="login-btn" class="btn btn-primary btn-block" style="min-height:42px;margin-top:4px">Sign in</button>
+        </form>
+    </main>
 
     <script>
         // Check if already logged in. Must check sessionStorage, not localStorage -
@@ -40,9 +41,28 @@
         // Clean up any stale flag so it can never cause this again.
         localStorage.removeItem('construct-auth');
 
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            login();
+        });
+
+        function showLoginError(msg) {
+            let el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
         async function login() {
     let username = document.getElementById('username').value.trim();
     let password = document.getElementById('password').value;
+    let btn = document.getElementById('login-btn');
+    document.getElementById('error-msg').style.display = 'none';
+    if (!username || !password) {
+        showLoginError('Enter your username and password');
+        return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
     
     try {
         let response = await fetch('https://construct-backend-production.up.railway.app/api/auth/login', {
@@ -59,10 +79,14 @@
             sessionStorage.setItem('construct-auth', 'true');
             window.location.replace('dashboard.html');
         } else {
-            document.getElementById('error-msg').style.display = 'block';
+            showLoginError('Incorrect username or password');
+            btn.disabled = false;
+            btn.textContent = 'Sign in';
         }
     } catch (e) {
-        document.getElementById('error-msg').style.display = 'block';
+        showLoginError("Couldn't reach the server. Check your connection and try again.");
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
     }
 }
     </script>

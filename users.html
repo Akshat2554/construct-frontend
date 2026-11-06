@@ -15,17 +15,17 @@
 <body>
 
     <div class="page-body">
-        <div class="main-content" style="flex:1">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="main-content">
+            <div class="page-header">
                 <div>
-                    <h1 style="margin-bottom:4px">Users</h1>
-                    <span style="font-size:13px;color:var(--text-muted)">Create accounts and manage who can see what</span>
+                    <h1>Users</h1>
+                    <p class="page-subtitle">Create accounts and choose who can see what</p>
                 </div>
-                <button class="add-btn" id="add-btn">+ New Account</button>
+                <button class="add-btn" id="add-btn">+ New account</button>
             </div>
 
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-                <table class="list-table" style="margin:0;width:100%">
+            <div class="table-wrap">
+                <table class="list-table">
                     <thead>
                         <tr>
                             <th>Username</th>
@@ -121,22 +121,24 @@
                 let isSelf = user.username === currentUsername;
                 let row = document.createElement('tr');
                 row.innerHTML = `
-                    <td style="font-weight:500">${user.username}${isSelf ? ' <span style="color:var(--text-muted);font-weight:400;font-size:12px">(you)</span>' : ''}</td>
+                    <td style="font-weight:500;white-space:nowrap">${user.username}${isSelf ? ' <span class="badge" style="margin-left:4px">You</span>' : ''}</td>
                     <td>
-                        <select data-username="${user.username}" class="role-select" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:${roleColors[user.role] || 'var(--text-primary)'};font-weight:600">
+                        <select data-username="${user.username}" class="role-select" aria-label="Role for ${user.username}" style="color:${roleColors[user.role] || 'var(--text-primary)'};font-weight:600;padding:5px 30px 5px 10px">
                             <option value="ADMIN" ${user.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
                             <option value="FINANCE" ${user.role === 'FINANCE' ? 'selected' : ''}>Finance</option>
                             <option value="VISUALIZER" ${user.role === 'VISUALIZER' ? 'selected' : ''}>Visualizer</option>
                             ${user.role === 'UNASSIGNED' ? '<option value="UNASSIGNED" selected>Unassigned</option>' : ''}
                         </select>
                     </td>
-                    <td style="color:var(--text-muted);font-size:13px">
+                    <td class="text-secondary" style="white-space:nowrap">
                         ${user.role === 'ADMIN' ? 'All projects' : `${assignedCount} project${assignedCount === 1 ? '' : 's'}`}
                     </td>
                     <td style="text-align:right;white-space:nowrap">
-                        <button class="nav-btn" style="font-size:12px;padding:5px 12px;${user.role === 'ADMIN' ? 'display:none' : ''}" onclick="openAccessModal('${user.username}')">Manage Access</button>
-                        <button class="nav-btn" style="font-size:12px;padding:5px 12px" onclick="openPasswordModal('${user.username}')">Reset Password</button>
-                        <button class="dots-btn" style="${isSelf ? 'display:none' : ''}" onclick="deleteUser('${user.username}')" title="Delete account" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                        <div class="row" style="justify-content:flex-end">
+                        <button class="btn btn-secondary btn-sm" style="${user.role === 'ADMIN' ? 'display:none' : ''}" onclick="openAccessModal('${user.username}')">Manage access</button>
+                        <button class="btn btn-secondary btn-sm" onclick="openPasswordModal('${user.username}')">Reset password</button>
+                        <button class="dots-btn hover-danger" style="${isSelf ? 'visibility:hidden' : ''}" onclick="deleteUser('${user.username}')" title="Delete account" aria-label="Delete ${user.username}'s account">${icon('trash')}</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
