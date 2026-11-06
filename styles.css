@@ -666,24 +666,53 @@ td > .ghost-input:only-child { font-size: var(--fs-13); }
 .login-art-brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
 .login-art-brand .sb-logo-mark { background: var(--shell-text-strong); color: var(--shell); width: 36px; height: 36px; font-size: 18px; }
 .login-art-brand .sb-logo-text { font-size: 24px; }
-.login-plan { width: min(100%, 560px); align-self: center; color: var(--shell-text-strong); position: relative; z-index: 1; }
-.plan-walls path, .plan-doors path, .plan-dims path { stroke-dasharray: 1200; stroke-dashoffset: 0; }
-.plan-dims, .plan-doors { opacity: 0.55; }
-.plan-labels { opacity: 0.7; }
+.login-plan { width: min(100%, 580px); align-self: center; color: var(--shell-text-strong); position: relative; z-index: 1; }
+.plan-walls path, .plan-doors path, .plan-dims path { stroke-dasharray: 1600; stroke-dashoffset: 0; }
+.plan-dims, .plan-doors { opacity: 0.5; }
+.plan-labels { opacity: 0.75; }
+.plan-labels .area { opacity: 0.35; }
+.plan-rooms .room { opacity: 0; }
+.plan-measured { opacity: 0.9; stroke-dasharray: 440; stroke-dashoffset: 440; }
+.plan-measured.v { stroke-dasharray: 270; stroke-dashoffset: 270; }
+.plan-laser { filter: drop-shadow(0 0 4px rgba(243, 239, 230, 0.9)); }
 .login-art-line {
     position: relative; z-index: 1;
     font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 3.2vw, 44px);
     line-height: 1.1; letter-spacing: -0.01em; max-width: 12ch; text-wrap: balance;
 }
+.login-art-line .w { transition: opacity var(--dur-base) ease; }
+
 @media (prefers-reduced-motion: no-preference) {
+    /* Intro: the plan draws itself once */
     .plan-walls path { animation: plan-draw 1.6s var(--ease-in-out) both; }
     .plan-doors path, .plan-dims path { animation: plan-draw 1.2s var(--ease-out) 0.9s both; }
     .plan-labels { animation: plan-fade 0.6s ease 1.6s both; }
     .login-card { animation: card-in 0.5s var(--ease-out) 0.15s both; }
+
+    /* Loop (12s): each room is measured in turn while its word lights up */
+    .plan-rooms .room, .plan-labels .area, .login-art-line .w { animation: 12s ease-in-out infinite both; }
+    .plan-rooms .room { animation-name: room-on; }
+    .plan-labels .area { animation-name: area-on; }
+    .login-art-line .w { animation-name: word-on; }
+    .r1, .a1, .w1 { animation-delay: 1.8s !important; }
+    .r2, .a2, .w2 { animation-delay: 4.8s !important; }
+    .r3, .a3, .w3 { animation-delay: 7.8s !important; }
+    .r4, .a4, .w4 { animation-delay: 10.8s !important; }
+
+    /* The dimension string fills in behind the laser dot */
+    .plan-measured { animation: measure-h 6s linear 1.8s infinite both; }
+    .plan-measured.v { animation-name: measure-v; }
 }
-@keyframes plan-draw { from { stroke-dashoffset: 1200; } }
+.login-art.is-done * { animation-play-state: paused !important; }
+
+@keyframes plan-draw { from { stroke-dashoffset: 1600; } }
 @keyframes plan-fade { from { opacity: 0; } }
 @keyframes card-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes room-on { 0%, 100% { opacity: 0; } 4%, 22% { opacity: 0.12; } 27% { opacity: 0; } }
+@keyframes area-on { 0%, 100% { opacity: 0.35; } 4%, 22% { opacity: 1; } 27% { opacity: 0.35; } }
+@keyframes word-on { 0%, 100% { opacity: 0.4; } 4%, 22% { opacity: 1; } 27% { opacity: 0.4; } }
+@keyframes measure-h { 0% { stroke-dashoffset: 440; } 40%, 48% { stroke-dashoffset: 0; opacity: 0.9; } 50%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes measure-v { 0%, 50% { stroke-dashoffset: 270; opacity: 0.9; } 90%, 98% { stroke-dashoffset: 0; opacity: 0.9; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 
 .login-card {
     align-self: center; justify-self: center;
@@ -1436,7 +1465,13 @@ td > .ghost-input:only-child { font-size: var(--fs-13); }
     .main-content .table-wrap > table { display: table; }
 
     .category-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-    .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    /* One product per row: image on the left, details on the right */
+    .product-grid { grid-template-columns: 1fr; gap: 10px; }
+    .product-tile-card { flex-direction: row; }
+    .product-tile-image { width: 112px; aspect-ratio: auto; flex-shrink: 0; align-self: stretch; min-height: 140px; }
+    .product-tile-dots { top: 6px; right: 6px; }
+    .product-tile-body { flex: 1; min-width: 0; padding: 12px 14px; }
+    .product-tile-footer { margin-top: 6px; padding-top: 8px; }
 
     .supplier-form-grid { flex-direction: column; gap: 10px; }
     .checkbox-grid { grid-template-columns: 1fr; }
