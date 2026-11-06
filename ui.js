@@ -121,10 +121,12 @@ function uiPrompt(message, defaultValue = '', opts = {}) {
         if (!root.querySelectorAll) return;
         let nodes = root.matches && root.matches(SELECTOR) ? [root] : [];
         nodes = nodes.concat(Array.from(root.querySelectorAll(SELECTOR)));
-        nodes.forEach(el => {
+        let clickable = root.matches && root.matches('[data-clickable]') ? [root] : [];
+        clickable = clickable.concat(Array.from(root.querySelectorAll('[data-clickable]')));
+        nodes.concat(clickable).forEach(el => {
             if (el.dataset.kb) return;
             el.dataset.kb = '1';
-            if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+            if (!el.hasAttribute('role') && el.tagName !== 'TR') el.setAttribute('role', 'button');
             if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
         });
     }
@@ -154,3 +156,10 @@ function uiPrompt(message, defaultValue = '', opts = {}) {
         open[open.length - 1].classList.remove('open');
     });
 })();
+
+// Indian-style grouping for money: ₹1,25,000
+function formatINR(value) {
+    let n = Number(value);
+    if (value === null || value === undefined || value === '' || isNaN(n)) return '—';
+    return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}

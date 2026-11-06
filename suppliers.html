@@ -16,9 +16,9 @@
     <div class="page-body">
         <div class="sidebar">
             <a href="catalog.html" class="back-btn">← Back to Catalog</a>
-            <a href="all-products.html" class="add-btn" style="width:100%;text-align:center;text-decoration:none;margin-top:8px">View All Products</a>
-            <button class="add-btn" id="add-btn" style="width:100%;margin-top:10px">+ Add Supplier</button>
-            <div id="filter-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;"></div>
+            <button class="add-btn btn-block" id="add-btn" style="margin-top:8px">+ Add supplier</button>
+            <a href="all-products.html" class="btn btn-secondary btn-block">View all products</a>
+            <div id="filter-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;"></div>
         </div>
 
         <div class="main-content">
@@ -144,6 +144,10 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
 
             let grid = document.getElementById('supplier-container');
             grid.innerHTML = '';
+            if (!suppliers.length) {
+                grid.innerHTML = '<div class="empty-state card"><strong>No suppliers here yet</strong>Add a supplier, or clear the filters on the left.</div>';
+                return;
+            }
 
             let Manufacturer = suppliers.filter(s => s.supplierType === 'Manufacturer');
             let Supplier = suppliers.filter(s => s.supplierType === 'Supplier');
@@ -155,13 +159,15 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
 
                 let container = document.getElementById('supplier-container');
 
-                let header = document.createElement('div');
-                header.style.cssText = 'font-size:16px;font-weight:600;color:var(--text-primary);margin:20px 0 10px';
+                let header = document.createElement('h2');
+                header.className = 'section-title';
                 header.textContent = title;
                 container.appendChild(header);
 
                 let table = document.createElement('table');
                 table.className = 'list-table';
+                let wrap = document.createElement('div');
+                wrap.className = 'table-wrap';
                 table.innerHTML = `
                     <thead>
                         <tr>
@@ -176,7 +182,8 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
                     </thead>
                     <tbody id="tbody-${title.replace(/\s/g,'')}"></tbody>
                 `;
-                container.appendChild(table);
+                wrap.appendChild(table);
+                container.appendChild(wrap);
 
                 list.forEach(sup => renderSupplier(sup, `tbody-${title.replace(/\s/g,'')}`));
             }
@@ -193,19 +200,22 @@ document.getElementById('category-title').textContent = categoryName + ' — Sup
     return item ? item.quantity : 0;
 }
 
+        function cellText(v) { return v ? escapeHtml(v) : '<span class="text-muted">—</span>'; }
+
         function renderSupplier(sup, tbodyId) {
             let tbody = document.getElementById(tbodyId);
             let row = document.createElement('tr');
             row.style.cursor = 'pointer';
             row.innerHTML = `
-                <td style="font-weight:500">${sup.name}</td>
-                <td>${sup.conName} — ${sup.desgn}</td>
-                <td>${sup.num}</td>
-                <td>${sup.location}</td>
-                <td>${sup.scale}</td>
-                <td>${sup.usp}</td>
-                <td><button class="dots-btn" onclick="event.stopPropagation(); editSupplier(${sup.id})">⋮</button></td>
+                <td class="fw-600">${cellText(sup.name)}</td>
+                <td>${[sup.conName, sup.desgn].filter(Boolean).map(escapeHtml).join(' · ') || '<span class="text-muted">—</span>'}</td>
+                <td class="tnum">${cellText(sup.num)}</td>
+                <td>${cellText(sup.location)}</td>
+                <td>${cellText(sup.scale)}</td>
+                <td>${cellText(sup.usp)}</td>
+                <td><button aria-label="Edit supplier" title="Edit supplier" class="dots-btn" onclick="event.stopPropagation(); editSupplier(${sup.id})"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></td>
             `;
+            row.dataset.clickable = '';
             row.addEventListener('click', function() {
                 localStorage.setItem('selectedSupplier', sup.name);
                 localStorage.setItem('selectedSupplierId', sup.id);

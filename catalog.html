@@ -15,12 +15,12 @@
 <body>
     <div class="page-body">
         <div class="main-content" style="flex:1">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px">
-                <h1 style="margin:0">Product Catalog</h1>
-                <button class="add-btn" id="add-btn">+ Add Category</button>
-            </div>
-            <div class="search-box" style="margin-bottom:16px">
-                <input type="text" placeholder="Search categories...">
+            <div class="page-header">
+                <h1>Product catalog</h1>
+                <div class="search-box">
+                    <input type="search" placeholder="Search categories" aria-label="Search categories">
+                </div>
+                <button class="add-btn" id="add-btn">+ Add category</button>
             </div>
             <div class="category-grid" id="category-grid"></div>
         </div>
@@ -29,10 +29,10 @@
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal">
             <h2 id="modal-title">New Category</h2>
-            <input type="text" id="cat-name" placeholder="Category name">
-            <input type="text" id="cat-desc" placeholder="Short description">
+            <label class="field"><span class="field-label">Name</span><input type="text" id="cat-name" placeholder="e.g. Flooring"></label>
+            <label class="field"><span class="field-label">Description</span><input type="text" id="cat-desc" placeholder="What goes in this category"></label>
             <div class="modal-buttons">
-                <button id="delete-category-btn" style="display:none;background:var(--destructive);color:white;margin-right:auto">Delete</button>
+                <button id="delete-category-btn" class="delete-btn" style="display:none">Delete</button>
                 <button id="cancel-btn">Cancel</button>
                 <button id="confirm-btn">Add</button>
             </div>
@@ -43,11 +43,19 @@
     <script src="topbar.js?v=2"></script>
     <script>
         let editingId = null;
+        let _categoriesById = {};
 
 async function loadCategories() {
     let response = await authFetch('https://construct-backend-production.up.railway.app/api/categories');
     let categories = await response.json();
-    document.querySelector('.category-grid').innerHTML = '';
+    let grid = document.querySelector('.category-grid');
+    grid.innerHTML = '';
+    _categoriesById = {};
+    categories.forEach(function(cat) { _categoriesById[cat.id] = cat; });
+    if (!categories.length) {
+        grid.innerHTML = '<div class="empty-state card" style="grid-column:1/-1"><strong>No categories yet</strong>Add a category such as Flooring or Lighting to start building the catalog.</div>';
+        return;
+    }
     categories.forEach(function(cat) {
         renderCategories(cat);
     });
@@ -60,11 +68,13 @@ function renderCategories(cat) {
     card.style.cursor = 'pointer';
     card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div class="tile-title">${cat.name}</div>
-            <button class="dots-btn" onclick="event.stopPropagation(); editCategory(${cat.id}, '${cat.name}', '${cat.description}')">⋮</button>
+            <div class="tile-title">${escapeHtml(cat.name)}</div>
+            <button aria-label="Edit category" title="Edit category" class="dots-btn" onclick="event.stopPropagation(); editCategory(${cat.id})"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
         </div>
-        <div class="tile-desc">${cat.description}</div>
+        <div class="tile-desc">${cat.description ? escapeHtml(cat.description) : '<span class="text-muted">No description</span>'}</div>
     `;
+
+    card.dataset.clickable = '';
 
     card.addEventListener('click', function() {
     localStorage.setItem('selectedCategoryId', cat.id);
@@ -88,13 +98,16 @@ async function getCartQuantity(productId) {
     return item ? item.quantity : 0;
 }
 
-function editCategory(id, currentName, currentDescription) {
+function editCategory(id) {
+    let cat = _categoriesById[id] || {};
+    let currentName = cat.name || '';
+    let currentDescription = cat.description || '';
     editingId = id;
     document.getElementById('cat-name').value = currentName;
     document.getElementById('cat-desc').value = currentDescription;
     document.getElementById('modal-title').textContent = 'Edit Category';
     document.getElementById('confirm-btn').textContent = 'Save';
-    document.getElementById('delete-category-btn').style.display = 'block';
+    document.getElementById('delete-category-btn').style.display = 'inline-flex';
     modal.classList.add('open');
 }
 

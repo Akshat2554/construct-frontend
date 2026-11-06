@@ -15,25 +15,25 @@
 </head>
 <body>
     <div class="page-body">
-        <div class="main-content" style="flex:1">
-            <a href="suppliers.html" class="back-btn" style="display:inline-block;margin-bottom:14px">← Back to Suppliers</a>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px">
-                <h1 id="category-title" style="margin-bottom:0">Products</h1>
-                <div class="search-box" style="max-width:260px">
-                    <input type="text" placeholder="Search products...">
+        <div class="main-content">
+            <a href="suppliers.html" class="back-btn" style="margin-bottom:8px">← Suppliers</a>
+            <div class="page-header">
+                <h1 id="category-title">Products</h1>
+                <div class="search-box">
+                    <input type="search" placeholder="Search products" aria-label="Search products">
                 </div>
-                <div style="display:flex;align-items:center;gap:10px">
-                    <div class="view-toggle">
+                <div class="row">
+                    <div class="view-toggle" role="group" aria-label="View">
                         <button id="grid-view-btn" class="view-toggle-btn active" onclick="setView('grid')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Grid</button>
                         <button id="list-view-btn" class="view-toggle-btn" onclick="setView('list')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> List</button>
                     </div>
                     <div style="position:relative">
-                        <button class="add-btn" id="add-menu-btn" style="width:36px;height:36px;padding:0;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation(); document.getElementById('add-menu-dropdown').classList.toggle('open')">+</button>
-                        <div id="add-menu-dropdown" style="position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.18);min-width:180px;z-index:50;overflow:hidden;display:none">
-                            <button id="add-btn" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer">+ Add Product</button>
-                            <button id="upload-pdf-btn" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer">+ Upload PDF</button>
-                            <label style="display:block;width:100%;text-align:left;padding:10px 14px;color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer">
-                                Upload Excel
+                        <button class="add-btn" id="add-menu-btn" aria-haspopup="menu" aria-expanded="false" onclick="event.stopPropagation(); let m = document.getElementById('add-menu-dropdown'); m.classList.toggle('open'); this.setAttribute('aria-expanded', m.classList.contains('open'))">+ Add</button>
+                        <div id="add-menu-dropdown" class="menu" role="menu">
+                            <button id="add-btn" class="menu-item" role="menuitem">Add product</button>
+                            <button id="upload-pdf-btn" class="menu-item" role="menuitem">Upload PDF catalog</button>
+                            <label class="menu-item" role="menuitem">
+                                Import from Excel
                                 <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none">
                             </label>
                         </div>
@@ -44,8 +44,8 @@
         </div>
     </div>
     <style>
-        #add-menu-dropdown.open { display: block !important; }
-        #add-menu-dropdown button:hover, #add-menu-dropdown label:hover { background: var(--bg); }
+        #add-menu-dropdown { display: none; }
+        #add-menu-dropdown.open { display: block; }
     </style>
 
     <div class="modal-overlay" id="pdf-modal">
@@ -250,14 +250,14 @@ if (addingToRoom) {
             grid.innerHTML = '';
 
             if (catalogs.length > 0) {
-                grid.innerHTML += `<div style="grid-column:1/-1;font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Catalogs</div>`;
+                grid.innerHTML += `<h2 class="section-title" style="grid-column:1/-1">Catalogs</h2>`;
 
                 let pdfRow = document.createElement('div');
                 pdfRow.style.cssText = 'grid-column:1/-1;display:flex;gap:16px;overflow-x:auto;padding-bottom:8px';
 
                 catalogs.forEach(function(catalog) {
                     let card = document.createElement('div');
-                    card.style.cssText = 'min-width:200px;background:white;border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;flex-shrink:0';
+                    card.className = 'card'; card.style.cssText = 'min-width:200px;overflow:hidden;flex-shrink:0';
                     card.innerHTML = `
     <div style="position:relative">
         <iframe 
@@ -268,7 +268,7 @@ if (addingToRoom) {
         </iframe>
         <button class="dots-btn" onclick="deleteCatalog(${catalog.id})" 
             style="position:absolute;top:6px;right:6px;background:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2);font-size:16px"
-            title="Delete catalog" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            title="Delete catalog" aria-label="Delete catalog"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div style="padding:10px 12px">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${catalog.displayName}</div>
@@ -283,7 +283,7 @@ if (addingToRoom) {
 
             if (products.length > 0) {
                 let header = document.createElement('div');
-                header.style.cssText = 'grid-column:1/-1;font-size:16px;font-weight:600;color:var(--text-primary);margin:16px 0 8px';
+                header.className = 'section-title'; header.style.gridColumn = '1/-1';
                 header.textContent = 'Products';
                 grid.appendChild(header);
 
@@ -295,7 +295,7 @@ if (addingToRoom) {
             }
 
             if (catalogs.length === 0 && products.length === 0) {
-                grid.innerHTML = '<p style="color:var(--text-muted);padding:20px">No catalogs or products uploaded yet.</p>';
+                grid.innerHTML = '<div class="empty-state card" style="grid-column:1/-1"><strong>Nothing uploaded yet</strong>Add a product, or upload a PDF or Excel catalog from the + menu.</div>';
             }
         }
 
@@ -330,7 +330,7 @@ if (addingToRoom) {
             window._renderedProducts = products;
             let cart = await getCart();
             let cardRow = document.createElement('div');
-            cardRow.style.cssText = 'grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:16px';
+            cardRow.className = 'product-grid'; cardRow.style.gridColumn = '1/-1';
             grid.appendChild(cardRow);
 
             products.forEach(function(product) {
@@ -343,7 +343,7 @@ if (addingToRoom) {
         ${product.imageURL
             ? `<img src="${product.imageURL}" alt="${product.name}">`
             : `<div class="product-tile-placeholder"><svg class="ic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>`}
-        <button class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button>
+        <button aria-label="Edit product" title="Edit product" class="dots-btn product-tile-dots" onclick="event.stopPropagation(); editProduct(${product.id})"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     </div>
     <div class="product-tile-body">
         <div class="product-tile-name">${product.name}</div>
@@ -353,16 +353,16 @@ if (addingToRoom) {
         <div class="product-tile-row"><span>Unit</span><span>${product.unit || '—'}</span></div>
         <div class="product-tile-row"><span>Availability</span><span>${product.availability || '—'}</span></div>
         <div class="product-tile-footer">
-            <div class="product-tile-price">₹${product.price}</div>
+            <div class="product-tile-price">${formatINR(product.price)}</div>
             ${!product.name || !product.unit || !product.price 
-                ? `<button disabled title="Missing name, unit, or price" 
-                    style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--text-muted);border:none;font-size:18px;cursor:not-allowed;display:flex;align-items:center;justify-content:center">+</button>`
+                ? `<button disabled class="add-to-cart-btn" title="Needs a name, unit and price before it can go in the BOQ" aria-label="Can't add: missing name, unit or price" style="background:var(--surface-sunken);color:var(--text-muted)">+</button>`
                 : `<div data-product-id="${product.id}">${buildCartControl(product.id, qty)}</div>`
             }
         </div>
     </div>
 `;
                 card.style.cursor = 'pointer';
+card.dataset.clickable = '';
 card.addEventListener('click', function(e) {
     if (e.target.closest('button')) return;
     openProductDetail(product);
@@ -462,7 +462,7 @@ function openProductDetail(product) {
                         <th>Dimensions</th>
                         <th>Unit</th>
                         <th>Availability</th>
-                        <th>Price</th>
+                        <th class="num">Price</th>
                         <th></th>
                         <th></th>
                     </tr>
@@ -489,11 +489,12 @@ function openProductDetail(product) {
                     <td>${product.dimensions || '—'}</td>
                     <td>${product.unit || '—'}</td>
                     <td>${product.availability || '—'}</td>
-                    <td style="color:var(--warning);font-weight:600">₹${product.price}</td>
-                    <td><button class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})">⋮</button></td>
+                    <td class="num fw-600 text-accent">${formatINR(product.price)}</td>
+                    <td><button aria-label="Edit product" title="Edit product" class="dots-btn" onclick="event.stopPropagation(); editProduct(${product.id})"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></td>
                     <td data-product-id="${product.id}">${buildCartControl(product.id, qty)}</td>
                 `;
                 row.style.cursor = 'pointer';
+row.dataset.clickable = '';
 row.addEventListener('click', function(e) {
     if (e.target.closest('button')) return; // ignore button clicks
     openProductDetail(product);
@@ -893,7 +894,7 @@ function updateCompareTray() {
     }
     
     tray.style.display = 'flex';
-    btn.style.display = window._compareList.length >= 2 ? 'block' : 'none';
+    btn.style.display = window._compareList.length >= 2 ? 'inline-flex' : 'none';
     
     items.innerHTML = '';
     window._compareList.forEach(function(product) {
@@ -1066,11 +1067,11 @@ window._existingImageUrl = prod.imageURL || null;
     </script>
 
     <!-- Compare Tray -->
-<div id="compare-tray" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 24px;z-index:500;display:flex;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
-    <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em;white-space:nowrap">Comparing</span>
+<div id="compare-tray" class="compare-tray" style="display:none" role="region" aria-label="Product comparison">
+    <span class="label-caps" style="margin:0;white-space:nowrap">Comparing</span>
     <div id="compare-tray-items" style="display:flex;gap:8px;flex:1;overflow-x:auto"></div>
-    <button onclick="clearCompare()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">Clear</button>
-    <button id="compare-btn" onclick="openCompareView()" style="padding:6px 16px;border:none;border-radius:6px;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:none">Compare →</button>
+    <button onclick="clearCompare()" class="btn btn-secondary btn-sm">Clear</button>
+    <button id="compare-btn" onclick="openCompareView()" class="btn btn-primary btn-sm" style="display:none">Compare</button>
 </div>
 
 <!-- Compare View Modal -->
