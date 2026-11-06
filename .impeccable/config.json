@@ -1,0 +1,89 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/assigned.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.526Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/assigned.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.543Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/assigned.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.560Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.578Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.595Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.613Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.633Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.652Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-06T20:38:04.670Z",
+        "reason": "Claude: throwaway decision-round sketch drawn as skeleton bars, never shipped"
+      }
+    ]
+  }
+}

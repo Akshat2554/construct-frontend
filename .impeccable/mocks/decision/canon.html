@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:flex;font-family:Inter,sans-serif;background:#fff;color:#18181B;font-size:14px}
+.rail{width:232px;background:#FAFAFA;border-right:1px solid #E4E4E7;padding:18px 12px}
+.mark{font-weight:600;font-size:15px;margin-bottom:22px;padding:0 8px}
+.rail a{display:block;padding:7px 8px;border-radius:6px;color:#52525B}.rail a.on{background:#F4F4F5;color:#18181B;font-weight:500}
+main{flex:1;padding:24px 32px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+h1{font-size:22px;font-weight:600}
+.btn{background:#4F46E5;color:#fff;padding:8px 14px;border-radius:6px;font-weight:500}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{border:1px solid #E4E4E7;border-radius:8px;padding:14px}.stat span{color:#71717A;font-size:13px}.stat strong{display:block;font-size:24px;font-weight:600;margin-top:4px}
+table{width:100%;border-collapse:collapse;border:1px solid #E4E4E7;border-radius:8px}
+th{text-align:left;font-weight:500;color:#71717A;font-size:13px;padding:10px 14px;border-bottom:1px solid #E4E4E7;background:#FAFAFA}
+td{padding:12px 14px;border-bottom:1px solid #F4F4F5}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:#EEF2FF;color:#4F46E5}
+</style></head><body>
+<nav class="rail"><div class="mark">Construct</div><a>Dashboard</a><a class="on">Projects</a><a>Catalog</a><a>BOQ</a><a>Tasks</a><a>Users</a></nav>
+<main><div class="top"><h1>Projects</h1><span class="btn">New project</span></div>
+<div class="stats"><div class="stat"><span>Active projects</span><strong>6</strong></div><div class="stat"><span>Pending approvals</span><strong>3</strong></div><div class="stat"><span>BOQ value</span><strong>₹4.2 Cr</strong></div><div class="stat"><span>Team</span><strong>8</strong></div></div>
+<table><tr><th>Project</th><th>Client</th><th>Status</th><th>Area</th><th>Budget</th></tr>
+<tr><td>HTC Office Fit-out</td><td>HTC Global</td><td><span class="pill">Active</span></td><td>12,400 sqft</td><td>₹1,84,00,000</td></tr>
+<tr><td>Prestige Tech Park, L4</td><td>Prestige</td><td><span class="pill">Active</span></td><td>8,200 sqft</td><td>₹96,50,000</td></tr>
+<tr><td>Koramangala Studio</td><td>Bloom Labs</td><td><span class="pill">On hold</span></td><td>3,100 sqft</td><td>₹28,00,000</td></tr>
+</table></main></body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:flex;font-family:'Hanken Grotesk',sans-serif;background:#F1EEE8;color:#2B241F;font-variant-numeric:tabular-nums}
+.rail{width:232px;background:#2B241F;color:#D8D2C7;padding:24px 16px}
+.mark{font-weight:800;font-size:22px;color:#F1EEE8;margin-bottom:30px;display:flex;gap:8px;align-items:center}
+.mark i{display:flex;gap:2px}.mark i b{width:8px;height:22px;display:block}
+.nav a{display:block;padding:10px 12px;font-size:15px;border-radius:6px}
+.nav a.on{background:#3D342D;color:#fff}
+main{flex:1;padding:26px 32px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.01em}
+.sub{color:#6B6158;font-size:14px;margin:2px 0 22px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.cat{background:#fff;border:1px solid #D8D2C7;border-radius:10px;overflow:hidden}
+.chips{display:flex;height:84px}.chips b{flex:1}
+.cat div.t{padding:12px 14px}.cat strong{display:block;font-size:17px}.cat span{font-size:13px;color:#6B6158}
+.board{margin-top:24px;display:grid;grid-template-columns:1fr 380px;gap:16px}
+.panel{background:#fff;border:1px solid #D8D2C7;border-radius:10px}
+.panel h3{font-size:15px;padding:12px 16px;border-bottom:1px solid #E6E1D8;display:flex;justify-content:space-between}
+.row{display:grid;grid-template-columns:44px 1fr 90px 110px;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #EFEBE4;font-size:14px}
+.sw{width:44px;height:30px;border-radius:4px}
+.n{text-align:right}
+.pin{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
+.pin div{aspect-ratio:1;border-radius:6px;position:relative}.pin div span{position:absolute;left:6px;bottom:6px;font-size:11px;background:#fff;padding:2px 6px;border-radius:3px}
+</style></head><body>
+<nav class="rail"><div class="mark"><i><b style="background:#8C5A33"></b><b style="background:#5E7360"></b><b style="background:#B08A3E"></b></i>Construct</div>
+<div class="nav"><a>Dashboard</a><a>Projects</a><a class="on">Catalog</a><a>BOQ</a><a>Tasks</a></div></nav>
+<main><h1>Material library</h1><p class="sub">14 categories · 312 products from 41 suppliers</p>
+<div class="grid">
+<div class="cat"><div class="chips"><b style="background:#8C5A33"></b><b style="background:#A8754B"></b><b style="background:#C69B6D"></b></div><div class="t"><strong>Flooring</strong><span>Vitrified, wood, vinyl · 64</span></div></div>
+<div class="cat"><div class="chips"><b style="background:#D8D2C7"></b><b style="background:#BDB5A8"></b><b style="background:#9C9385"></b></div><div class="t"><strong>False ceiling</strong><span>Gypsum, grid, baffle · 22</span></div></div>
+<div class="cat"><div class="chips"><b style="background:#5E7360"></b><b style="background:#7F9481"></b><b style="background:#A9B9A9"></b></div><div class="t"><strong>Paint</strong><span>Emulsion, texture · 48</span></div></div>
+<div class="cat"><div class="chips"><b style="background:#B08A3E"></b><b style="background:#2B241F"></b><b style="background:#8B8178"></b></div><div class="t"><strong>Lighting</strong><span>Panels, tracks, pendants · 37</span></div></div>
+</div>
+<div class="board">
+<div class="panel"><h3>Conference Room A · selections <span style="color:#6B6158">₹1,42,880</span></h3>
+<div class="row"><div class="sw" style="background:#C69B6D"></div><span>Oak laminate flooring, 8 mm</span><span class="n">163 sqft</span><span class="n">₹48,900</span></div>
+<div class="row"><div class="sw" style="background:#7F9481"></div><span>Sage matt emulsion</span><span class="n">7.6 L</span><span class="n">₹5,320</span></div>
+<div class="row"><div class="sw" style="background:#BDB5A8"></div><span>Gypsum ceiling, 12.5 mm</span><span class="n">163 sqft</span><span class="n">₹17,930</span></div>
+<div class="row"><div class="sw" style="background:#2B241F"></div><span>Linear pendant, 1200 mm</span><span class="n">3 nos</span><span class="n">₹70,730</span></div></div>
+<div class="panel"><h3>Scheme board</h3><div class="pin"><div style="background:#C69B6D"><span>Floor</span></div><div style="background:#7F9481"><span>Walls</span></div><div style="background:#BDB5A8"><span>Ceiling</span></div><div style="background:#2B241F"><span>Lights</span></div><div style="background:#B08A3E"><span>Trims</span></div><div style="background:#F1EEE8;border:1px dashed #BDB5A8"><span>+ Add</span></div></div></div>
+</div></main></body></html>

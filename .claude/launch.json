@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "construct-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        ".claude/serve.py",
+        "5178"
+      ],
+      "port": 5178
+    }
+  ]
+}
