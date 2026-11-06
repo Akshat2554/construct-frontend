@@ -16,15 +16,15 @@
 
     <div class="page-body">
         <div class="sidebar">
-            <a href="index.html" class="nav-btn">← Projects</a>
+            <a href="index.html" class="back-btn">← Projects</a>
             <button class="boq-nav-btn active" id="layout-btn" onclick="switchView('layout')">Overview</button>
             <button class="boq-nav-btn" id="shortlist-btn" onclick="switchView('shortlist')">Vendor Shortlist</button>
 <button class="boq-nav-btn" id="updates-btn" onclick="switchView('updates')">Updates</button>
         </div>
         <div class="main-content">
-            <div style="margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <h1 id="project-title" style="font-family:'Syne',sans-serif;margin-bottom:4px"></h1>
-                <span id="project-subtitle" style="font-size:13px;color:var(--text-muted)"></span>
+            <div class="project-head">
+                <h1 id="project-title"></h1>
+                <p id="project-subtitle" class="page-subtitle"></p>
             </div>
             <div id="view-layout"></div>
             <div id="view-shortlist" style="display:none"></div>
@@ -50,8 +50,7 @@
         <div class="modal" style="width:500px;max-width:95vw">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
                 <h2 id="calc-modal-title" style="margin:0"></h2>
-                <button onclick="document.getElementById('calc-modal').classList.remove('open')"
-                    style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                <button onclick="document.getElementById('calc-modal').classList.remove('open')" class="icon-btn" aria-label="Close"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
     
             <!-- Base area -->
@@ -67,7 +66,7 @@
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                     <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Exclusions</span>
                     <button onclick="addCalcItem('exclusion')"
-                        style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Add</button>
+                        class="link-btn text-13">+ Add</button>
                 </div>
                 <div id="calc-exclusions"></div>
             </div>
@@ -77,7 +76,7 @@
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                     <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Inclusions</span>
                     <button onclick="addCalcItem('inclusion')"
-                        style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Add</button>
+                        class="link-btn text-13">+ Add</button>
                 </div>
                 <div id="calc-inclusions"></div>
             </div>
@@ -282,54 +281,50 @@ async function loadLayout() {
 
     let layout = document.getElementById('view-layout');
     layout.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <div style="display:flex;align-items:center;gap:12px">
-                <span style="font-size:13px;font-weight:600;color:var(--text-primary)">Floor</span>
-                <select id="floor-selector" onchange="currentFloor=parseInt(this.value);loadLayout()" 
-                    style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text-primary)">
+        <div class="floor-toolbar">
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+                <label for="floor-selector" class="text-13 fw-600">Floor</label>
+                <select id="floor-selector" onchange="currentFloor=parseInt(this.value);loadLayout()">
                     ${floorList.map(f => `<option value="${f}" ${f === currentFloor ? 'selected' : ''}>Floor ${f}</option>`).join('')}
                 </select>
-                <button onclick="addFloor(${Math.max(...floorList) + 1})" 
-                    style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;font-family:inherit;font-size:13px;color:var(--text-secondary);cursor:pointer">
-                    + Add Floor
+                <button onclick="addFloor(${Math.max(...floorList) + 1})" class="btn btn-secondary btn-sm">
+                    + Add floor
                 </button>
                 ${currentFloor > 1 ? `
-    <button onclick="deleteFloor(${currentFloor})"
-        style="padding:6px 12px;border:1px solid var(--destructive);border-radius:6px;background:transparent;color:var(--destructive);font-size:12px;font-family:inherit;cursor:pointer">
-        Delete Floor
+    <button onclick="deleteFloor(${currentFloor})" class="btn btn-sm btn-danger-outline">
+        Delete floor
     </button>
 ` : ''}
             </div>
-            <div style="display:flex;gap:8px">
+            <div class="row" style="flex-wrap:wrap">
                 ${drawings.length === 0 ? `
-                    <label class="add-btn" style="font-size:12px;padding:6px 14px;cursor:pointer">
-                        Upload Drawing
+                    <label class="btn btn-primary">
+                        Upload drawing
                         <input type="file" id="drawing-upload" accept="image/*,.pdf" style="display:none" 
                             onchange="uploadDrawing(this, ${currentFloor})">
                     </label>
                 ` : `
-                    <span style="font-size:12px;color:var(--text-muted);align-self:center">${drawings[0].displayName || 'Floor ' + currentFloor + ' drawing'}</span>
-                    <label class="add-btn" style="font-size:12px;padding:6px 14px;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--text-secondary)">
-                        Replace
+                    <span class="text-12 text-muted" style="align-self:center">${drawings[0].displayName || 'Floor ' + currentFloor + ' drawing'}</span>
+                    <label class="btn btn-secondary">
+                        Replace drawing
                         <input type="file" id="drawing-upload" accept="image/*,.pdf" style="display:none"
                             onchange="uploadDrawing(this, ${currentFloor}, ${drawings[0].id})">
                     </label>
-                    <button onclick="deleteDrawing(${drawings[0].id})" 
-    style="padding:6px 12px;border:1px solid var(--destructive);border-radius:6px;background:transparent;color:var(--destructive);font-size:12px;font-family:inherit;cursor:pointer">
-    Delete Drawing
+                    <button onclick="deleteDrawing(${drawings[0].id})" class="btn btn-danger-outline">
+    Delete drawing
 </button>
                 `}
-                <button class="add-btn" onclick="openAddRoomModal()" style="font-size:12px;padding:6px 14px">+ Add Room</button>
+                <button class="btn btn-primary" onclick="openAddRoomModal()">+ Add room</button>
             </div>
         </div>
 
-        <div style="display:flex;gap:16px;height:calc(100vh - 260px)">
+        <div class="layout-split">
             
             <!-- Left: Drawing -->
-            <div style="flex:1;border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;background:var(--surface)">
+            <div class="layout-drawing">
                 ${drawings.length === 0 ? `
                     <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-muted)">
-                        <div style="font-size:40px">📐</div>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--text-faint)"><path d="M3 3h18v18H3z"/><path d="M3 9h6v12M15 3v6h6"/></svg>
                         <div style="font-size:13px">Upload a drawing for Floor ${currentFloor}</div>
                     </div>
                 ` : drawings[0].fileName && drawings[0].fileName.toLowerCase().endsWith('.pdf') ? `
@@ -344,7 +339,7 @@ async function loadLayout() {
             </div>
 
             <!-- Right: Room List -->
-            <div style="width:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+            <div class="layout-rooms">
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${rooms.length} room${rooms.length !== 1 ? 's' : ''} on Floor ${currentFloor}</div>
                 <div id="room-list"></div>
             </div>
@@ -368,28 +363,28 @@ let totalCeilingArea = totalFloorArea;
 
 // Add totals bar to layout header
 let totalsBar = document.createElement('div');
-totalsBar.style.cssText = 'display:flex;gap:24px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--border)';
+totalsBar.className = 'totals-bar';
 totalsBar.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Paint Area</span>
+    <div class="total-field">
+        <span class="dim-label">Paint Area</span>
         <input type="number" id="total-paint-area" value="${project.totalPaintArea || totalPaintArea.toFixed(0)}"
-            style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
+            class="dim-input" inputmode="decimal" aria-label="Total paint area in square feet"
             onchange="saveProjectTotal('totalPaintArea', this.value)">
-        <span style="font-size:12px;color:var(--text-muted)">sqft</span>
+        <span class="dim-unit">sqft</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Floor Area</span>
+    <div class="total-field">
+        <span class="dim-label">Floor Area</span>
         <input type="number" id="total-floor-area" value="${project.totalFloorArea || totalFloorArea.toFixed(0)}"
-            style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
+            class="dim-input" inputmode="decimal" aria-label="Total floor area in square feet"
             onchange="saveProjectTotal('totalFloorArea', this.value)">
-        <span style="font-size:12px;color:var(--text-muted)">sqft</span>
+        <span class="dim-unit">sqft</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.06em">Ceiling Area</span>
+    <div class="total-field">
+        <span class="dim-label">Ceiling Area</span>
         <input type="number" id="total-ceiling-area" value="${project.totalCeilingArea || totalCeilingArea.toFixed(0)}"
-            style="width:80px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-weight:700;color:var(--text-primary);background:transparent;font-family:inherit;text-align:center"
+            class="dim-input" inputmode="decimal" aria-label="Total ceiling area in square feet"
             onchange="saveProjectTotal('totalCeilingArea', this.value)">
-        <span style="font-size:12px;color:var(--text-muted)">sqft</span>
+        <span class="dim-unit">sqft</span>
     </div>
 `;
 layout.insertBefore(totalsBar, layout.firstChild);
@@ -774,74 +769,69 @@ async function openRoomDetail(room) {
     document.getElementById('view-layout').innerHTML = `
 
         <!-- HEADER -->
-        <div style="display:flex;align-items:center;gap:0;padding:0 20px;height:56px;background:var(--surface);border-bottom:1px solid var(--border)">
+        <div class="room-header">
             
             <!-- Back + Room name + tag -->
-            <div style="display:flex;align-items:center;gap:10px;min-width:200px">
-                <button class="hover-text" onclick="loadLayout()" 
-                    style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;padding:0;line-height:1;transition:color 0.15s">←</button>
-                <span style="font-size:16px;font-weight:700;color:var(--text-primary);font-family:'Syne',sans-serif">${room.name}</span>
-                <span style="font-size:12px;color:var(--accent);background:var(--accent-glow);padding:2px 8px;border-radius:20px;font-weight:600">${room.roomType || '—'}</span>
+            <div class="room-title">
+                <button class="icon-btn" onclick="loadLayout()" aria-label="Back to floor plan" title="Back to floor plan">${icon('arrowLeft')}</button>
+                <h2 class="room-name">${room.name}</h2>
+                <span class="badge badge-accent">${room.roomType || '—'}</span>
             </div>
 
             <!-- Divider -->
-            <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
+            <div class="room-divider" aria-hidden="true"></div>
 
             <!-- Dimensions — inline label + value -->
-            <div style="display:flex;align-items:center;gap:16px;flex:1">
-                <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:12px;color:var(--text-muted);font-weight:500">L</span>
+            <div class="room-dims">
+                <div class="dim-field">
+                    <span class="dim-label" title="Length">L</span>
                     <input type="number" value="${room.length || ''}" 
                         onchange="updateRoomDimension(${room.id}, 'length', this.value)"
-                        placeholder="—"
-                        style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
-                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                    <span style="font-size:12px;color:var(--text-muted)">mm</span>
+                        placeholder="—" inputmode="decimal" class="dim-input"
+                        aria-label="${room.name} dimension in millimetres">
+                    <span class="dim-unit">mm</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:12px;color:var(--text-muted);font-weight:500">B</span>
+                <div class="dim-field">
+                    <span class="dim-label" title="Breadth">B</span>
                     <input type="number" value="${room.breadth || ''}" 
                         onchange="updateRoomDimension(${room.id}, 'breadth', this.value)"
-                        placeholder="—"
-                        style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
-                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                    <span style="font-size:12px;color:var(--text-muted)">mm</span>
+                        placeholder="—" inputmode="decimal" class="dim-input"
+                        aria-label="${room.name} dimension in millimetres">
+                    <span class="dim-unit">mm</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:12px;color:var(--text-muted);font-weight:500">H</span>
+                <div class="dim-field">
+                    <span class="dim-label" title="Height">H</span>
                     <input type="number" value="${room.height || ''}" 
                         onchange="updateRoomDimension(${room.id}, 'height', this.value)"
-                        placeholder="—"
-                        style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--bg);font-family:inherit;text-align:center;transition:border-color 0.15s"
-                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-                    <span style="font-size:12px;color:var(--text-muted)">mm</span>
+                        placeholder="—" inputmode="decimal" class="dim-input"
+                        aria-label="${room.name} dimension in millimetres">
+                    <span class="dim-unit">mm</span>
                 </div>
             </div>
 
             <!-- Divider -->
-            <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
+            <div class="room-divider" aria-hidden="true"></div>
 
             <!-- Area stats — clean text, no boxes -->
-            <div style="display:flex;align-items:center;gap:20px">
-                <div style="display:flex;flex-direction:column;gap:1px">
-                    <span style="font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em">Wall</span>
-<span id="header-wall-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${wallArea}</span>
+            <div class="room-stats">
+                <div class="room-stat">
+                    <span class="room-stat-label">Wall</span>
+<span id="header-wall-area" class="room-stat-value">${wallArea}</span>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:1px">
-                    <span style="font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em">Floor</span>
-<span id="header-floor-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${area}</span>
+                <div class="room-stat">
+                    <span class="room-stat-label">Floor</span>
+<span id="header-floor-area" class="room-stat-value">${area}</span>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:1px">
-                    <span style="font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:0.05em">Ceiling</span>
-<span id="header-ceiling-area" style="font-size:14px;font-weight:700;color:var(--text-primary)">${ceilingArea}</span>                </div>
+                <div class="room-stat">
+                    <span class="room-stat-label">Ceiling</span>
+<span id="header-ceiling-area" class="room-stat-value">${ceilingArea}</span>                </div>
             </div>
 
             <!-- Divider -->
-            <div style="width:1px;height:28px;background:var(--border);margin:0 20px"></div>
+            <div class="room-divider" aria-hidden="true"></div>
 
             <!-- Delete -->
-            <button class="hover-danger" onclick="deleteRoom(${room.id}, '${room.name}')"
-                style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;font-family:inherit;transition:color 0.15s">Delete Room</button>
+            <button class="btn btn-ghost btn-sm hover-danger room-delete" onclick="deleteRoom(${room.id}, '${room.name}')">Delete room</button>
         </div>
 
         <!-- hidden inputs for calculators -->
@@ -851,7 +841,7 @@ async function openRoomDetail(room) {
         <input type="hidden" id="room-breadth-val" value="${room.breadth || 0}">
 
         <!-- THREE COLUMN BODY -->
-<div style="display:grid;grid-template-columns:1fr 300px 250px;gap:10px;padding:12px;height:calc(100vh - 68px);background:var(--bg)">
+<div class="room-grid">
 
             <!-- LEFT: Renders -->
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden">
@@ -878,8 +868,8 @@ async function openRoomDetail(room) {
                 <div style="flex:1;padding:10px;overflow:hidden">
                     <div id="render-canvas" style="width:100%;height:100%;border-radius:8px;position:relative;background:var(--text-primary);cursor:crosshair;overflow:hidden">
                         ${_renders.length === 0 ? `
-                            <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-muted)">
-                                <div style="font-size:44px">🏠</div>
+                            <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-muted);background:var(--surface-raised)">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--text-faint)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                                 <div style="font-size:13px">Upload a render to get started</div>
                                 <label style="padding:8px 18px;background:var(--accent);color:white;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">
                                     Upload Render
@@ -1458,7 +1448,7 @@ function renderCalcItems() {
                 <input type="number" value="${item.area}" placeholder="sqft"
                     style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;text-align:center;background:var(--bg)"
                     onchange="updateCalcItem(${item.id}, 'area', this.value)">
-                <span style="font-size:12px;color:var(--text-muted)">sqft</span>
+                <span class="dim-unit">sqft</span>
                 <button class="hover-danger" onclick="removeCalcItem(${item.id}, '${itemType}')"
                     style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             `;
@@ -1880,8 +1870,7 @@ updateCartCount();
     <div class="modal" style="width:440px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <h2 id="opening-modal-title" style="margin:0">Add Door</h2>
-            <button onclick="document.getElementById('opening-modal').classList.remove('open')"
-                style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)" aria-label="Remove"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            <button onclick="document.getElementById('opening-modal').classList.remove('open')" class="icon-btn" aria-label="Close"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
 
         <!-- Existing items list -->
