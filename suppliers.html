@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suppliers — Construct</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    <script src="auth.js"></script>
-    <script src="toast.js"></script>
-    <script src="api.js"></script>
-    <script src="cart.js"></script>
+    <script src="auth.js?v=2"></script>
+    <script src="toast.js?v=2"></script>
+    <script src="ui.js?v=2"></script>
+    <script src="api.js?v=2"></script>
+    <script src="cart.js?v=2"></script>
 </head>
 <body>
     <div class="page-body">
@@ -108,7 +109,7 @@
         </div>
     </div>
 
-    <script src="topbar.js"></script>
+    <script src="topbar.js?v=2"></script>
     <script>
         const filterIcons = {
     'Office Furniture': 'desk',
@@ -322,7 +323,7 @@ btn.addEventListener('click', function() {
             let supplierType = document.getElementById('sup-type').value;
 
             if (name === '') {
-                alert('Please enter a company name');
+                showToast('Please enter a company name', 'error');
                 return;
             }
 
@@ -376,7 +377,7 @@ btn.addEventListener('click', function() {
 });
 
         document.getElementById('delete-supplier-btn').addEventListener('click', async function() {
-            if (confirm('Delete this supplier? This cannot be undone.')) {
+            if (await uiConfirm('Delete this supplier? This cannot be undone.')) {
                 await authFetch('https://construct-backend-production.up.railway.app/api/suppliers/' + editingId, {
                     method: 'DELETE'
                 });

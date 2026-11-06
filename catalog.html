@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catalog — Construct</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="auth.js"></script>
-    <script src="toast.js"></script>
-    <script src="api.js"></script>
-    <script src="cart.js"></script>
+    <link rel="stylesheet" href="styles.css?v=2">
+    <script src="auth.js?v=2"></script>
+    <script src="toast.js?v=2"></script>
+    <script src="ui.js?v=2"></script>
+    <script src="api.js?v=2"></script>
+    <script src="cart.js?v=2"></script>
 
 </head>
 <body>
@@ -39,7 +40,7 @@
     </div>
     </div>
 
-    <script src="topbar.js"></script>
+    <script src="topbar.js?v=2"></script>
     <script>
         let editingId = null;
 
@@ -132,7 +133,7 @@ confirmBtn.addEventListener('click', async function() {
     let desc = document.getElementById('cat-desc').value.trim();
 
     if (name === '') {
-        alert('Please enter a category name');
+        showToast('Please enter a category name', 'error');
         return;
     }
 
@@ -155,7 +156,7 @@ confirmBtn.addEventListener('click', async function() {
     loadCategories();
 
     document.getElementById('delete-category-btn').addEventListener('click', async function() {
-    if (confirm('Are you sure you want to delete this category?')) {
+    if (await uiConfirm('Delete this category? This cannot be undone.')) {
         await authFetch('https://construct-backend-production.up.railway.app/api/categories/' + editingId, {
             method: 'DELETE'
         });

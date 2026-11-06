@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>All products — Construct</title>
-        <link rel="stylesheet" href="styles.css">
-        <script src="auth.js"></script>
-        <script src="toast.js"></script>
-        <script src="api.js"></script>
+        <link rel="stylesheet" href="styles.css?v=2">
+        <script src="auth.js?v=2"></script>
+        <script src="toast.js?v=2"></script>
+        <script src="ui.js?v=2"></script>
+        <script src="api.js?v=2"></script>
         <script src = "cart.js"></script>
 
     </head>
@@ -90,7 +91,7 @@
             </div>
         </div>
 
-        <script src="topbar.js"></script>
+        <script src="topbar.js?v=2"></script>
         <script>
             let currentView = localStorage.getItem('productView') || 'grid';
             let categoryId = localStorage.getItem('selectedCategoryId');
@@ -380,7 +381,7 @@ async function handleAddToCart(productId) {
     } else {
         let payload = addToCartPayload(product);
         eval(payload);
-        alert(product.name + ' added to BOQ');
+        showToast(product.name + ' added to BOQ', 'success');
     }
     
     // Update button to green checkmark
@@ -402,7 +403,7 @@ function addToCompare(productId) {
     }
     
     if (window._compareList.length >= 4) {
-        alert('You can compare up to 4 products at a time');
+        showToast('You can compare up to 4 products at a time', 'warning');
         return;
     }
     

@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products — Construct</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="auth.js"></script>
-    <script src="toast.js"></script>
-    <script src="api.js"></script>
-    <script src="cart.js"></script>
+    <script src="auth.js?v=2"></script>
+    <script src="toast.js?v=2"></script>
+    <script src="ui.js?v=2"></script>
+    <script src="api.js?v=2"></script>
+    <script src="cart.js?v=2"></script>
 
 </head>
 <body>
@@ -204,7 +205,7 @@
     </div>
     </div>
 
-    <script src="topbar.js"></script>
+    <script src="topbar.js?v=2"></script>
     <script>
         document.addEventListener('click', function(e) {
             let dropdown = document.getElementById('add-menu-dropdown');
@@ -316,7 +317,7 @@ if (addingToRoom) {
     let safeSubcategory = (product.subcategory || '').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
 
     if (!product.name || !product.unit || !product.price) {
-        return `alert('Cannot add to BOQ: missing name, unit, or price')`;
+        return `showToast('This product needs a name, unit and price before it can go in the BOQ', 'error')`;
     }
 
     if (localStorage.getItem('addingToRoom')) {
@@ -372,7 +373,7 @@ card.addEventListener('click', function(e) {
         }
 
         async function deleteCatalog(id) {
-    if (confirm('Delete this catalog?')) {
+    if (await uiConfirm('Delete this catalog? This cannot be undone.')) {
         await authFetch('https://construct-backend-production.up.railway.app/api/catalogs/' + id, { method: 'DELETE' });
         loadSupplierCatalog();
     }
@@ -424,7 +425,7 @@ function openProductDetail(product) {
 
     document.getElementById('pd-add-btn').onclick = async function() {
     if (!product.name || !product.unit || !product.price) {
-        alert('Cannot add to BOQ: missing name, unit, or price');
+        showToast('This product needs a name, unit and price before it can go in the BOQ', 'error');
         return;
     }
     await addToCart({
@@ -574,7 +575,7 @@ row.addEventListener('click', function(e) {
             let supplierId = localStorage.getItem('selectedSupplierId');
 
             if (!displayName || !file) {
-                alert('Please fill in all fields');
+                showToast('Please fill in all fields', 'error');
                 return;
             }
 
@@ -632,7 +633,7 @@ row.addEventListener('click', function(e) {
     let supplierId = localStorage.getItem('selectedSupplierId');
 
     if (name === '') {
-        alert('Please enter a product name');
+        showToast('Please enter a product name', 'error');
         return;
     }
 
@@ -696,7 +697,7 @@ row.addEventListener('click', function(e) {
     
     let file = event.dataTransfer.files[0];
     if (!file || !file.type.startsWith('image/')) {
-        alert('Please drop an image file');
+        showToast('Please drop an image file', 'error');
         return;
     }
     await uploadProductImage(file);
@@ -712,7 +713,7 @@ async function handleAddToCart(productId) {
         await addToRoomShortlist(product.id, product.name, product.price, product.unit || '', roomId);
     } else {
         if (!product.name || !product.unit || !product.price) {
-            alert('Cannot add to BOQ: missing name, unit, or price');
+            showToast('This product needs a name, unit and price before it can go in the BOQ', 'error');
             return;
         }
         await addToCart({
@@ -875,7 +876,7 @@ function addToCompare(productId) {
     }
     
     if (window._compareList.length >= 4) {
-        alert('You can compare up to 4 products at a time');
+        showToast('You can compare up to 4 products at a time', 'warning');
         return;
     }
     
@@ -1057,7 +1058,7 @@ window._existingImageUrl = prod.imageURL || null;
 });
 
         document.getElementById('delete-product-btn').addEventListener('click', async function() {
-            if (confirm('Delete this product? This cannot be undone.')) {
+            if (await uiConfirm('Delete this product? This cannot be undone.')) {
                 await authFetch('https://construct-backend-production.up.railway.app/api/products/' + editingProductId, {
                     method: 'DELETE'
                 });

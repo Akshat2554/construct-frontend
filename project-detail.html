@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Project — Construct</title>
-        <link rel="stylesheet" href="styles.css">
-        <script src="auth.js"></script>
-        <script src="toast.js"></script>
-        <script src="api.js"></script>
-        <script src="cart.js"></script>
+        <link rel="stylesheet" href="styles.css?v=2">
+        <script src="auth.js?v=2"></script>
+        <script src="toast.js?v=2"></script>
+        <script src="ui.js?v=2"></script>
+        <script src="api.js?v=2"></script>
+        <script src="cart.js?v=2"></script>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     </head>
 <body>
@@ -147,7 +148,7 @@
         </div>
     </div>
 
-    <script src="topbar.js"></script>
+    <script src="topbar.js?v=2"></script>
 <script>
     let projectId = localStorage.getItem('selectedProjectId');
     let projectName = localStorage.getItem('selectedProjectName');
@@ -478,7 +479,7 @@ async function uploadDrawing(input, floorNumber, existingId) {
 
     let remarks = '';
     if (existingId) {
-        remarks = prompt('Why is this drawing being replaced? (optional)') || '';
+        remarks = await uiPrompt('Why is this drawing being replaced? (optional)', '', { confirmLabel: 'Replace drawing' }) || '';
     }
 
     if (existingId) {
@@ -515,7 +516,7 @@ async function uploadDrawing(input, floorNumber, existingId) {
 }
 
 async function deleteDrawing(id) {
-    if (confirm('Delete this drawing? This cannot be undone.')) {
+    if (await uiConfirm('Delete this drawing? This cannot be undone.')) {
         await authFetch('https://construct-backend-production.up.railway.app/api/drawings/' + id, { method: 'DELETE' });
         createVersion('Drawing deleted on Floor ' + currentFloor);
         loadLayout();
@@ -534,7 +535,7 @@ async function saveProjectTotal(field, value) {
 }
 
 async function deleteFloor(floorNum) {
-    if (confirm('Delete Floor ' + floorNum + '? All rooms and drawings on this floor will be deleted.')) {
+    if (await uiConfirm('Delete Floor ' + floorNum + '? All rooms and drawings on this floor will be deleted.')) {
         // Delete all rooms on this floor
         let roomsRes = await authFetch('https://construct-backend-production.up.railway.app/api/rooms/' + projectId);
         let allRooms = await roomsRes.json();
@@ -563,7 +564,7 @@ async function deleteFloor(floorNum) {
 }
 
 async function addManualActivity() {
-    let label = prompt('What happened?');
+    let label = await uiPrompt('What happened?', '', { confirmLabel: 'Add to updates' });
     if (!label) return;
     logActivity(label, '');
     showToast('Activity logged', 'success');
@@ -1252,7 +1253,7 @@ async function uploadRender(input, roomId) {
 }
 
 async function deleteRender(id) {
-    if (confirm('Delete this render?')) {
+    if (await uiConfirm('Delete this render? This cannot be undone.')) {
         await authFetch(`${API}/api/room-renders/${id}`, { method: 'DELETE' });
         let roomRes = await authFetch(`${API}/api/rooms/single/${currentRoomId}`);
         let room = await roomRes.json();
@@ -1804,7 +1805,7 @@ function getEffectiveArea(roomId) {
 }
 
 async function deleteRoom(id, name) {
-    if (confirm(`Delete ${name || 'this room'}? This cannot be undone.`)) {
+    if (await uiConfirm(`Delete ${name || 'this room'}? This cannot be undone.`)) {
         await authFetch(`${API}/api/rooms/${id}`, { method: 'DELETE' });
         logActivity('Room Deleted', `Room "${name}" deleted`);
         loadLayout();
@@ -1853,7 +1854,7 @@ document.getElementById('pin-modal-confirm').addEventListener('click', async fun
     this._firing = true;
     setTimeout(() => this._firing = false, 1000);
     let selected = document.querySelector('input[name="pin-product"]:checked');
-    if (!selected) { alert('Select a product'); return; }
+    if (!selected) { showToast('Select a product', 'error'); return; }
     let note = document.getElementById('pin-note-field').value;
     document.getElementById('pin-modal').classList.remove('open');
     await placePinOnRender(currentRenderId, parseInt(selected.value), _pendingPinX, _pendingPinY, note);

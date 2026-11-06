@@ -36,14 +36,14 @@ function invalidateCartCache() {
 function updateCartCountFromCache() {
     let count = _cartCache ? _cartCache.length : 0;
     let badge = document.getElementById('cart-count');
-    if (badge) badge.textContent = count;
+    if (badge) { badge.textContent = count; badge.dataset.count = count; }
 }
 
 async function updateCartCount() {
     let cart = await getCart();
     let count = cart.length;
     let badge = document.getElementById('cart-count');
-    if (badge) badge.textContent = count;
+    if (badge) { badge.textContent = count; badge.dataset.count = count; }
 }
 
 // ===== Activity Logging =====
@@ -71,7 +71,7 @@ function logActivity(action, details, projectIdOverride) {
 // ===== Cart Operations =====
 async function addToCart(product) {
     let projectId = getProjectId();
-    if (!projectId) { alert('Please select a project first'); return; }
+    if (!projectId) { showToast('Open a project first, then add products to its BOQ', 'warning'); return; }
     
     let response = await fetch(`${API}/api/boq`, {
         method: 'POST',
